@@ -1,6 +1,6 @@
 /**
  * Ermittelt die nächste lokal und remote freie numerische Component-ID.
- * Usage: node scripts/next-component-id.mjs rules/BDR-913.json
+ * Usage: npm run next-component-id -- rules/BDR-913.json
  */
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -19,7 +19,7 @@ const rulesDir = join(repositoryRoot, 'rules');
 async function main() {
   const ruleFile = process.argv.slice(2).find(argument => !argument.startsWith('--'));
   if (!ruleFile) {
-    console.error('Usage: node scripts/next-component-id.mjs <rule-file.json>');
+    console.error('Usage: npm run next-component-id -- <rule-file.json>');
     process.exitCode = 1;
     return;
   }

@@ -43,8 +43,8 @@ Mit `--apply` wird vor dem PUT der unveränderte Serverstand unter
 Git-ignoriert. Der Rollback folgt derselben Freigabeschranke:
 
 ```powershell
-node scripts/rollback-rule.mjs backups/BDR-913/2026-01-01T12-00-00Z.server.json
-node scripts/rollback-rule.mjs backups/BDR-913/2026-01-01T12-00-00Z.server.json --apply
+npm run rollback-rule -- backups/BDR-913/2026-01-01T12-00-00Z.server.json
+npm run rollback-rule -- backups/BDR-913/2026-01-01T12-00-00Z.server.json --apply
 ```
 
 Auch ein Rollback sichert zunächst den aktuellen Serverstand und verifiziert

@@ -43,7 +43,7 @@ export function resolveTrackedRuleFile(repositoryRoot, inputPath) {
   };
 }
 
-export function resolveBackupFile(repositoryRoot, inputPath) {
+function resolveBackupFile(repositoryRoot, inputPath) {
   const absolutePath = resolve(repositoryRoot, inputPath);
   const backupsRoot = resolve(repositoryRoot, 'backups');
   const relativePath = relative(backupsRoot, absolutePath);

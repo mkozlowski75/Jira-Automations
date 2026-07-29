@@ -71,17 +71,22 @@ test('validiert alle produktiven Exporte ohne Fehler oder Warnungen', () => {
   assert.deepEqual(result.warnings, []);
 });
 
-test('stellt genau einen sicheren Push-Befehl bereit', () => {
+test('stellt eine eindeutige und vollständige Befehlsoberfläche bereit', () => {
   const packageJson = parseJsonFile(join(repositoryRoot, 'package.json'));
 
+  assert.deepEqual(Object.keys(packageJson.scripts), [
+    'test',
+    'validate',
+    'verify',
+    'next-component-id',
+    'inspect-environment',
+    'pull-rule',
+    'push-rule',
+    'rollback-rule',
+    'lint',
+  ]);
   assert.equal(packageJson.scripts['push-rule'], 'node scripts/push-rule.mjs');
   assert.equal(packageJson.scripts.verify, 'npm test && npm run validate');
-  assert.equal(packageJson.scripts.preflight, undefined);
-  assert.equal(packageJson.scripts.sync, undefined);
-  assert.equal(packageJson.scripts.export, undefined);
-  assert.equal(existsSync(join(repositoryRoot, 'scripts', 'sync-rules.mjs')), false);
-  assert.equal(existsSync(join(repositoryRoot, 'scripts', 'export-rules.mjs')), false);
-  assert.equal(existsSync(join(repositoryRoot, 'scripts', 'test-connectivity.mjs')), false);
 });
 
 test('akzeptiert optionale Regelfelder, leere Projekte und optionale Component-Felder', () => {

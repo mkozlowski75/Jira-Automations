@@ -1,6 +1,6 @@
 /**
  * Stellt eine Jira-Automatisierungsregel aus einem lokalen Server-Backup wieder her.
- * Usage: node scripts/rollback-rule.mjs backups/BDR-913/<timestamp>.server.json [--apply]
+ * Usage: npm run rollback-rule -- backups/BDR-913/<timestamp>.server.json [--apply]
  */
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -28,7 +28,7 @@ async function main() {
   const args = process.argv.slice(2);
   const backupFile = args.find(argument => !argument.startsWith('--'));
   if (!backupFile) {
-    console.log('Usage: node scripts/rollback-rule.mjs <backup.server.json> [--apply] [--allow-field=<field>]');
+    console.log('Usage: npm run rollback-rule -- <backup.server.json> [--apply] [--allow-field=<field>]');
     process.exitCode = 1;
     return;
   }

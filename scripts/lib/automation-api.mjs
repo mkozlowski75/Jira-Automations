@@ -6,11 +6,11 @@ import {
 } from './api-helper.mjs';
 import { findAutomationPluginInfo } from './plugin-info.mjs';
 
-export function automationRuleUrl(rule) {
+function automationRuleUrl(rule) {
   return `${automationRulesUrl(rule)}/${rule.id}`;
 }
 
-export function automationRulesUrl(rule) {
+function automationRulesUrl(rule) {
   if (!Number.isInteger(rule?.id) || rule.id < 1) {
     throw new Error('Die Regel besitzt keine gültige numerische ID.');
   }

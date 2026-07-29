@@ -1,6 +1,6 @@
 /**
  * Ruft eine einzelne Jira-Automatisierungsregel read-only ab.
- * Usage: node scripts/pull-rule.mjs rules/BDR-913.json [--save]
+ * Usage: npm run pull-rule -- rules/BDR-913.json
  */
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -9,20 +9,15 @@ import {
   parseJsonFile,
   resolveTrackedRuleFile,
 } from './lib/rule-repository.mjs';
-import {
-  redactSensitive,
-  writeServerBackup,
-} from './lib/rule-workflow.mjs';
+import { redactSensitive } from './lib/rule-workflow.mjs';
 
 const __dir = dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = join(__dir, '..');
-const backupsRoot = join(repositoryRoot, 'backups');
 
 async function main() {
-  const args = process.argv.slice(2);
-  const ruleFile = args.find(argument => !argument.startsWith('--'));
+  const ruleFile = process.argv.slice(2).find(argument => !argument.startsWith('--'));
   if (!ruleFile) {
-    console.log('Usage: node scripts/pull-rule.mjs <rule-file.json> [--save]');
+    console.log('Usage: npm run pull-rule -- <rule-file.json>');
     process.exitCode = 1;
     return;
   }
@@ -37,13 +32,7 @@ async function main() {
   console.log(`Projects: ${JSON.stringify(safeRule.projects)}`);
   console.log(`Trigger: ${safeRule.trigger?.type || 'nicht vorhanden'}`);
   console.log(`Components: ${Array.isArray(safeRule.components) ? safeRule.components.length : 0}`);
-
-  if (args.includes('--save')) {
-    const backupPath = writeServerBackup(backupsRoot, remoteRule);
-    console.log(`Serverstand lokal gesichert: ${backupPath}`);
-  } else {
-    console.log('Kein lokaler Schreibvorgang; --save legt eine Git-ignorierte Serverkopie an.');
-  }
+  console.log('Kein lokaler Schreibvorgang.');
 }
 
 main().catch(() => {

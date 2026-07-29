@@ -1,6 +1,6 @@
 /**
  * Prüft Jira-Version und Automation-API ausschließlich read-only.
- * Usage: node scripts/inspect-environment.mjs rules/BDR-913.json
+ * Usage: npm run inspect-environment -- rules/BDR-913.json
  */
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -16,7 +16,7 @@ const repositoryRoot = join(__dir, '..');
 async function main() {
   const ruleFile = process.argv.slice(2).find(argument => !argument.startsWith('--'));
   if (!ruleFile) {
-    console.log('Usage: node scripts/inspect-environment.mjs <rule-file.json>');
+    console.log('Usage: npm run inspect-environment -- <rule-file.json>');
     process.exitCode = 1;
     return;
   }

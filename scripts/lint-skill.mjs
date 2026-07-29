@@ -1,6 +1,6 @@
 /**
  * Prüft Struktur, Links, Beispiele und Typabdeckung des Jira-Automation-Skills.
- * Usage: node scripts/lint-skill.mjs
+ * Usage: npm run lint
  */
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';

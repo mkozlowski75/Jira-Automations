@@ -1,14 +1,14 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-export const IMMUTABLE_TOP_LEVEL_FIELDS = Object.freeze([
+const IMMUTABLE_TOP_LEVEL_FIELDS = Object.freeze([
   'id',
   'clientKey',
   'created',
   'authorAccountId',
 ]);
 
-export const GUARDED_TOP_LEVEL_FIELDS = Object.freeze([
+const GUARDED_TOP_LEVEL_FIELDS = Object.freeze([
   'actorAccountId',
   'projects',
   'state',
@@ -36,7 +36,7 @@ function canonicalize(value, ignoredKeys = new Set()) {
   return result;
 }
 
-export function rulesEqual(left, right, { ignoreUpdated = false } = {}) {
+function rulesEqual(left, right, { ignoreUpdated = false } = {}) {
   const ignoredKeys = ignoreUpdated ? new Set(['updated']) : new Set();
   return JSON.stringify(canonicalize(left, ignoredKeys))
     === JSON.stringify(canonicalize(right, ignoredKeys));
@@ -136,7 +136,7 @@ function collectComponents(rule) {
   return components;
 }
 
-export function summarizeRuleChanges(remoteRule, localRule) {
+function summarizeRuleChanges(remoteRule, localRule) {
   const beforeComponents = collectComponents(remoteRule);
   const afterComponents = collectComponents(localRule);
   const added = [];
@@ -262,7 +262,7 @@ export function prepareDeployment({
   };
 }
 
-export function backupRelativePath(ruleId, date = new Date()) {
+function backupRelativePath(ruleId, date = new Date()) {
   const timestamp = date.toISOString().replace(/:/g, '-').replace(/\.\d{3}Z$/, 'Z');
   return join(`BDR-${ruleId}`, `${timestamp}.server.json`);
 }

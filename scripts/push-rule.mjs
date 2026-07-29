@@ -13,7 +13,6 @@ import {
 import {
   loadGitHeadRule,
   parseJsonFile,
-  resolveBackupFile,
   resolveTrackedRuleFile,
   validateCandidateRule,
 } from './lib/rule-repository.mjs';
@@ -33,14 +32,10 @@ function parseArguments(args) {
     .filter(argument => argument.startsWith('--allow-field='))
     .map(argument => argument.slice('--allow-field='.length))
     .filter(Boolean);
-  const baselineArgument = args
-    .find(argument => argument.startsWith('--baseline='))
-    ?.slice('--baseline='.length);
   return {
     ruleFile,
     apply: args.includes('--apply'),
     allowedFields,
-    baselineArgument,
   };
 }
 
@@ -87,10 +82,9 @@ async function main() {
     ruleFile,
     apply,
     allowedFields,
-    baselineArgument,
   } = parseArguments(process.argv.slice(2));
   if (!ruleFile) {
-    console.log('Usage: npm run push-rule -- <rule-file.json> [--baseline=<backup>] [--apply] [--allow-field=<field>]');
+    console.log('Usage: npm run push-rule -- <rule-file.json> [--apply] [--allow-field=<field>]');
     process.exitCode = 1;
     return;
   }
@@ -100,9 +94,7 @@ async function main() {
   // Regel laden
   const resolved = resolveTrackedRuleFile(repositoryRoot, ruleFile);
   const localRule = parseJsonFile(resolved.absolutePath);
-  const baselineRule = baselineArgument
-    ? parseJsonFile(resolveBackupFile(repositoryRoot, baselineArgument))
-    : loadGitHeadRule(repositoryRoot, resolved.repositoryPath);
+  const baselineRule = loadGitHeadRule(repositoryRoot, resolved.repositoryPath);
   const schema = parseJsonFile(join(rulesDir, 'rule-schema.json'));
   const validation = validateCandidateRule({
     rulesDir,

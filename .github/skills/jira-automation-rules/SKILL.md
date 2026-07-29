@@ -38,10 +38,10 @@ Lernartefakte. Übernimm keine Beispiel-ID in eine produktive Regel.
 
 1. Identifiziere genau eine Zielregel und prüfe, dass sie als
    `rules/BDR-{id}.json` vorliegt.
-2. Führe `node scripts/pull-rule.mjs <regeldatei>` aus. Das ist read-only und
+2. Führe `npm run pull-rule -- <regeldatei>` aus. Das ist read-only und
    gibt nur redigierte Metadaten aus.
 3. Prüfe die Umgebung vor strukturellen Erweiterungen mit
-   `node scripts/inspect-environment.mjs <regeldatei>`. Ist die
+   `npm run inspect-environment -- <regeldatei>`. Ist die
    Automation-Version unbekannt, verwende eine aktuelle Server-Referenzregel
    desselben Component-Typs; existiert keine, stoppe.
 4. Lies die vollständige Zielregel und eine passende aktuelle Referenzregel.
@@ -94,6 +94,6 @@ unveränderte Export muss als Git-Basisstand vorliegen, bevor er bearbeitet und
 
 Backups liegen lokal unter `backups/BDR-{id}/` und können Secrets enthalten.
 Öffne oder zeige sie nicht ungefiltert. Führe zunächst
-`node scripts/rollback-rule.mjs <backup>` ohne `--apply` aus. Ein Rollback
+`npm run rollback-rule -- <backup>` ohne `--apply` aus. Ein Rollback
 benötigt wie ein Push eine ausdrückliche Freigabe in der aktuellen Unterhaltung
 und anschließend `--apply`.

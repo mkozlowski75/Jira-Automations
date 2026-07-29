@@ -1,7 +1,7 @@
 /**
  * Validiert alle produktiven Regel-JSONs unter rules/ gegen rule-schema.json
  * und prüft regelübergreifende Code-Barrel-Invarianten.
- * Usage: node scripts/validate-rules.mjs
+ * Usage: npm run validate
  */
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';

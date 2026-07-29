@@ -3,8 +3,10 @@
 ## Aktueller Nachweisstand
 
 - Zielplattform: Jira Data Center mit Automation for Jira (Code Barrel).
-- Regelmodell: 28 rohe Exporte und 24 bekannte Typ-/Versionskombinationen.
-- Schema- und Validator-Basis: Repository-Stand ab Commit `926d62d`.
+- Regelmodell: alle getrackten `rules/BDR-*.json` und der aktuelle
+  `KNOWN_COMPONENTS`-Katalog.
+- Schema- und Validator-Basis: `rules/rule-schema.json` und
+  `scripts/lib/rule-validation.mjs`.
 - Dokumentationsstand zuletzt statisch geprüft: `2026-07-29`.
 - Jira-Version: `10.3.23`.
 - Jira-Build: `10030023`.
@@ -18,7 +20,7 @@
 ## Read-only Prüfung
 
 ```powershell
-node scripts/inspect-environment.mjs rules/BDR-913.json
+npm run inspect-environment -- rules/BDR-913.json
 ```
 
 Der Befehl liest Konfiguration und Client-Zertifikat ausschließlich innerhalb

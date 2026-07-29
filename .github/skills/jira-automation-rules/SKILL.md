@@ -53,8 +53,8 @@ Lernartefakte. Übernimm keine Beispiel-ID in eine produktive Regel.
    lokale und aktuelle Remote-Regeln. Führe es für jede weitere neue Component
    erneut aus.
 7. Ändere nur die beauftragte Logik. Setze `updated` nicht künstlich.
-8. Führe `npm run validate` aus. Für einen Push sind 0 Fehler und 0 Warnungen
-   erforderlich.
+8. Führe `npm run verify` aus. Für einen Push sind 0 Fehler und 0 Warnungen
+   erforderlich; alle Tests müssen bestehen.
 9. Führe `npm run push-rule -- <regeldatei>` ohne `--apply` aus. Zeige dem
    Benutzer den redigierten Preflight mit Regel, Scope, Trigger, hinzugefügten,
    geänderten und entfernten Components sowie geschützten Feldänderungen.

@@ -3,12 +3,13 @@
 ## Pflichtprüfungen
 
 ```powershell
-npm run validate
+npm run verify
 npm run push-rule -- rules/BDR-913.json
 ```
 
-Der erste Befehl prüft alle lokalen Regeln. Der zweite Befehl ist ohne `--apply`
-ein read-only Preflight. Ein Push ist nur bei 0 Fehlern und 0 Warnungen zulässig.
+Der erste Befehl führt Tests, Skill-Prüfung und Regelvalidierung aus. Der zweite
+Befehl ist ohne `--apply` ein read-only Preflight. Ein Push ist nur bei
+bestandenen Tests sowie 0 Fehlern und 0 Warnungen zulässig.
 
 Der Validator prüft unter anderem:
 

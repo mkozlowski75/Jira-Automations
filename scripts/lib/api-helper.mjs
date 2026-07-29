@@ -1,5 +1,5 @@
 ﻿/**
- * Gemeinsamer API-Helper für Jira Data Center und GitLab.
+ * Gemeinsamer API-Helper für Jira Data Center.
  * Lädt Credentials + Client-Zertifikat (mTLS) aus config/.env.
  */
 import dotenv from 'dotenv';
@@ -8,6 +8,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import https from 'node:https';
 import http from 'node:http';
+import { resolveSafeRedirect } from './http-policy.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: join(__dirname, '..', '..', 'config', '.env') });
@@ -17,15 +18,23 @@ const JIRA_BASE  = process.env.JIRA_BASE_URL;
 const JIRA_PATH  = process.env.JIRA_API_PATH || '/jira/rest/api/2';
 const JIRA_PAT   = process.env.JIRA_PERSONAL_ACCESS_TOKEN;
 
-const GITLAB_BASE  = process.env.GITLAB_BASE_URL;
-const GITLAB_TOKEN = process.env.GITLAB_API_TOKEN;
-
 const CERT_PATH = process.env.CLIENT_CERT_PATH;
 const CERT_PASS = process.env.CLIENT_CERT_PASSPHRASE || '';
+const SERVER_CA_PATH = process.env.SERVER_CA_PATH;
 
 // ─── SSL Agent (mTLS Client-Zertifikat) ────────────────────
 /** @type {https.Agent | undefined} */
 let sslAgent;
+let serverCa;
+
+if (SERVER_CA_PATH) {
+  try {
+    if (!existsSync(SERVER_CA_PATH)) throw new Error('Server-CA fehlt.');
+    serverCa = readFileSync(SERVER_CA_PATH);
+  } catch {
+    console.error('⚠️  Konnte konfigurierte Server-CA nicht laden.');
+  }
+}
 
 if (CERT_PATH && existsSync(CERT_PATH)) {
   try {
@@ -33,9 +42,10 @@ if (CERT_PATH && existsSync(CERT_PATH)) {
     sslAgent = new https.Agent({
       pfx,
       passphrase: CERT_PASS,
-      rejectUnauthorized: false,
+      ca: serverCa,
+      rejectUnauthorized: true,
     });
-  } catch (err) {
+  } catch {
     console.error('⚠️  Konnte Client-Zertifikat nicht laden.');
   }
 }
@@ -45,7 +55,7 @@ if (!sslAgent) {
 }
 
 // ─── HTTP-Request mit nativem https (mTLS-kompatibel) ──────
-function request(method, url, opts = {}) {
+function request(method, url, opts = {}, redirectCount = 0) {
   return new Promise((resolve, reject) => {
     const parsed = new URL(url);
     const isHttps = parsed.protocol === 'https:';
@@ -58,7 +68,8 @@ function request(method, url, opts = {}) {
       method: method,
       headers: opts.headers || {},
       agent: isHttps ? sslAgent : undefined,
-      rejectUnauthorized: false,
+      ca: isHttps ? serverCa : undefined,
+      rejectUnauthorized: true,
     };
 
     const req = mod.request(options, (res) => {
@@ -66,7 +77,7 @@ function request(method, url, opts = {}) {
       res.on('data', (chunk) => chunks.push(chunk));
       res.on('end', () => {
         const body = Buffer.concat(chunks).toString('utf-8');
-        // folge Redirects (max 5)
+        // Folge höchstens fünf same-origin Redirects und niemals bei Schreibzugriffen.
         if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location) {
           const location = res.headers.location;
           // Erkenne Login-/Permission-Redirects
@@ -74,8 +85,14 @@ function request(method, url, opts = {}) {
             reject(new Error(`Zugriff verweigert – Berechtigung fehlt für: ${url}`));
             return;
           }
-          const redirectUrl = new URL(location, url).toString();
-          resolve(request(method, redirectUrl, opts));
+          let redirectUrl;
+          try {
+            redirectUrl = resolveSafeRedirect(method, url, location, redirectCount);
+          } catch (error) {
+            reject(error);
+            return;
+          }
+          resolve(request(method, redirectUrl, opts, redirectCount + 1));
           return;
         }
         resolve({
@@ -110,17 +127,6 @@ async function httpGetJson(url, headers = {}) {
   return res.json();
 }
 
-async function httpPostJson(url, body, headers = {}) {
-  const res = await request('POST', url, {
-    headers: { ...headers, 'Content-Type': 'application/json' },
-    body,
-  });
-  if (!res.ok) {
-    throw new Error(`POST ${url} → ${res.status} ${res.statusText}`);
-  }
-  return res.json();
-}
-
 async function httpPutJson(url, body, headers = {}) {
   const res = await request('PUT', url, {
     headers: { ...headers, 'Content-Type': 'application/json' },
@@ -140,41 +146,30 @@ const jiraAuthHeaders = {
   'Accept': 'application/json',
 };
 
+function assertJiraConfigured() {
+  if (!JIRA_BASE || !JIRA_PAT) {
+    throw new Error('Jira-Verbindung ist nicht vollständig konfiguriert.');
+  }
+}
+
 export async function jiraGet(path) {
+  assertJiraConfigured();
   const url = `${JIRA_BASE}${JIRA_PATH}${path}`;
   return httpGetJson(url, jiraAuthHeaders);
 }
 
 export async function jiraRawGet(url, headers = {}) {
   // Für Endpunkte, die nicht unter JIRA_PATH liegen (z.B. Automation-API)
+  assertJiraConfigured();
   return httpGetJson(url, { ...jiraAuthHeaders, ...headers });
 }
 
 export async function jiraRawPut(url, body) {
   // Für Endpunkte, die nicht unter JIRA_PATH liegen (z.B. Automation-API)
+  assertJiraConfigured();
   return httpPutJson(url, body, jiraAuthHeaders);
 }
 
 export function jiraConfig() {
   return { base: JIRA_BASE };
-}
-
-// ─── GitLab API ─────────────────────────────────────────────
-const gitlabAuthHeaders = {
-  'PRIVATE-TOKEN': GITLAB_TOKEN,
-  'Accept': 'application/json',
-};
-
-export async function gitlabGet(path) {
-  const url = `${GITLAB_BASE}/api/v4${path}`;
-  return httpGetJson(url, gitlabAuthHeaders);
-}
-
-export async function gitlabPost(path, body) {
-  const url = `${GITLAB_BASE}/api/v4${path}`;
-  return httpPostJson(url, body, gitlabAuthHeaders);
-}
-
-export function gitlabConfig() {
-  return { base: GITLAB_BASE };
 }

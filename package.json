@@ -1,18 +1,18 @@
 ﻿{
   "name": "bdr-jira-automations",
   "version": "1.0.0",
-  "description": "Jira-Automatisierungsregeln und GitLab-Integrationen für Bdr",
+  "description": "Sichere Entwicklung und Bereitstellung von Jira-Data-Center-Automatisierungsregeln",
   "private": true,
   "type": "module",
   "scripts": {
     "test": "node --test test/rule-validation.test.mjs && node scripts/lint-skill.mjs",
     "validate": "node scripts/validate-rules.mjs",
+    "verify": "npm test && npm run validate",
     "next-component-id": "node scripts/next-component-id.mjs",
     "inspect-environment": "node scripts/inspect-environment.mjs",
     "pull-rule": "node scripts/pull-rule.mjs",
     "push-rule": "node scripts/push-rule.mjs",
     "rollback-rule": "node scripts/rollback-rule.mjs",
-    "export": "node scripts/export-rules.mjs",
     "lint": "node scripts/lint-skill.mjs"
   },
   "dependencies": {

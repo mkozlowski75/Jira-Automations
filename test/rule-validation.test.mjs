@@ -13,7 +13,8 @@ import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { createRuleSetValidator } from '../scripts/lib/rule-validation.mjs';
-import { findAutomationPluginInfo } from '../scripts/lib/automation-api.mjs';
+import { resolveSafeRedirect } from '../scripts/lib/http-policy.mjs';
+import { findAutomationPluginInfo } from '../scripts/lib/plugin-info.mjs';
 import {
   loadBackupRule,
   parseJsonFile,
@@ -74,9 +75,13 @@ test('stellt genau einen sicheren Push-Befehl bereit', () => {
   const packageJson = parseJsonFile(join(repositoryRoot, 'package.json'));
 
   assert.equal(packageJson.scripts['push-rule'], 'node scripts/push-rule.mjs');
+  assert.equal(packageJson.scripts.verify, 'npm test && npm run validate');
   assert.equal(packageJson.scripts.preflight, undefined);
   assert.equal(packageJson.scripts.sync, undefined);
+  assert.equal(packageJson.scripts.export, undefined);
   assert.equal(existsSync(join(repositoryRoot, 'scripts', 'sync-rules.mjs')), false);
+  assert.equal(existsSync(join(repositoryRoot, 'scripts', 'export-rules.mjs')), false);
+  assert.equal(existsSync(join(repositoryRoot, 'scripts', 'test-connectivity.mjs')), false);
 });
 
 test('akzeptiert optionale Regelfelder, leere Projekte und optionale Component-Felder', () => {
@@ -322,6 +327,30 @@ test('ermittelt Automation-Version und Build aus einer UPM-Antwort', () => {
     build: '90102',
   });
   assert.equal(findAutomationPluginInfo({ plugins: [] }), null);
+});
+
+test('Redirect-Policy schützt Schreibzugriffe und Authentifizierungsheader', () => {
+  assert.equal(
+    resolveSafeRedirect('GET', 'https://jira.example.invalid/a', '/b', 0),
+    'https://jira.example.invalid/b',
+  );
+  assert.throws(
+    () => resolveSafeRedirect('PUT', 'https://jira.example.invalid/a', '/b', 0),
+    /Schreibzugriff blockiert/,
+  );
+  assert.throws(
+    () => resolveSafeRedirect(
+      'GET',
+      'https://jira.example.invalid/a',
+      'https://other.example.invalid/b',
+      0,
+    ),
+    /Cross-origin/,
+  );
+  assert.throws(
+    () => resolveSafeRedirect('GET', 'https://jira.example.invalid/a', '/b', 5),
+    /Zu viele HTTP-Redirects/,
+  );
 });
 
 test('Preflight blockiert Drift, Warnungen, Schutzfelder und Secret-Änderungen', () => {

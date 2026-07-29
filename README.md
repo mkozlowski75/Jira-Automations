@@ -39,11 +39,15 @@ Jira-Automations/
 npm install
 
 # Regel-Export validieren
-node scripts/validate-rules.mjs
+npm run validate
 
 # Regel-Sync mit Jira (push/pull)
 node scripts/sync-rules.mjs --help
 ```
+
+Neue Regeln werden zunächst deaktiviert in Jira angelegt und anschließend nach
+`rules/` exportiert. Es gibt bewusst keine generische lokale Regelvorlage, weil
+Jira die Regel- und Component-IDs sowie weitere Metadaten vergibt.
 
 ## Lizenz
 

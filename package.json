@@ -5,6 +5,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "test": "node --test test/rule-validation.test.mjs",
     "validate": "node scripts/validate-rules.mjs",
     "sync": "node scripts/sync-rules.mjs",
     "export": "node scripts/export-rules.mjs",
@@ -12,6 +13,9 @@
   },
   "dependencies": {
     "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "ajv": "^8.17.1"
   },
   "engines": {
     "node": ">=18"

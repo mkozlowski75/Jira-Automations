@@ -1,0 +1,10 @@
+{
+  "json.schemas": [
+    {
+      "fileMatch": [
+        "/rules/BDR-*.json"
+      ],
+      "url": "./rules/rule-schema.json"
+    }
+  ]
+}

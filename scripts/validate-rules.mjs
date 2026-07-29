@@ -1,71 +1,60 @@
-﻿/**
- * Validiert alle Regel-JSONs unter rules/ gegen rule-schema.json
+/**
+ * Validiert alle produktiven Regel-JSONs unter rules/ gegen rule-schema.json
+ * und prüft regelübergreifende Code-Barrel-Invarianten.
  * Usage: node scripts/validate-rules.mjs
  */
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createRuleSetValidator } from './lib/rule-validation.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rulesDir = join(__dirname, '..', 'rules');
 const schemaPath = join(rulesDir, 'rule-schema.json');
 
-const raw = readFileSync(schemaPath, 'utf-8');
-// Strip BOM if present
-const schema = JSON.parse(raw.charCodeAt(0) === 0xFEFF ? raw.slice(1) : raw);
+function parseJsonFile(path) {
+  const raw = readFileSync(path, 'utf-8');
+  // Strip BOM if present
+  return JSON.parse(raw.charCodeAt(0) === 0xFEFF ? raw.slice(1) : raw);
+}
 
-const requiredKeys = schema.required;
-const triggerTypes = schema.properties.trigger.properties.type.enum;
-const actionTypes = schema.properties.actions.items.properties.type.enum;
+const schema = parseJsonFile(schemaPath);
+const files = readdirSync(rulesDir)
+  .filter(file => /^BDR-\d+\.json$/.test(file))
+  .sort((left, right) => left.localeCompare(right, 'de', { numeric: true }));
 
-console.log('🔍 Validiere Jira-Automatisierungsregeln …\n');
-
-const files = readdirSync(rulesDir).filter(f => f.endsWith('.json') && f !== 'rule-schema.json');
-let errors = 0;
-let warnings = 0;
+const entries = [];
+const parseErrors = [];
 
 for (const file of files) {
-  const rulePath = join(rulesDir, file);
-  const ruleRaw = readFileSync(rulePath, 'utf-8');
-  const rule = JSON.parse(ruleRaw.charCodeAt(0) === 0xFEFF ? ruleRaw.slice(1) : ruleRaw);
-  const prefix = `  [${file}]`;
-
-  // Pflichtfelder
-  for (const key of requiredKeys) {
-    if (!(key in rule)) {
-      console.log(`${prefix} ❌ Pflichtfeld fehlt: "${key}"`);
-      errors++;
-    }
-  }
-
-  // ID-Format
-  if (rule.id && !/^BDR-\d{3}$/.test(rule.id)) {
-    console.log(`${prefix} ❌ ID-Format ungültig: "${rule.id}" (erwartet: BDR-NNN)`);
-    errors++;
-  }
-
-  // Trigger-Type
-  if (rule.trigger && !triggerTypes.includes(rule.trigger.type)) {
-    console.log(`${prefix} ⚠️  Unbekannter Trigger-Typ: "${rule.trigger.type}"`);
-    warnings++;
-  }
-
-  // Action-Types
-  if (rule.actions) {
-    for (const [i, action] of rule.actions.entries()) {
-      if (!actionTypes.includes(action.type)) {
-        console.log(`${prefix} ⚠️  Unbekannter Action-Typ [${i}]: "${action.type}"`);
-        warnings++;
-      }
-    }
-  }
-
-  // Template-Warnung
-  if (rule.id === 'BDR-001' && rule.enabled !== false) {
-    console.log(`${prefix} ⚠️  Template-Regel sollte enabled: false sein`);
-    warnings++;
+  try {
+    entries.push({
+      file,
+      rule: parseJsonFile(join(rulesDir, file)),
+    });
+  } catch (error) {
+    parseErrors.push({
+      file,
+      path: '/',
+      message: `Ungültiges JSON: ${error.message}`,
+    });
   }
 }
 
-console.log(`\n📊 Ergebnis: ${files.length} Regeln — ${errors} Fehler, ${warnings} Warnungen`);
-if (errors > 0) process.exit(1);
+const validateRuleSet = createRuleSetValidator(schema);
+const result = validateRuleSet(entries);
+const errors = [...parseErrors, ...result.errors];
+const warnings = result.warnings;
+
+console.log('🔍 Validiere Jira-Automatisierungsregeln …\n');
+
+for (const error of errors) {
+  console.log(`  [${error.file}] ❌ ${error.path}: ${error.message}`);
+}
+
+for (const warning of warnings) {
+  console.log(`  [${warning.file}] ⚠️  ${warning.path}: ${warning.message}`);
+}
+
+console.log(`\n📊 Ergebnis: ${files.length} Regeln — ${errors.length} Fehler, ${warnings.length} Warnungen`);
+if (errors.length > 0) process.exitCode = 1;

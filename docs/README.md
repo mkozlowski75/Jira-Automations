@@ -25,17 +25,14 @@ Regeln zur Verknüpfung von Jira-Issues mit GitLab:
 
 ## Regel-Format
 
-Jede Regel wird als JSON-Datei unter `rules/` gespeichert:
+Jede Regel wird als roher Code-Barrel-Export unter
+`rules/BDR-{numerische Regel-ID}.json` gespeichert. Das vollständige rekursive
+Format ist in `rules/rule-schema.json` beschrieben und wird mit
+`npm run validate` geprüft.
 
-```json
-{
-  "name": "Regelname",
-  "description": "Beschreibung der Regel",
-  "trigger": { "type": "issue_created" },
-  "condition": "...",
-  "actions": ["..."]
-}
-```
+Für eine neue Regel zuerst in Jira eine leere, deaktivierte Regel anlegen und
+exportieren. Erst danach den Export lokal bearbeiten. Dadurch bleiben die von
+Jira vergebenen Regel-, Component-, Actor- und Zeitstempelwerte erhalten.
 
 ## API-Authentifizierung (Data Center)
 

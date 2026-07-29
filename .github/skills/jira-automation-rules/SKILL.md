@@ -9,7 +9,7 @@ description: 'Jira Data Center (Code Barrel) Automatisierungsregeln in JSON bear
 
 ```
 Jira-Automations/
-├── rules/                 # Regel-JSONs (BDR-xxx.json) + _template.json + rule-schema.json
+├── rules/                 # Rohe Jira-Exporte (BDR-{id}.json) + rule-schema.json
 ├── scripts/
 │   ├── push-rule.mjs      # Einzelne Regel nach Jira pushen
 │   ├── sync-rules.mjs     # Bulk-Sync (pull/diff/push)
@@ -19,6 +19,10 @@ Jira-Automations/
 ```
 
 **Jira-Instanz:** `https://partner.bdr.de` (Data Center) · **Automation-API-Pfad:** `/jira/rest/cb-automation/latest/project/{projectId}/rule/{ruleId}`
+
+Es gibt keine generische Regelvorlage: Für eine neue Regel zuerst in Jira eine
+leere, deaktivierte Regel anlegen und exportieren. Anschließend den echten Export
+bearbeiten, damit Regel-ID, Component-IDs, Actor und Zeitstempel von Jira stammen.
 
 ## Regel-Struktur (Top-Level)
 

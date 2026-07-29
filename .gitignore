@@ -10,5 +10,4 @@ Thumbs.db
 .DS_Store
 
 # IDE
-.vscode/settings.json
 *.code-workspace

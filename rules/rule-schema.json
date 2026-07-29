@@ -1,86 +1,1404 @@
-﻿{
+{
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Jira Automation Rule",
+  "$id": "https://partner.bdr.de/schemas/codebarrel-automation-rule.json",
+  "title": "Jira Data Center Code Barrel Automation Rule",
+  "description": "Struktur eines rohen Exports aus Automation for Jira (Code Barrel).",
   "type": "object",
-  "required": ["id", "name", "trigger"],
+  "required": [
+    "id",
+    "clientKey",
+    "name",
+    "state",
+    "canOtherRuleTrigger",
+    "notifyOnError",
+    "authorAccountId",
+    "actorAccountId",
+    "created",
+    "updated",
+    "trigger",
+    "components",
+    "projects",
+    "labels",
+    "tags"
+  ],
   "properties": {
     "id": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Numerische, von Jira vergebene Regel-ID."
+    },
+    "clientKey": {
       "type": "string",
-      "pattern": "^BDR-\\d{3}$",
-      "description": "Eindeutige Regel-ID, z. B. BDR-001"
+      "minLength": 1
     },
     "name": {
       "type": "string",
-      "minLength": 3,
-      "description": "Anzeigename der Regel"
+      "minLength": 1
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "ENABLED",
+        "DISABLED"
+      ]
     },
     "description": {
-      "type": "string",
-      "description": "Beschreibung, was die Regel tut"
+      "type": "string"
     },
-    "enabled": {
-      "type": "boolean",
-      "default": true
+    "canOtherRuleTrigger": {
+      "type": "boolean"
+    },
+    "notifyOnError": {
+      "type": "string",
+      "enum": [
+        "FIRSTERROR",
+        "EVERYERROR"
+      ]
+    },
+    "authorAccountId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "actorAccountId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "created": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "updated": {
+      "type": "integer",
+      "minimum": 0
     },
     "trigger": {
-      "type": "object",
-      "required": ["type"],
-      "properties": {
-        "type": {
-          "type": "string",
-          "enum": [
-            "issue_created",
-            "issue_updated",
-            "issue_transitioned",
-            "comment_added",
-            "field_value_changed",
-            "scheduled",
-            "webhook",
-            "branch_created",
-            "merge_request_merged"
-          ]
+      "allOf": [
+        {
+          "$ref": "#/$defs/componentNode"
         },
-        "jql": {
-          "type": "string",
-          "description": "JQL-Filter für den Trigger"
-        }
-      }
-    },
-    "conditions": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "field": { "type": "string" },
-          "operator": { "type": "string" },
-          "value": {}
-        }
-      }
-    },
-    "actions": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["type"],
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "transition_issue",
-              "edit_issue",
-              "add_comment",
-              "assign_issue",
-              "send_webhook",
-              "create_branch",
-              "send_email",
-              "set_field_value"
-            ]
-          },
-          "config": {
-            "type": "object"
+        {
+          "properties": {
+            "component": {
+              "const": "TRIGGER"
+            }
           }
         }
+      ]
+    },
+    "components": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/componentNode"
       }
+    },
+    "projects": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/project"
+      }
+    },
+    "labels": {
+      "type": "array",
+      "items": {
+        "type": "integer"
+      }
+    },
+    "tags": {
+      "type": "array"
+    }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "project": {
+      "type": "object",
+      "required": [
+        "projectId",
+        "projectTypeKey"
+      ],
+      "properties": {
+        "projectId": {
+          "type": "string",
+          "pattern": "^\\d+$"
+        },
+        "projectTypeKey": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": true
+    },
+    "componentNode": {
+      "type": "object",
+      "required": [
+        "id",
+        "component",
+        "schemaVersion",
+        "type",
+        "children",
+        "conditions"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^\\d+$"
+        },
+        "component": {
+          "type": "string",
+          "minLength": 1
+        },
+        "schemaVersion": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "value": true,
+        "parentId": {
+          "type": "string",
+          "pattern": "^\\d+$"
+        },
+        "conditionParentId": {
+          "type": "string",
+          "pattern": "^\\d+$"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/componentNode"
+          }
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/componentNode"
+          }
+        }
+      },
+      "additionalProperties": true,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "codebarrel.action.log"
+              },
+              "schemaVersion": {
+                "const": 1
+              }
+            },
+            "required": [
+              "type",
+              "schemaVersion"
+            ]
+          },
+          "then": {
+            "required": [
+              "value"
+            ],
+            "properties": {
+              "component": {
+                "const": "ACTION"
+              },
+              "value": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "com.xiplink.jira.git.jira_git_plugin:pull-request-merged-trigger"
+              },
+              "schemaVersion": {
+                "const": 1
+              }
+            },
+            "required": [
+              "type",
+              "schemaVersion"
+            ]
+          },
+          "then": {
+            "required": [
+              "value"
+            ],
+            "properties": {
+              "component": {
+                "const": "TRIGGER"
+              },
+              "value": {
+                "$ref": "#/$defs/pullRequestMergedValue"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "jira.comparator.condition"
+              },
+              "schemaVersion": {
+                "const": 1
+              }
+            },
+            "required": [
+              "type",
+              "schemaVersion"
+            ]
+          },
+          "then": {
+            "required": [
+              "value"
+            ],
+            "properties": {
+              "component": {
+                "const": "CONDITION"
+              },
+              "value": {
+                "$ref": "#/$defs/comparatorConditionValue"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "jira.condition.container.block"
+              },
+              "schemaVersion": {
+                "const": 1
+              }
+            },
+            "required": [
+              "type",
+              "schemaVersion"
+            ]
+          },
+          "then": {
+            "properties": {
+              "component": {
+                "const": "CONDITION"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "jira.condition.if.block"
+              },
+              "schemaVersion": {
+                "const": 1
+              }
+            },
+            "required": [
+              "type",
+              "schemaVersion"
+            ]
+          },
+          "then": {
+            "required": [
+              "value"
+            ],
+            "properties": {
+              "component": {
+                "const": "CONDITION_BLOCK"
+              },
+              "value": {
+                "$ref": "#/$defs/ifBlockValue"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "jira.create.variable"
+              },
+              "schemaVersion": {
+                "const": 1
+              }
+            },
+            "required": [
+              "type",
+              "schemaVersion"
+            ]
+          },
+          "then": {
+            "required": [
+              "value"
+            ],
+            "properties": {
+              "component": {
+                "const": "ACTION"
+              },
+              "value": {
+                "$ref": "#/$defs/createVariableValue"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "jira.incoming.webhook"
+              },
+              "schemaVersion": {
+                "const": 1
+              }
+            },
+            "required": [
+              "type",
+              "schemaVersion"
+            ]
+          },
+          "then": {
+            "required": [
+              "value"
+            ],
+            "properties": {
+              "component": {
+                "const": "TRIGGER"
+              },
+              "value": {
+                "$ref": "#/$defs/incomingWebhookValue"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "jira.issue.assign"
+              },
+              "schemaVersion": {
+                "const": 3
+              }
+            },
+            "required": [
+              "type",
+              "schemaVersion"
+            ]
+          },
+          "then": {
+            "required": [
+              "value"
+            ],
+            "properties": {
+              "component": {
+                "const": "ACTION"
+              },
+              "value": {
+                "$ref": "#/$defs/issueAssignValue"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "jira.issue.comment"
+              },
+              "schemaVersion": {
+                "const": 1
+              }
+            },
+            "required": [
+              "type",
+              "schemaVersion"
+            ]
+          },
+          "then": {
+            "required": [
+              "value"
+            ],
+            "properties": {
+              "component": {
+                "const": "ACTION"
+              },
+              "value": {
+                "$ref": "#/$defs/issueCommentValue"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "jira.issue.condition"
+              },
+              "schemaVersion": {
+                "const": 3
+              }
+            },
+            "required": [
+              "type",
+              "schemaVersion"
+            ]
+          },
+          "then": {
+            "required": [
+              "value"
+            ],
+            "properties": {
+              "component": {
+                "const": "CONDITION"
+              },
+              "value": {
+                "$ref": "#/$defs/issueConditionValue"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "jira.issue.create"
+              },
+              "schemaVersion": {
+                "const": 6
+              }
+            },
+            "required": [
+              "type",
+              "schemaVersion"
+            ]
+          },
+          "then": {
+            "required": [
+              "value"
+            ],
+            "properties": {
+              "component": {
+                "const": "ACTION"
+              },
+              "value": {
+                "$ref": "#/$defs/issueCreateValue"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "jira.issue.edit"
+              },
+              "schemaVersion": {
+                "const": 6
+              }
+            },
+            "required": [
+              "type",
+              "schemaVersion"
+            ]
+          },
+          "then": {
+            "required": [
+              "value"
+            ],
+            "properties": {
+              "component": {
+                "const": "ACTION"
+              },
+              "value": {
+                "$ref": "#/$defs/issueEditValue"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "jira.issue.event.trigger:transitioned"
+              },
+              "schemaVersion": {
+                "const": 1
+              }
+            },
+            "required": [
+              "type",
+              "schemaVersion"
+            ]
+          },
+          "then": {
+            "required": [
+              "value"
+            ],
+            "properties": {
+              "component": {
+                "const": "TRIGGER"
+              },
+              "value": {
+                "$ref": "#/$defs/transitionedTriggerValue"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "jira.issue.link"
+              },
+              "schemaVersion": {
+                "const": 2
+              }
+            },
+            "required": [
+              "type",
+              "schemaVersion"
+            ]
+          },
+          "then": {
+            "required": [
+              "value"
+            ],
+            "properties": {
+              "component": {
+                "const": "ACTION"
+              },
+              "value": {
+                "$ref": "#/$defs/issueLinkValue"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "jira.issue.outgoing.email"
+              },
+              "schemaVersion": {
+                "const": 3
+              }
+            },
+            "required": [
+              "type",
+              "schemaVersion"
+            ]
+          },
+          "then": {
+            "required": [
+              "value"
+            ],
+            "properties": {
+              "component": {
+                "const": "ACTION"
+              },
+              "value": {
+                "$ref": "#/$defs/outgoingEmailValue"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "jira.issue.outgoing.webhook"
+              },
+              "schemaVersion": {
+                "const": 2
+              }
+            },
+            "required": [
+              "type",
+              "schemaVersion"
+            ]
+          },
+          "then": {
+            "required": [
+              "value"
+            ],
+            "properties": {
+              "component": {
+                "const": "ACTION"
+              },
+              "value": {
+                "$ref": "#/$defs/outgoingWebhookValue"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "jira.issue.related"
+              },
+              "schemaVersion": {
+                "const": 1
+              }
+            },
+            "required": [
+              "type",
+              "schemaVersion"
+            ]
+          },
+          "then": {
+            "required": [
+              "value"
+            ],
+            "properties": {
+              "component": {
+                "const": "BRANCH"
+              },
+              "value": {
+                "$ref": "#/$defs/relatedIssuesValue"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "jira.issue.transition"
+              },
+              "schemaVersion": {
+                "const": 6
+              }
+            },
+            "required": [
+              "type",
+              "schemaVersion"
+            ]
+          },
+          "then": {
+            "required": [
+              "value"
+            ],
+            "properties": {
+              "component": {
+                "const": "ACTION"
+              },
+              "value": {
+                "$ref": "#/$defs/issueTransitionValue"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "jira.jql.scheduled"
+              },
+              "schemaVersion": {
+                "const": 1
+              }
+            },
+            "required": [
+              "type",
+              "schemaVersion"
+            ]
+          },
+          "then": {
+            "required": [
+              "value"
+            ],
+            "properties": {
+              "component": {
+                "const": "TRIGGER"
+              },
+              "value": {
+                "$ref": "#/$defs/scheduledTriggerValue"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "jira.manual.trigger.issue"
+              },
+              "schemaVersion": {
+                "const": 1
+              }
+            },
+            "required": [
+              "type",
+              "schemaVersion"
+            ]
+          },
+          "then": {
+            "required": [
+              "value"
+            ],
+            "properties": {
+              "component": {
+                "const": "TRIGGER"
+              },
+              "value": {
+                "$ref": "#/$defs/manualTriggerValue"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "jira.multiple.issue.event"
+              },
+              "schemaVersion": {
+                "const": 1
+              }
+            },
+            "required": [
+              "type",
+              "schemaVersion"
+            ]
+          },
+          "then": {
+            "required": [
+              "value"
+            ],
+            "properties": {
+              "component": {
+                "const": "TRIGGER"
+              },
+              "value": {
+                "$ref": "#/$defs/multipleIssueEventValue"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "jira.sprint.event.trigger:started"
+              },
+              "schemaVersion": {
+                "const": 1
+              }
+            },
+            "required": [
+              "type",
+              "schemaVersion"
+            ]
+          },
+          "then": {
+            "required": [
+              "value"
+            ],
+            "properties": {
+              "component": {
+                "const": "TRIGGER"
+              },
+              "value": {
+                "$ref": "#/$defs/sprintStartedValue"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "jira.version.create"
+              },
+              "schemaVersion": {
+                "const": 1
+              }
+            },
+            "required": [
+              "type",
+              "schemaVersion"
+            ]
+          },
+          "then": {
+            "required": [
+              "value"
+            ],
+            "properties": {
+              "component": {
+                "const": "ACTION"
+              },
+              "value": {
+                "$ref": "#/$defs/createVersionValue"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "msteams.notification"
+              },
+              "schemaVersion": {
+                "const": 2
+              }
+            },
+            "required": [
+              "type",
+              "schemaVersion"
+            ]
+          },
+          "then": {
+            "required": [
+              "value"
+            ],
+            "properties": {
+              "component": {
+                "const": "ACTION"
+              },
+              "value": {
+                "$ref": "#/$defs/teamsNotificationValue"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "pullRequestMergedValue": {
+      "type": "object",
+      "required": [
+        "isCustomized",
+        "prMode"
+      ],
+      "properties": {
+        "isCustomized": {
+          "type": "boolean"
+        },
+        "prMode": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": true
+    },
+    "comparatorConditionValue": {
+      "type": "object",
+      "required": [
+        "first",
+        "operator",
+        "second"
+      ],
+      "properties": {
+        "first": {
+          "type": "string"
+        },
+        "operator": {
+          "type": "string"
+        },
+        "second": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "ifBlockValue": {
+      "type": "object",
+      "required": [
+        "conditionMatchType"
+      ],
+      "properties": {
+        "conditionMatchType": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "createVariableValue": {
+      "type": "object",
+      "required": [
+        "id",
+        "lazy",
+        "name",
+        "query",
+        "type"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "lazy": {
+          "type": "boolean"
+        },
+        "name": {
+          "type": "object"
+        },
+        "query": {
+          "type": "object"
+        },
+        "type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "incomingWebhookValue": {
+      "type": "object",
+      "required": [
+        "processIssuesInBulk",
+        "searchOrProvide",
+        "webhookToken"
+      ],
+      "properties": {
+        "jql": {
+          "type": "string"
+        },
+        "processIssuesInBulk": {
+          "type": "boolean"
+        },
+        "searchOrProvide": {
+          "type": "string"
+        },
+        "webhookToken": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "issueAssignValue": {
+      "type": "object",
+      "required": [
+        "assignType",
+        "excludedUsers"
+      ],
+      "properties": {
+        "assignType": {
+          "type": "string"
+        },
+        "assignee": {
+          "type": "object"
+        },
+        "excludedUsers": {
+          "type": "array"
+        }
+      },
+      "additionalProperties": true
+    },
+    "issueCommentValue": {
+      "type": "object",
+      "required": [
+        "addCommentOnce",
+        "comment",
+        "publicComment",
+        "sendNotifications",
+        "useLegacyRendering"
+      ],
+      "properties": {
+        "addCommentOnce": {
+          "type": "boolean"
+        },
+        "comment": {
+          "type": "string"
+        },
+        "publicComment": {
+          "type": "boolean"
+        },
+        "sendNotifications": {
+          "type": "boolean"
+        },
+        "useLegacyRendering": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    },
+    "issueConditionValue": {
+      "type": "object",
+      "required": [
+        "comparison",
+        "selectedField"
+      ],
+      "properties": {
+        "compareValue": {
+          "type": "object"
+        },
+        "comparison": {
+          "type": "string"
+        },
+        "selectedField": {
+          "type": "object"
+        },
+        "selectedFieldType": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "issueCreateValue": {
+      "type": "object",
+      "required": [
+        "operations",
+        "sendNotifications",
+        "useLegacyRendering"
+      ],
+      "properties": {
+        "advancedFields": {
+          "type": "string"
+        },
+        "operations": {
+          "type": "array"
+        },
+        "sendNotifications": {
+          "type": "boolean"
+        },
+        "useLegacyRendering": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    },
+    "issueEditValue": {
+      "type": "object",
+      "required": [
+        "operations",
+        "sendNotifications",
+        "useLegacyRendering"
+      ],
+      "properties": {
+        "operations": {
+          "type": "array"
+        },
+        "sendNotifications": {
+          "type": "boolean"
+        },
+        "useLegacyRendering": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    },
+    "transitionedTriggerValue": {
+      "type": "object",
+      "required": [
+        "eventKey",
+        "fromStatus",
+        "issueEvent",
+        "synchronous",
+        "toStatus"
+      ],
+      "properties": {
+        "eventKey": {
+          "type": "string"
+        },
+        "fromStatus": {
+          "type": "array"
+        },
+        "issueEvent": {
+          "type": "string"
+        },
+        "synchronous": {
+          "type": "boolean"
+        },
+        "toStatus": {
+          "type": "array"
+        }
+      },
+      "additionalProperties": true
+    },
+    "issueLinkValue": {
+      "type": "object",
+      "required": [
+        "issue",
+        "linkType"
+      ],
+      "properties": {
+        "issue": {
+          "type": "object"
+        },
+        "linkType": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "outgoingEmailValue": {
+      "type": "object",
+      "required": [
+        "bcc",
+        "body",
+        "cc",
+        "convertLineBreaks",
+        "from",
+        "fromName",
+        "mimeType",
+        "replyTo",
+        "subject",
+        "to"
+      ],
+      "properties": {
+        "bcc": {
+          "type": "array"
+        },
+        "body": {
+          "type": "string"
+        },
+        "cc": {
+          "type": "array"
+        },
+        "convertLineBreaks": {
+          "type": "boolean"
+        },
+        "from": {
+          "type": "string"
+        },
+        "fromName": {
+          "type": "string"
+        },
+        "mimeType": {
+          "type": "string"
+        },
+        "replyTo": {
+          "type": "string"
+        },
+        "subject": {
+          "type": "string"
+        },
+        "to": {
+          "type": "array"
+        }
+      },
+      "additionalProperties": true
+    },
+    "outgoingWebhookValue": {
+      "type": "object",
+      "required": [
+        "contentType",
+        "headers",
+        "method",
+        "responseEnabled",
+        "sendIssue",
+        "url",
+        "usedSecretsKeys"
+      ],
+      "properties": {
+        "contentType": {
+          "type": "string"
+        },
+        "customBody": {
+          "type": "string"
+        },
+        "headers": {
+          "type": "array"
+        },
+        "method": {
+          "type": "string"
+        },
+        "responseEnabled": {
+          "type": "boolean"
+        },
+        "sendIssue": {
+          "type": "boolean"
+        },
+        "url": {
+          "type": "string"
+        },
+        "usedSecretsKeys": {
+          "type": "array"
+        }
+      },
+      "additionalProperties": true
+    },
+    "relatedIssuesValue": {
+      "type": "object",
+      "required": [
+        "jql",
+        "linkTypes",
+        "onlyUpdatedIssues",
+        "processIssuesInBulk",
+        "relatedType"
+      ],
+      "properties": {
+        "jql": {
+          "type": "string"
+        },
+        "linkTypes": {
+          "type": "array"
+        },
+        "onlyUpdatedIssues": {
+          "type": "boolean"
+        },
+        "processIssuesInBulk": {
+          "type": "boolean"
+        },
+        "relatedType": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "issueTransitionValue": {
+      "type": "object",
+      "required": [
+        "destinationStatus",
+        "ignoreConditions",
+        "operations",
+        "sendNotifications",
+        "transitionMatch",
+        "transitionMode",
+        "useLegacyRendering"
+      ],
+      "properties": {
+        "destinationStatus": {
+          "type": "object"
+        },
+        "ignoreConditions": {
+          "type": "boolean"
+        },
+        "operations": {
+          "type": "array"
+        },
+        "sendNotifications": {
+          "type": "boolean"
+        },
+        "transitionMatch": {
+          "type": "string"
+        },
+        "transitionMode": {
+          "type": "string"
+        },
+        "useLegacyRendering": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    },
+    "scheduledTriggerValue": {
+      "type": "object",
+      "required": [
+        "executionMode",
+        "jql",
+        "onlyUpdatedIssues",
+        "processIssuesInBulk",
+        "schedule"
+      ],
+      "properties": {
+        "executionMode": {
+          "type": "string"
+        },
+        "jql": {
+          "type": "string"
+        },
+        "onlyUpdatedIssues": {
+          "type": "boolean"
+        },
+        "processIssuesInBulk": {
+          "type": "boolean"
+        },
+        "schedule": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": true
+    },
+    "manualTriggerValue": {
+      "type": "object",
+      "required": [
+        "groups"
+      ],
+      "properties": {
+        "groups": {
+          "type": "array"
+        }
+      },
+      "additionalProperties": true
+    },
+    "multipleIssueEventValue": {
+      "type": "object",
+      "required": [
+        "events",
+        "synchronous"
+      ],
+      "properties": {
+        "events": {
+          "type": "array"
+        },
+        "synchronous": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    },
+    "sprintStartedValue": {
+      "type": "object",
+      "required": [
+        "boardId",
+        "sprintNameFilter"
+      ],
+      "properties": {
+        "boardId": {
+          "type": "number"
+        },
+        "sprintNameFilter": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "createVersionValue": {
+      "type": "object",
+      "required": [
+        "overrideReleaseDate",
+        "project",
+        "versionName"
+      ],
+      "properties": {
+        "overrideReleaseDate": {
+          "type": "string"
+        },
+        "project": {
+          "type": "object"
+        },
+        "versionName": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "teamsNotificationValue": {
+      "type": "object",
+      "required": [
+        "body",
+        "imageUrl",
+        "includeIssueSummary",
+        "subTitle",
+        "title",
+        "webhookUrl"
+      ],
+      "properties": {
+        "body": {
+          "type": "string"
+        },
+        "imageUrl": {
+          "type": "string"
+        },
+        "includeIssueSummary": {
+          "type": "boolean"
+        },
+        "subTitle": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "webhookUrl": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": true
     }
   }
 }

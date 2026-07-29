@@ -1,0 +1,37 @@
+{
+  "id": 100,
+  "clientKey": "com.codebarrel.tenant.global",
+  "name": "Bereinigte Testregel",
+  "state": "DISABLED",
+  "canOtherRuleTrigger": false,
+  "notifyOnError": "FIRSTERROR",
+  "authorAccountId": "JIRAUSER_TEST",
+  "actorAccountId": "JIRAUSER_TEST",
+  "created": 0,
+  "updated": 0,
+  "trigger": {
+    "id": "1000",
+    "component": "TRIGGER",
+    "schemaVersion": 1,
+    "type": "jira.manual.trigger.issue",
+    "value": {
+      "groups": []
+    },
+    "children": [],
+    "conditions": []
+  },
+  "components": [
+    {
+      "id": "1001",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "codebarrel.action.log",
+      "value": "Test",
+      "children": [],
+      "conditions": []
+    }
+  ],
+  "projects": [],
+  "labels": [],
+  "tags": []
+}

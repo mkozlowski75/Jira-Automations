@@ -40,14 +40,13 @@ Jira vergebenen Regel-, Component-, Actor- und Zeitstempelwerte erhalten.
 2. IDs und Strukturen ausschließlich aus aktuellen Jira-Metadaten oder
    Referenzregeln übernehmen.
 3. `npm run validate` mit 0 Fehlern und 0 Warnungen abschließen.
-4. `scripts/push-rule.mjs` ohne `--apply` als Preflight ausführen.
+4. `npm run push-rule -- <regeldatei>` ohne `--apply` als Preflight ausführen.
 5. Redigierten Diff prüfen und ausdrückliche Freigabe einholen.
 6. Erst danach denselben Befehl mit `--apply` ausführen.
 
 Der Push prüft Git-HEAD gegen den aktuellen Serverstand, blockiert Drift und
 geschützte Feldänderungen, legt unter `backups/` eine lokale Serverkopie an und
-ruft die Regel nach dem PUT erneut ab. `sync-rules.mjs` ist nicht Teil dieses
-Produktionsworkflows.
+ruft die Regel nach dem PUT erneut ab.
 
 ## API-Authentifizierung (Data Center)
 

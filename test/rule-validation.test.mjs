@@ -14,7 +14,10 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { createRuleSetValidator } from '../scripts/lib/rule-validation.mjs';
 import { findAutomationPluginInfo } from '../scripts/lib/automation-api.mjs';
-import { loadBackupRule } from '../scripts/lib/rule-repository.mjs';
+import {
+  loadBackupRule,
+  parseJsonFile,
+} from '../scripts/lib/rule-repository.mjs';
 import {
   diffRules,
   nextComponentId,
@@ -65,6 +68,15 @@ test('validiert alle produktiven Exporte ohne Fehler oder Warnungen', () => {
   assert.equal(entries.length, 28);
   assert.deepEqual(result.errors, []);
   assert.deepEqual(result.warnings, []);
+});
+
+test('stellt genau einen sicheren Push-Befehl bereit', () => {
+  const packageJson = parseJsonFile(join(repositoryRoot, 'package.json'));
+
+  assert.equal(packageJson.scripts['push-rule'], 'node scripts/push-rule.mjs');
+  assert.equal(packageJson.scripts.preflight, undefined);
+  assert.equal(packageJson.scripts.sync, undefined);
+  assert.equal(existsSync(join(repositoryRoot, 'scripts', 'sync-rules.mjs')), false);
 });
 
 test('akzeptiert optionale Regelfelder, leere Projekte und optionale Component-Felder', () => {

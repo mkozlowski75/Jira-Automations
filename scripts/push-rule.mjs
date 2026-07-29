@@ -1,6 +1,6 @@
 /**
  * Push eine einzelne Regel-Datei nach Jira Data Center (Automation API).
- * Usage: node scripts/push-rule.mjs rules/BDR-913.json
+ * Usage: npm run push-rule -- rules/BDR-913.json
  *
  * Ohne --apply wird ausschließlich ein read-only Preflight ausgeführt.
  */
@@ -90,7 +90,7 @@ async function main() {
     baselineArgument,
   } = parseArguments(process.argv.slice(2));
   if (!ruleFile) {
-    console.log('Usage: node scripts/push-rule.mjs <rule-file.json> [--baseline=<backup>] [--apply] [--allow-field=<field>]');
+    console.log('Usage: npm run push-rule -- <rule-file.json> [--baseline=<backup>] [--apply] [--allow-field=<field>]');
     process.exitCode = 1;
     return;
   }

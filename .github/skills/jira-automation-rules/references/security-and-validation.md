@@ -4,7 +4,7 @@
 
 ```powershell
 npm run validate
-node scripts/push-rule.mjs rules/BDR-913.json
+npm run push-rule -- rules/BDR-913.json
 ```
 
 Der erste Befehl prüft alle lokalen Regeln. Der zweite Befehl ist ohne `--apply`

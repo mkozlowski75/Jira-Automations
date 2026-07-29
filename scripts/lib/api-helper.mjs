@@ -15,7 +15,6 @@ dotenv.config({ path: join(__dirname, '..', '..', 'config', '.env') });
 // ─── Konfiguration ──────────────────────────────────────────
 const JIRA_BASE  = process.env.JIRA_BASE_URL;
 const JIRA_PATH  = process.env.JIRA_API_PATH || '/jira/rest/api/2';
-const JIRA_EMAIL = process.env.JIRA_USER_EMAIL;
 const JIRA_PAT   = process.env.JIRA_PERSONAL_ACCESS_TOKEN;
 
 const GITLAB_BASE  = process.env.GITLAB_BASE_URL;
@@ -146,16 +145,6 @@ export async function jiraGet(path) {
   return httpGetJson(url, jiraAuthHeaders);
 }
 
-export async function jiraPost(path, body) {
-  const url = `${JIRA_BASE}${JIRA_PATH}${path}`;
-  return httpPostJson(url, body, jiraAuthHeaders);
-}
-
-export async function jiraPut(path, body) {
-  const url = `${JIRA_BASE}${JIRA_PATH}${path}`;
-  return httpPutJson(url, body, jiraAuthHeaders);
-}
-
 export async function jiraRawGet(url, headers = {}) {
   // Für Endpunkte, die nicht unter JIRA_PATH liegen (z.B. Automation-API)
   return httpGetJson(url, { ...jiraAuthHeaders, ...headers });
@@ -167,7 +156,7 @@ export async function jiraRawPut(url, body) {
 }
 
 export function jiraConfig() {
-  return { base: JIRA_BASE, path: JIRA_PATH, email: JIRA_EMAIL };
+  return { base: JIRA_BASE };
 }
 
 // ─── GitLab API ─────────────────────────────────────────────

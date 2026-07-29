@@ -55,7 +55,7 @@ Lernartefakte. Übernimm keine Beispiel-ID in eine produktive Regel.
 7. Ändere nur die beauftragte Logik. Setze `updated` nicht künstlich.
 8. Führe `npm run validate` aus. Für einen Push sind 0 Fehler und 0 Warnungen
    erforderlich.
-9. Führe `node scripts/push-rule.mjs <regeldatei>` ohne `--apply` aus. Zeige dem
+9. Führe `npm run push-rule -- <regeldatei>` ohne `--apply` aus. Zeige dem
    Benutzer den redigierten Preflight mit Regel, Scope, Trigger, hinzugefügten,
    geänderten und entfernten Components sowie geschützten Feldänderungen.
 10. Führe einen Push nur aus, wenn der Benutzer ihn in der aktuellen Unterhaltung
@@ -87,8 +87,8 @@ unveränderte Export muss als Git-Basisstand vorliegen, bevor er bearbeitet und
   Validierungsfehlern oder Warnungen: nicht pushen.
 - Melde nach jedem Schreibversuch, ob Backup, PUT und Remote-Verifikation
   erfolgreich waren. Zeige dabei keine ungefilterten Regel- oder Response-Daten.
-- `sync-rules.mjs --pull`, `--diff` und `--push` sind kein sicherer
-  Produktionsworkflow und dürfen von diesem Skill nicht verwendet werden.
+- Verwende ausschließlich `pull-rule`, `push-rule` und `rollback-rule` für den
+  Serverabgleich. `push-rule` ist ohne `--apply` immer read-only.
 
 ## Rollback
 

@@ -22,5 +22,5 @@ Zusätzliche Exportfelder müssen unverändert erhalten bleiben.
 | `labels`, `tags` | Exportwerte erhalten, sofern nicht beauftragt |
 
 Ein sicherer Push unterstützt aktuell genau einen Projekt-Scope. Regeln mit
-leerem oder mehrfachem Scope dürfen analysiert, aber nicht mit `push-rule.mjs`
-geschrieben werden.
+leerem oder mehrfachem Scope dürfen analysiert, aber nicht mit
+`npm run push-rule` geschrieben werden.

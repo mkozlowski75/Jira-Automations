@@ -9,9 +9,9 @@
   "authorAccountId": "JIRAUSER15085",
   "actorAccountId": "JIRAUSER15085",
   "created": 1771327111999,
-  "updated": 1771327489184,
+  "updated": 1785331748844,
   "trigger": {
-    "id": "100372",
+    "id": "135786",
     "component": "TRIGGER",
     "schemaVersion": 1,
     "type": "jira.sprint.event.trigger:started",
@@ -24,7 +24,7 @@
   },
   "components": [
     {
-      "id": "100373",
+      "id": "135787",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "codebarrel.action.log",
@@ -33,7 +33,7 @@
       "conditions": []
     },
     {
-      "id": "100374",
+      "id": "135788",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "codebarrel.action.log",

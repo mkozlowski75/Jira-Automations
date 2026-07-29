@@ -3,20 +3,15 @@
  * und prüft regelübergreifende Code-Barrel-Invarianten.
  * Usage: npm run validate
  */
-import { readFileSync, readdirSync } from 'node:fs';
+import { readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parseJsonFile } from './lib/rule-repository.mjs';
 import { createRuleSetValidator } from './lib/rule-validation.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rulesDir = join(__dirname, '..', 'rules');
 const schemaPath = join(rulesDir, 'rule-schema.json');
-
-function parseJsonFile(path) {
-  const raw = readFileSync(path, 'utf-8');
-  // Strip BOM if present
-  return JSON.parse(raw.charCodeAt(0) === 0xFEFF ? raw.slice(1) : raw);
-}
 
 const schema = parseJsonFile(schemaPath);
 const files = readdirSync(rulesDir)

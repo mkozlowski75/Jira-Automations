@@ -5,6 +5,7 @@ import { createRuleSetValidator } from './rule-validation.mjs';
 
 export function parseJsonFile(path) {
   const raw = readFileSync(path, 'utf8');
+  // Strip BOM if present
   return JSON.parse(raw.charCodeAt(0) === 0xFEFF ? raw.slice(1) : raw);
 }
 

@@ -1,0 +1,14 @@
+﻿# Secrets
+config/.env
+
+# Node
+node_modules/
+npm-debug.log*
+
+# OS
+Thumbs.db
+.DS_Store
+
+# IDE
+.vscode/settings.json
+*.code-workspace

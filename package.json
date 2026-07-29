@@ -1,0 +1,19 @@
+﻿{
+  "name": "bdr-jira-automations",
+  "version": "1.0.0",
+  "description": "Jira-Automatisierungsregeln und GitLab-Integrationen für Bdr",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "validate": "node scripts/validate-rules.mjs",
+    "sync": "node scripts/sync-rules.mjs",
+    "export": "node scripts/export-rules.mjs",
+    "lint": "node scripts/lint-rules.mjs"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

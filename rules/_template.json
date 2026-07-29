@@ -1,0 +1,19 @@
+﻿{
+  "id": "BDR-001",
+  "name": "TEMPLATE – Beispielregel",
+  "description": "Diese Regel dient als Vorlage. Bei Deployment auf `enabled: false` setzen.",
+  "enabled": false,
+  "trigger": {
+    "type": "issue_created",
+    "jql": "project = BDR"
+  },
+  "conditions": [],
+  "actions": [
+    {
+      "type": "add_comment",
+      "config": {
+        "body": "Regel BDR-001 hat getriggert – dies ist nur ein Template."
+      }
+    }
+  ]
+}

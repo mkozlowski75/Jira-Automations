@@ -1,0 +1,86 @@
+﻿{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Jira Automation Rule",
+  "type": "object",
+  "required": ["id", "name", "trigger"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^BDR-\\d{3}$",
+      "description": "Eindeutige Regel-ID, z. B. BDR-001"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 3,
+      "description": "Anzeigename der Regel"
+    },
+    "description": {
+      "type": "string",
+      "description": "Beschreibung, was die Regel tut"
+    },
+    "enabled": {
+      "type": "boolean",
+      "default": true
+    },
+    "trigger": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "issue_created",
+            "issue_updated",
+            "issue_transitioned",
+            "comment_added",
+            "field_value_changed",
+            "scheduled",
+            "webhook",
+            "branch_created",
+            "merge_request_merged"
+          ]
+        },
+        "jql": {
+          "type": "string",
+          "description": "JQL-Filter für den Trigger"
+        }
+      }
+    },
+    "conditions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "field": { "type": "string" },
+          "operator": { "type": "string" },
+          "value": {}
+        }
+      }
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "transition_issue",
+              "edit_issue",
+              "add_comment",
+              "assign_issue",
+              "send_webhook",
+              "create_branch",
+              "send_email",
+              "set_field_value"
+            ]
+          },
+          "config": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  }
+}

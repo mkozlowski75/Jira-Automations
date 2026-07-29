@@ -1,0 +1,122 @@
+{
+  "id": 850,
+  "clientKey": "com.codebarrel.tenant.global",
+  "name": "Jira: Add Contained Tickets to Release",
+  "state": "DISABLED",
+  "description": "CER-7569 Release tickets are linked to included tickets after the status of the release ticket changes to \"Preliminary release recommendation Bdr\".\nAll bug, task and story tickets with the same fix version as the release ticket are linked to the release ticket as a \"Belongs to\" link.\nRULE DISABLED, see comment in CER-7569 \n",
+  "canOtherRuleTrigger": false,
+  "notifyOnError": "FIRSTERROR",
+  "authorAccountId": "JIRAUSER15085",
+  "actorAccountId": "JIRAUSER23851",
+  "created": 1765204530823,
+  "updated": 1771265112046,
+  "trigger": {
+    "id": "100231",
+    "component": "TRIGGER",
+    "schemaVersion": 1,
+    "type": "jira.manual.trigger.issue",
+    "value": {
+      "groups": [
+        "prj-cer-pa"
+      ]
+    },
+    "children": [],
+    "conditions": []
+  },
+  "components": [
+    {
+      "id": "100232",
+      "component": "CONDITION",
+      "schemaVersion": 3,
+      "type": "jira.issue.condition",
+      "value": {
+        "selectedField": {
+          "type": "ID",
+          "value": "issuetype"
+        },
+        "selectedFieldType": "issuetype",
+        "comparison": "EQUALS",
+        "compareValue": {
+          "type": "ID",
+          "value": "10200",
+          "multiValue": false
+        }
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "100233",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "jira.create.variable",
+      "value": {
+        "id": "_customsmartvalue_id_1765205420147",
+        "name": {
+          "type": "FREE",
+          "value": "fixVersion"
+        },
+        "type": "SMART",
+        "query": {
+          "type": "SMART",
+          "value": "{{issue.fixversions.last.name}}"
+        },
+        "lazy": false
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "100234",
+      "component": "BRANCH",
+      "schemaVersion": 1,
+      "type": "jira.issue.related",
+      "value": {
+        "relatedType": "jql",
+        "jql": "project = CER AND fixVersion = {{fixVersion}} AND type in (Bug, Story, Task)",
+        "linkTypes": [],
+        "onlyUpdatedIssues": false,
+        "processIssuesInBulk": false
+      },
+      "children": [
+        {
+          "id": "100235",
+          "component": "ACTION",
+          "parentId": "100234",
+          "schemaVersion": 1,
+          "type": "codebarrel.action.log",
+          "value": "{{issue.key}} {{issue.issuetype.name}}",
+          "children": [],
+          "conditions": []
+        },
+        {
+          "id": "100236",
+          "component": "ACTION",
+          "parentId": "100234",
+          "schemaVersion": 2,
+          "type": "jira.issue.link",
+          "value": {
+            "linkType": "inward:10301",
+            "issue": {
+              "type": "COPY",
+              "value": "trigger"
+            }
+          },
+          "children": [],
+          "conditions": []
+        }
+      ],
+      "conditions": []
+    }
+  ],
+  "projects": [
+    {
+      "projectId": "11215",
+      "projectTypeKey": "software"
+    }
+  ],
+  "labels": [
+    31
+  ],
+  "tags": []
+}

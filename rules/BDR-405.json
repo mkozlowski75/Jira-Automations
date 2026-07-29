@@ -1,0 +1,83 @@
+{
+  "id": 405,
+  "clientKey": "com.codebarrel.tenant.global",
+  "name": "E-Mail notification about ticket review date",
+  "state": "ENABLED",
+  "description": "Sends an email to related users when a ticket's review date is reached.",
+  "canOtherRuleTrigger": false,
+  "notifyOnError": "FIRSTERROR",
+  "authorAccountId": "JIRAUSER15085",
+  "actorAccountId": "JIRAUSER23851",
+  "created": 1714661107283,
+  "updated": 1768913791877,
+  "trigger": {
+    "id": "91973",
+    "component": "TRIGGER",
+    "schemaVersion": 1,
+    "type": "jira.jql.scheduled",
+    "value": {
+      "schedule": {
+        "cronExpression": "",
+        "method": "FIXED",
+        "rate": 1,
+        "rateInterval": 86400
+      },
+      "jql": "project = Ceroma and (\"Wiedervorlage am\" >= startOfDay() AND \"Wiedervorlage am\" <= endOfDay() )",
+      "executionMode": "jql",
+      "onlyUpdatedIssues": false,
+      "processIssuesInBulk": false
+    },
+    "children": [],
+    "conditions": []
+  },
+  "components": [
+    {
+      "id": "91974",
+      "component": "ACTION",
+      "schemaVersion": 3,
+      "type": "jira.issue.outgoing.email",
+      "value": {
+        "from": "",
+        "fromName": "",
+        "replyTo": "",
+        "to": [
+          {
+            "type": "COPY",
+            "value": "customfield_11700"
+          },
+          {
+            "type": "COPY",
+            "value": "reporter"
+          },
+          {
+            "type": "COPY",
+            "value": "assignee"
+          }
+        ],
+        "cc": [
+          {
+            "type": "SMART",
+            "value": "{{issue.watchers.emailAddress}}"
+          }
+        ],
+        "bcc": [],
+        "subject": "Wiedervorlage für {{issue.key}}: {{issue.summary}}",
+        "body": "Hallo,\n\ndas Wiedervorlagedatum für das Jira-Ticket <a href=\"{{issue.url}}\">{{issue.key}} - {{issue.summary}}</a> wurde erreicht.\n\nViele Grüße\n\nDeine Jira-Automation <a href=\"https://partner.bdr.de/jira/secure/AutomationProjectAdminAction!default.jspa?projectKey=CER#/rule/405\">{{rule.name}}</a>",
+        "mimeType": "text/html",
+        "convertLineBreaks": true
+      },
+      "children": [],
+      "conditions": []
+    }
+  ],
+  "projects": [
+    {
+      "projectId": "11215",
+      "projectTypeKey": "software"
+    }
+  ],
+  "labels": [
+    30
+  ],
+  "tags": []
+}

@@ -1,0 +1,204 @@
+{
+  "id": 430,
+  "clientKey": "com.codebarrel.tenant.global",
+  "name": "MS Teams notification about new and changed tickets",
+  "state": "DISABLED",
+  "canOtherRuleTrigger": false,
+  "notifyOnError": "FIRSTERROR",
+  "authorAccountId": "JIRAUSER15085",
+  "actorAccountId": "JIRAUSER23851",
+  "created": 1717513725236,
+  "updated": 1739537336979,
+  "trigger": {
+    "id": "46436",
+    "component": "TRIGGER",
+    "schemaVersion": 1,
+    "type": "jira.multiple.issue.event",
+    "value": {
+      "synchronous": false,
+      "events": [
+        {
+          "key": "jira:issue_created",
+          "event": "issue_created",
+          "system": false
+        },
+        {
+          "key": "jira:issue_updated",
+          "event": "issue_updated",
+          "system": false
+        }
+      ]
+    },
+    "children": [],
+    "conditions": []
+  },
+  "components": [
+    {
+      "id": "46437",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "jira.create.variable",
+      "value": {
+        "id": "_customsmartvalue_id_1717582877779",
+        "name": {
+          "type": "FREE",
+          "value": "EMailSubject"
+        },
+        "type": "SMART",
+        "query": {
+          "type": "SMART",
+          "value": "Jira-Ticket {{issue.key}} updated"
+        },
+        "lazy": false
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "46438",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "jira.create.variable",
+      "value": {
+        "id": "_customsmartvalue_id_1717582936548",
+        "name": {
+          "type": "FREE",
+          "value": "EMailContent"
+        },
+        "type": "SMART",
+        "query": {
+          "type": "SMART",
+          "value": "Hi, ticket {{issue.key}} was updated"
+        },
+        "lazy": false
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "46439",
+      "component": "CONDITION",
+      "schemaVersion": 1,
+      "type": "jira.condition.container.block",
+      "children": [
+        {
+          "id": "46440",
+          "component": "CONDITION_BLOCK",
+          "parentId": "46439",
+          "schemaVersion": 1,
+          "type": "jira.condition.if.block",
+          "value": {
+            "conditionMatchType": "ALL"
+          },
+          "children": [
+            {
+              "id": "46442",
+              "component": "ACTION",
+              "parentId": "46440",
+              "schemaVersion": 1,
+              "type": "jira.create.variable",
+              "value": {
+                "id": "_customsmartvalue_id_1717582050014",
+                "name": {
+                  "type": "FREE",
+                  "value": "EMailSubject"
+                },
+                "type": "SMART",
+                "query": {
+                  "type": "SMART",
+                  "value": "New Jira-Ticket {{issue.key}} created"
+                },
+                "lazy": false
+              },
+              "children": [],
+              "conditions": []
+            },
+            {
+              "id": "46443",
+              "component": "ACTION",
+              "parentId": "46440",
+              "schemaVersion": 1,
+              "type": "jira.create.variable",
+              "value": {
+                "id": "_customsmartvalue_id_1717582124200",
+                "name": {
+                  "type": "FREE",
+                  "value": "EMailContent"
+                },
+                "type": "SMART",
+                "query": {
+                  "type": "SMART",
+                  "value": "Hi {{reporter.displayName}} created a new ticket {{issue.key}}!"
+                },
+                "lazy": false
+              },
+              "children": [],
+              "conditions": []
+            }
+          ],
+          "conditions": [
+            {
+              "id": "46441",
+              "component": "CONDITION",
+              "conditionParentId": "46440",
+              "schemaVersion": 3,
+              "type": "jira.issue.condition",
+              "value": {
+                "selectedField": {
+                  "type": "ID",
+                  "value": "status"
+                },
+                "comparison": "ONE_OF",
+                "compareValue": {
+                  "type": "ID",
+                  "value": "[\"11901\"]",
+                  "multiValue": true
+                }
+              },
+              "children": [],
+              "conditions": []
+            }
+          ]
+        }
+      ],
+      "conditions": []
+    },
+    {
+      "id": "46444",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "codebarrel.action.log",
+      "value": "Message Subject: {{EMailSubject}}",
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "46445",
+      "component": "ACTION",
+      "schemaVersion": 2,
+      "type": "msteams.notification",
+      "value": {
+        "webhookUrl": {
+          "key": "MS Teams Kanal \"Jira\" in Team \"Ceroma\""
+        },
+        "title": "{{EMailSubject}}",
+        "subTitle": "",
+        "imageUrl": "https://d283vu6e5qi87p.cloudfront.net/automation/prod/automation-logo.svg",
+        "body": "{{EMailContent}}",
+        "includeIssueSummary": true
+      },
+      "children": [],
+      "conditions": []
+    }
+  ],
+  "projects": [
+    {
+      "projectId": "11215",
+      "projectTypeKey": "software"
+    }
+  ],
+  "labels": [
+    30
+  ],
+  "tags": []
+}

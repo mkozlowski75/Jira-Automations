@@ -1,0 +1,486 @@
+{
+  "id": 431,
+  "clientKey": "com.codebarrel.tenant.global",
+  "name": "GitLab: Merge a merge request when COMPONENT TEST COMPLETED",
+  "state": "ENABLED",
+  "description": "CER-6529 Merge requests beim Statusübergang zu \"COMPONENT TEST COMPLETED\" automatisiert durchführen",
+  "canOtherRuleTrigger": false,
+  "notifyOnError": "EVERYERROR",
+  "authorAccountId": "JIRAUSER15085",
+  "actorAccountId": "JIRAUSER23851",
+  "created": 1717687090458,
+  "updated": 1771574180033,
+  "trigger": {
+    "id": "101279",
+    "component": "TRIGGER",
+    "schemaVersion": 1,
+    "type": "jira.issue.event.trigger:transitioned",
+    "value": {
+      "synchronous": false,
+      "eventKey": "jira:issue_updated",
+      "issueEvent": "issue_generic",
+      "fromStatus": [
+        {
+          "type": "ID",
+          "value": "12206"
+        }
+      ],
+      "toStatus": [
+        {
+          "type": "ID",
+          "value": "13700"
+        }
+      ]
+    },
+    "children": [],
+    "conditions": []
+  },
+  "components": [
+    {
+      "id": "101280",
+      "component": "CONDITION",
+      "schemaVersion": 3,
+      "type": "jira.issue.condition",
+      "value": {
+        "selectedField": {
+          "type": "ID",
+          "value": "issuetype"
+        },
+        "selectedFieldType": "issuetype",
+        "comparison": "ONE_OF",
+        "compareValue": {
+          "type": "ID",
+          "value": "[\"10004\",\"10002\",\"10001\"]",
+          "multiValue": true
+        }
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "101281",
+      "component": "CONDITION",
+      "schemaVersion": 3,
+      "type": "jira.issue.condition",
+      "value": {
+        "selectedField": {
+          "type": "ID",
+          "value": "summary"
+        },
+        "selectedFieldType": "summary",
+        "comparison": "NOT_CONTAIN",
+        "compareValue": {
+          "type": "VALUE",
+          "value": "Analyse",
+          "multiValue": false
+        }
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "101282",
+      "component": "CONDITION",
+      "schemaVersion": 3,
+      "type": "jira.issue.condition",
+      "value": {
+        "selectedField": {
+          "type": "ID",
+          "value": "components"
+        },
+        "selectedFieldType": "components",
+        "comparison": "CONTAINS_NONE",
+        "compareValue": {
+          "type": "NAME",
+          "value": "[\"Benutzerhandbuch\"]",
+          "multiValue": true
+        }
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "101283",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "jira.create.variable",
+      "value": {
+        "id": "_customsmartvalue_id_1717583101251",
+        "name": {
+          "type": "FREE",
+          "value": "GitlabProjectId"
+        },
+        "type": "SMART",
+        "query": {
+          "type": "SMART",
+          "value": "0"
+        },
+        "lazy": false
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "101284",
+      "component": "CONDITION",
+      "schemaVersion": 1,
+      "type": "jira.condition.container.block",
+      "children": [
+        {
+          "id": "101285",
+          "component": "CONDITION_BLOCK",
+          "parentId": "101284",
+          "schemaVersion": 1,
+          "type": "jira.condition.if.block",
+          "value": {
+            "conditionMatchType": "ALL"
+          },
+          "children": [
+            {
+              "id": "101287",
+              "component": "ACTION",
+              "parentId": "101285",
+              "schemaVersion": 1,
+              "type": "jira.create.variable",
+              "value": {
+                "id": "_customsmartvalue_id_1717166040336",
+                "name": {
+                  "type": "FREE",
+                  "value": "GitlabProjectId"
+                },
+                "type": "SMART",
+                "query": {
+                  "type": "SMART",
+                  "value": "5629"
+                },
+                "lazy": false
+              },
+              "children": [],
+              "conditions": []
+            }
+          ],
+          "conditions": [
+            {
+              "id": "101286",
+              "component": "CONDITION",
+              "conditionParentId": "101285",
+              "schemaVersion": 3,
+              "type": "jira.issue.condition",
+              "value": {
+                "selectedField": {
+                  "type": "ID",
+                  "value": "components"
+                },
+                "selectedFieldType": "components",
+                "comparison": "CONTAINS_ANY",
+                "compareValue": {
+                  "type": "NAME",
+                  "value": "[\"CeromaCore\",\"Ceroma REST API\"]",
+                  "multiValue": true
+                }
+              },
+              "children": [],
+              "conditions": []
+            }
+          ]
+        },
+        {
+          "id": "101288",
+          "component": "CONDITION_BLOCK",
+          "parentId": "101284",
+          "schemaVersion": 1,
+          "type": "jira.condition.if.block",
+          "value": {
+            "conditionMatchType": "ALL"
+          },
+          "children": [
+            {
+              "id": "101290",
+              "component": "ACTION",
+              "parentId": "101288",
+              "schemaVersion": 1,
+              "type": "jira.create.variable",
+              "value": {
+                "id": "_customsmartvalue_id_1717166464953",
+                "name": {
+                  "type": "FREE",
+                  "value": "GitlabProjectId"
+                },
+                "type": "SMART",
+                "query": {
+                  "type": "SMART",
+                  "value": "5674"
+                },
+                "lazy": false
+              },
+              "children": [],
+              "conditions": []
+            }
+          ],
+          "conditions": [
+            {
+              "id": "101289",
+              "component": "CONDITION",
+              "conditionParentId": "101288",
+              "schemaVersion": 3,
+              "type": "jira.issue.condition",
+              "value": {
+                "selectedField": {
+                  "type": "ID",
+                  "value": "components"
+                },
+                "selectedFieldType": "components",
+                "comparison": "CONTAINS_ANY",
+                "compareValue": {
+                  "type": "NAME",
+                  "value": "[\"Mediator\"]",
+                  "multiValue": true
+                }
+              },
+              "children": [],
+              "conditions": []
+            }
+          ]
+        },
+        {
+          "id": "101291",
+          "component": "CONDITION_BLOCK",
+          "parentId": "101284",
+          "schemaVersion": 1,
+          "type": "jira.condition.if.block",
+          "value": {
+            "conditionMatchType": "ALL"
+          },
+          "children": [
+            {
+              "id": "101293",
+              "component": "ACTION",
+              "parentId": "101291",
+              "schemaVersion": 1,
+              "type": "jira.create.variable",
+              "value": {
+                "id": "_customsmartvalue_id_1717166599384",
+                "name": {
+                  "type": "FREE",
+                  "value": "GitlabProjectId"
+                },
+                "type": "SMART",
+                "query": {
+                  "type": "SMART",
+                  "value": "5592"
+                },
+                "lazy": false
+              },
+              "children": [],
+              "conditions": []
+            }
+          ],
+          "conditions": [
+            {
+              "id": "101292",
+              "component": "CONDITION",
+              "conditionParentId": "101291",
+              "schemaVersion": 3,
+              "type": "jira.issue.condition",
+              "value": {
+                "selectedField": {
+                  "type": "ID",
+                  "value": "components"
+                },
+                "selectedFieldType": "components",
+                "comparison": "CONTAINS_ANY",
+                "compareValue": {
+                  "type": "NAME",
+                  "value": "[\"PostIdentService\"]",
+                  "multiValue": true
+                }
+              },
+              "children": [],
+              "conditions": []
+            }
+          ]
+        },
+        {
+          "id": "101294",
+          "component": "CONDITION_BLOCK",
+          "parentId": "101284",
+          "schemaVersion": 1,
+          "type": "jira.condition.if.block",
+          "value": {
+            "conditionMatchType": "ALL"
+          },
+          "children": [
+            {
+              "id": "101295",
+              "component": "ACTION",
+              "parentId": "101294",
+              "schemaVersion": 1,
+              "type": "jira.create.variable",
+              "value": {
+                "id": "_customsmartvalue_id_1717166583087",
+                "name": {
+                  "type": "FREE",
+                  "value": "GitlabProjectId"
+                },
+                "type": "SMART",
+                "query": {
+                  "type": "SMART",
+                  "value": "5629"
+                },
+                "lazy": false
+              },
+              "children": [],
+              "conditions": []
+            }
+          ],
+          "conditions": []
+        }
+      ],
+      "conditions": []
+    },
+    {
+      "id": "101296",
+      "component": "ACTION",
+      "schemaVersion": 2,
+      "type": "jira.issue.outgoing.webhook",
+      "value": {
+        "url": "https://gitlab.partner.bdr.de/api/v4/projects/{{GitlabProjectId}}/merge_requests?search={{issue.key}}&state=opened",
+        "headers": [
+          {
+            "id": "_header_1717081007022",
+            "name": "Content-Type",
+            "value": {
+              "keyOrValue": "application/json",
+              "secret": false
+            }
+          },
+          {
+            "id": "_header_1718050060534",
+            "name": "Private-Token",
+            "value": {
+              "keyOrValue": "Gitlab-Token zz-sys-cer",
+              "secret": true
+            }
+          }
+        ],
+        "sendIssue": false,
+        "contentType": "empty",
+        "customBody": "{\n  \"source_branch\": \"feature/{{issue.key}}\",\n  \"target_branch\": \"develop\",\n  \"title\": \"Merge {{issue.key}} to develop\",\n  \"description\": \"Closes {{issue.key}}\",\n  \"remove_source_branch\": true\n}",
+        "method": "GET",
+        "responseEnabled": true,
+        "usedSecretsKeys": [
+          "Gitlab-Token zz-sys-cer"
+        ]
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "101297",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "jira.create.variable",
+      "value": {
+        "id": "_customsmartvalue_id_1717687418775",
+        "name": {
+          "type": "FREE",
+          "value": "GitLabMergeRequestIid"
+        },
+        "type": "SMART",
+        "query": {
+          "type": "SMART",
+          "value": "{{webhookResponses.last.body.iid}}"
+        },
+        "lazy": false
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "101298",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "codebarrel.action.log",
+      "value": "\"Gefundene Merge Requests für dieses Ticket:{{#webhookResponse.body}}ID:{{iid}} {{/webhookResponse.body}}",
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "101299",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "codebarrel.action.log",
+      "value": "Merge Request iid: {{GitLabMergeRequestIid}} {{#if(GitLabMergeRequestIid.isEmpty)}} Keine gefunden, Regel wird nicht fortgeführt {{/}}",
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "101300",
+      "component": "CONDITION",
+      "schemaVersion": 1,
+      "type": "jira.comparator.condition",
+      "value": {
+        "first": "{{GitLabMergeRequestIid}}",
+        "second": "",
+        "operator": "NOT_EQUALS"
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "101301",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "codebarrel.action.log",
+      "value": "https://gitlab.partner.bdr.de/api/v4/projects/{{GitlabProjectId}}/merge_requests/{{GitLabMergeRequestIid}}/merge",
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "101302",
+      "component": "ACTION",
+      "schemaVersion": 2,
+      "type": "jira.issue.outgoing.webhook",
+      "value": {
+        "url": "https://gitlab.partner.bdr.de/api/v4/projects/{{GitlabProjectId}}/merge_requests/{{GitLabMergeRequestIid}}/merge",
+        "headers": [
+          {
+            "id": "_header_1717690622128",
+            "name": "Content-Type",
+            "value": {
+              "keyOrValue": "application/json",
+              "secret": false
+            }
+          },
+          {
+            "id": "_header_1717750322928",
+            "name": "Private-Token",
+            "value": {
+              "keyOrValue": "Gitlab-Token zz-sys-cer",
+              "secret": true
+            }
+          }
+        ],
+        "sendIssue": false,
+        "contentType": "empty",
+        "method": "PUT",
+        "responseEnabled": true,
+        "usedSecretsKeys": [
+          "Gitlab-Token zz-sys-cer"
+        ]
+      },
+      "children": [],
+      "conditions": []
+    }
+  ],
+  "projects": [
+    {
+      "projectId": "11215",
+      "projectTypeKey": "software"
+    }
+  ],
+  "labels": [
+    29
+  ],
+  "tags": []
+}

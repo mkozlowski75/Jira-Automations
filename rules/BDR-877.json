@@ -1,0 +1,997 @@
+{
+  "id": 877,
+  "clientKey": "com.codebarrel.tenant.global",
+  "name": "Jira: Create Release Tickets after Sprint Start",
+  "state": "ENABLED",
+  "description": "CER-7537: Creates release tickets for CeromaCore, Ceroma manual and (if required) Mediator and PostIdentService.\n\nSends a confirmation E-Mail.\n\n- For CeromaCore and Ceroma manual the release version is determined from the sprint number (X.XX -> X.XX.0).\n- For Mediator and PostIdentService the release version is determined from the sprint goal. The versions have to be included in the sprint goal in this pattern:\n<actual description of the goal>\nMediator <version>\nPostIdentService <version>\ne.g.\neArchiv\nMediator 1.33.0\nPostIdentService 2.11.0\n\nIf the version does not exist yet, it will be created",
+  "canOtherRuleTrigger": false,
+  "notifyOnError": "FIRSTERROR",
+  "authorAccountId": "JIRAUSER15085",
+  "actorAccountId": "JIRAUSER23851",
+  "created": 1768396012880,
+  "updated": 1785325238910,
+  "trigger": {
+    "id": "135671",
+    "component": "TRIGGER",
+    "schemaVersion": 1,
+    "type": "jira.sprint.event.trigger:started",
+    "value": {
+      "boardId": 639,
+      "sprintNameFilter": ""
+    },
+    "children": [],
+    "conditions": []
+  },
+  "components": [
+    {
+      "id": "135672",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "jira.create.variable",
+      "value": {
+        "id": "_customsmartvalue_id_1764856657329",
+        "name": {
+          "type": "FREE",
+          "value": "sprintName"
+        },
+        "type": "SMART",
+        "query": {
+          "type": "SMART",
+          "value": "{{sprint.name}}"
+        },
+        "lazy": false
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "135673",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "jira.create.variable",
+      "value": {
+        "id": "_customsmartvalue_id_1764856719057",
+        "name": {
+          "type": "FREE",
+          "value": "sprintGoal"
+        },
+        "type": "SMART",
+        "query": {
+          "type": "SMART",
+          "value": "{{sprint.goal}}"
+        },
+        "lazy": false
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "135674",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "jira.create.variable",
+      "value": {
+        "id": "_customsmartvalue_id_1764859320064",
+        "name": {
+          "type": "FREE",
+          "value": "sprintId"
+        },
+        "type": "SMART",
+        "query": {
+          "type": "SMART",
+          "value": "{{sprint.id}}"
+        },
+        "lazy": false
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "135675",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "jira.create.variable",
+      "value": {
+        "id": "_customsmartvalue_id_1764858187452",
+        "name": {
+          "type": "FREE",
+          "value": "ceromaVersion"
+        },
+        "type": "SMART",
+        "query": {
+          "type": "SMART",
+          "value": "{{sprintName.split(\" \").first}}.0"
+        },
+        "lazy": false
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "135676",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "codebarrel.action.log",
+      "value": "Sprint : {{sprintName}}",
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "135677",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "codebarrel.action.log",
+      "value": "Goal: {{sprintGoal}}",
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "135678",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "jira.create.variable",
+      "value": {
+        "id": "_customsmartvalue_id_1768394217942",
+        "name": {
+          "type": "FREE",
+          "value": "ruleId"
+        },
+        "type": "SMART",
+        "query": {
+          "type": "SMART",
+          "value": "877"
+        },
+        "lazy": false
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "135679",
+      "component": "CONDITION",
+      "schemaVersion": 1,
+      "type": "jira.comparator.condition",
+      "value": {
+        "first": "{{ceromaVersion}}",
+        "second": "^[0-9.]+$",
+        "operator": "REGEX_MATCHES"
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "135680",
+      "component": "CONDITION",
+      "schemaVersion": 1,
+      "type": "jira.comparator.condition",
+      "value": {
+        "first": "{{sprintName.length}}",
+        "second": "0",
+        "operator": "GREATER_THAN"
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "135681",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "jira.version.create",
+      "value": {
+        "versionName": "{{ceromaVersion}}",
+        "project": {
+          "type": "ID",
+          "value": "11215",
+          "additional": "software"
+        },
+        "overrideReleaseDate": "SET_ON_EMPTY"
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "135682",
+      "component": "ACTION",
+      "schemaVersion": 6,
+      "type": "jira.issue.create",
+      "value": {
+        "operations": [
+          {
+            "fieldId": "summary",
+            "fieldType": "summary",
+            "type": "SET",
+            "value": "CEROMA Release {{ceromaVersion}}"
+          },
+          {
+            "fieldId": "description",
+            "fieldType": "description",
+            "type": "SET",
+            "value": "h1. Release Summary\n||Produkt|_Ceroma_|\n||Release-Version|{{{}ceromaVersion{}}}-TBD|\n||Changeset|TBD|\n||Lieferort|[https://partner.bdr.de/artifactory/ceroma-generic-dsl/Ceroma/\\{{ceromaVersion}}-TBD/|https://partner.bdr.de/artifactory/ceroma-generic-dsl/Ceroma/%7B%7BceromaVersion%7D%7D-TBD/]|\n||_Checkliste zur Sicherheitsbewertung_|Ceroma {{ceromaVersion}} DE Checkliste zur Sicherheitsbewertung eines Software-Releases|\n||Code-Report-Analyse|🟢🟡🔴|\n||Systemkomponenten|CeromaCore\nCeromaFrontendBDrIn\nCeromaFrontendDownloadServer\nCeromaFrontendOrderStore\nCeromaFrontendSupport\nCeromaSupportUI|\n||Release-Beschreibung|TBD|\n||Abhängigkeiten|[Linux, Subsysteme, 3rd-Party] - OpenJDK 21.x\n - MySQL 8.4.x\n - Red Hat Enterprise Linux 8.10 (Ootpa) 64bit|\n||Bemerkungen|Zur Lieferung für Aufbau in Test-/Referenz-/Produktiv-Umgebung der D-Trust|\n||Inhalt| |\nh1. Test and Quality Reports\n||Sonar Report|[https://partner.bdr.de/artifactory/ceroma-generic-dsl/Ceroma/\\{{ceromaVersion}}-TBD/reports/|https://partner.bdr.de/artifactory/ceroma-generic-dsl/Ceroma/%7B%7BceromaVersion%7D%7D-TBD/reports/]|\n||SBOM Report|[https://partner.bdr.de/artifactory/ceroma-generic-dsl/Ceroma/\\{{ceromaVersion}}-TBD/reports/|https://partner.bdr.de/artifactory/ceroma-generic-dsl/Ceroma/%7B%7BceromaVersion%7D%7D-TBD/reports/]|\n||Systemtest Report|Siehe Anhang (Testprotokoll)|\n||Vorläufige Freigabeempfehlung|<Datum>TBD|\n||Freigabeempfehlung|<Datum>TBD|\nh1. Installationsinformation\n\nSiehe Anhang (Installationscheckliste).\n|h3. Zusatzinformationen zur Installation:|\n|*HINWEISE:*\nTBD|"
+          },
+          {
+            "fieldId": "project",
+            "fieldType": "project",
+            "type": "SET",
+            "value": {
+              "type": "ID",
+              "value": "11215"
+            }
+          },
+          {
+            "fieldId": "issuetype",
+            "fieldType": "issuetype",
+            "type": "SET",
+            "value": {
+              "type": "ID",
+              "value": "10200"
+            }
+          },
+          {
+            "fieldId": "customfield_10004",
+            "fieldType": "com.pyxis.greenhopper.jira:gh-sprint",
+            "type": "SET",
+            "value": {
+              "type": "SMART",
+              "value": "{{sprintId}}"
+            }
+          },
+          {
+            "fieldId": "components",
+            "fieldType": "components",
+            "type": "SET",
+            "value": [
+              {
+                "type": "NAME",
+                "value": "CeromaCore"
+              },
+              {
+                "type": "NAME",
+                "value": "DownloadServer"
+              },
+              {
+                "type": "NAME",
+                "value": "FrontendBDrIn"
+              },
+              {
+                "type": "NAME",
+                "value": "FrontendSupport"
+              },
+              {
+                "type": "NAME",
+                "value": "OrderStore"
+              },
+              {
+                "type": "NAME",
+                "value": "SupportUI"
+              }
+            ]
+          },
+          {
+            "fieldId": "fixVersions",
+            "fieldType": "fixVersions",
+            "type": "SET",
+            "value": [
+              {
+                "type": "SMART",
+                "value": "{{ceromaVersion}}"
+              }
+            ]
+          }
+        ],
+        "sendNotifications": false,
+        "useLegacyRendering": false
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "135683",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "jira.create.variable",
+      "value": {
+        "id": "_customsmartvalue_id_1768392465844",
+        "name": {
+          "type": "FREE",
+          "value": "ceromaReleaseKey"
+        },
+        "type": "SMART",
+        "query": {
+          "type": "SMART",
+          "value": "{{createdIssue.key}}"
+        },
+        "lazy": false
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "135684",
+      "component": "BRANCH",
+      "schemaVersion": 1,
+      "type": "jira.issue.related",
+      "value": {
+        "relatedType": "jql",
+        "jql": "key = {{ceromaReleaseKey}}",
+        "linkTypes": [],
+        "onlyUpdatedIssues": false,
+        "processIssuesInBulk": false
+      },
+      "children": [
+        {
+          "id": "135685",
+          "component": "ACTION",
+          "parentId": "135684",
+          "schemaVersion": 1,
+          "type": "jira.issue.comment",
+          "value": {
+            "comment": "Release-Ticket {{issue.key}} created by Jira Automation [{{rule.name}}|https://partner.bdr.de/jira/secure/AutomationProjectAdminAction!default.jspa?projectKey=CER#/rule/{{ruleId}}]",
+            "publicComment": false,
+            "sendNotifications": true,
+            "addCommentOnce": false,
+            "useLegacyRendering": false
+          },
+          "children": [],
+          "conditions": []
+        }
+      ],
+      "conditions": []
+    },
+    {
+      "id": "135686",
+      "component": "ACTION",
+      "schemaVersion": 6,
+      "type": "jira.issue.create",
+      "value": {
+        "operations": [
+          {
+            "fieldId": "summary",
+            "fieldType": "summary",
+            "type": "SET",
+            "value": "CEROMA Benutzerhandbuch {{ceromaVersion}}"
+          },
+          {
+            "fieldId": "description",
+            "fieldType": "description",
+            "type": "SET",
+            "value": "h1. Release Summary\n||Produkt|_Ceroma-Benutzerhandbuch_|\n||Release-Version|{{ceromaVersion}}|\n||Lieferort|[https://partner.bdr.de/artifactory/ceroma-generic-dsl/Ceroma/\\{{ceromaVersion}}-TBD/doc/ceroma-documentation.zip|https://partner.bdr.de/artifactory/ceroma-generic-dsl/Ceroma/%7B%7BceromaVersion%7D%7D-TBD/doc/ceroma-documentation.zip]|\n||Systemkomponenten|Benutzer-Handbuch.docx\nBenutzer-Handbuch.html\nInstallations-und-Administrationshandbuch.docx\nInstallations-und-Administrationshandbuch.html\nSystem-Handbuch.docx\nSystem-Handbuch.html|\n||Bemerkungen|Zur Lieferung für Aufbau in Test-/Referenz-/Produktiv-Umgebung der D-Trust|"
+          },
+          {
+            "fieldId": "project",
+            "fieldType": "project",
+            "type": "SET",
+            "value": {
+              "type": "ID",
+              "value": "11215"
+            }
+          },
+          {
+            "fieldId": "issuetype",
+            "fieldType": "issuetype",
+            "type": "SET",
+            "value": {
+              "type": "ID",
+              "value": "10200"
+            }
+          },
+          {
+            "fieldId": "customfield_10004",
+            "fieldType": "com.pyxis.greenhopper.jira:gh-sprint",
+            "type": "SET",
+            "value": {
+              "type": "SMART",
+              "value": "{{sprintId}}"
+            }
+          },
+          {
+            "fieldId": "components",
+            "fieldType": "components",
+            "type": "SET",
+            "value": [
+              {
+                "type": "NAME",
+                "value": "Benutzerhandbuch"
+              }
+            ]
+          },
+          {
+            "fieldId": "fixVersions",
+            "fieldType": "fixVersions",
+            "type": "SET",
+            "value": [
+              {
+                "type": "SMART",
+                "value": "{{ceromaVersion}}"
+              }
+            ]
+          }
+        ],
+        "sendNotifications": false,
+        "useLegacyRendering": false
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "135687",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "jira.create.variable",
+      "value": {
+        "id": "_customsmartvalue_id_1768393674748",
+        "name": {
+          "type": "FREE",
+          "value": "ceromaManualKey"
+        },
+        "type": "SMART",
+        "query": {
+          "type": "SMART",
+          "value": "{{createdIssue.key}}"
+        },
+        "lazy": false
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "135688",
+      "component": "BRANCH",
+      "schemaVersion": 1,
+      "type": "jira.issue.related",
+      "value": {
+        "relatedType": "jql",
+        "jql": "key = {{ceromaManualKey}}",
+        "linkTypes": [],
+        "onlyUpdatedIssues": false,
+        "processIssuesInBulk": false
+      },
+      "children": [
+        {
+          "id": "135689",
+          "component": "ACTION",
+          "parentId": "135688",
+          "schemaVersion": 1,
+          "type": "jira.issue.comment",
+          "value": {
+            "comment": "Release-Ticket {{issue.key}} created by Jira Automation [{{rule.name}}|https://partner.bdr.de/jira/secure/AutomationProjectAdminAction!default.jspa?projectKey=CER#/rule/{{ruleId}}]",
+            "publicComment": false,
+            "sendNotifications": true,
+            "addCommentOnce": true,
+            "useLegacyRendering": false
+          },
+          "children": [],
+          "conditions": []
+        }
+      ],
+      "conditions": []
+    },
+    {
+      "id": "135690",
+      "component": "CONDITION",
+      "schemaVersion": 1,
+      "type": "jira.condition.container.block",
+      "children": [
+        {
+          "id": "135691",
+          "component": "CONDITION_BLOCK",
+          "parentId": "135690",
+          "schemaVersion": 1,
+          "type": "jira.condition.if.block",
+          "value": {
+            "conditionMatchType": "ALL"
+          },
+          "children": [
+            {
+              "id": "135693",
+              "component": "ACTION",
+              "parentId": "135691",
+              "schemaVersion": 1,
+              "type": "jira.create.variable",
+              "value": {
+                "id": "_customsmartvalue_id_1765138081994",
+                "name": {
+                  "type": "FREE",
+                  "value": "mediatorVersion"
+                },
+                "type": "SMART",
+                "query": {
+                  "type": "SMART",
+                  "value": "{{sprintGoal.substringAfter(\"Mediator\").trim().split(\"\\n\").first.trim}}"
+                },
+                "lazy": false
+              },
+              "children": [],
+              "conditions": []
+            },
+            {
+              "id": "135694",
+              "component": "ACTION",
+              "parentId": "135691",
+              "schemaVersion": 1,
+              "type": "jira.create.variable",
+              "value": {
+                "id": "_customsmartvalue_id_1765199325944",
+                "name": {
+                  "type": "FREE",
+                  "value": "mediatorFixVersion"
+                },
+                "type": "SMART",
+                "query": {
+                  "type": "SMART",
+                  "value": "Mediator {{mediatorVersion}}"
+                },
+                "lazy": false
+              },
+              "children": [],
+              "conditions": []
+            },
+            {
+              "id": "135695",
+              "component": "ACTION",
+              "parentId": "135691",
+              "schemaVersion": 1,
+              "type": "codebarrel.action.log",
+              "value": "mediatorVersion: {{mediatorVersion}}",
+              "children": [],
+              "conditions": []
+            },
+            {
+              "id": "135696",
+              "component": "ACTION",
+              "parentId": "135691",
+              "schemaVersion": 1,
+              "type": "jira.version.create",
+              "value": {
+                "versionName": "{{mediatorFixVersion}}",
+                "project": {
+                  "type": "ID",
+                  "value": "11215",
+                  "additional": "software"
+                },
+                "overrideReleaseDate": "SET_ON_EMPTY"
+              },
+              "children": [],
+              "conditions": []
+            },
+            {
+              "id": "135697",
+              "component": "ACTION",
+              "parentId": "135691",
+              "schemaVersion": 6,
+              "type": "jira.issue.create",
+              "value": {
+                "operations": [
+                  {
+                    "fieldId": "summary",
+                    "fieldType": "summary",
+                    "type": "SET",
+                    "value": "Mediator Release {{mediatorVersion}}"
+                  },
+                  {
+                    "fieldId": "description",
+                    "fieldType": "description",
+                    "type": "SET",
+                    "value": "h1. Release Summary\n||Produkt|_Mediator_|\n||Release-Version|{{{}mediatorVersion{}}}-TBD|\n||Changeset|TBD|\n||Lieferort|[https://partner.bdr.de/artifactory/cer-generic-dsl/AVS-Ceroma-Mediator/\\{{mediatorVersion}}-TBD/|https://partner.bdr.de/artifactory/cer-generic-dsl/AVS-Ceroma-Mediator/%7B%7BmediatorVersion%7D%7D-TBD/]|\n||_Checkliste zur Sicherheitsbewertung_|Mediator {{mediatorVersion}} DE Checkliste zur Sicherheitsbewertung eines Software-Releases|\n||Code-Report-Analyse|🟢🟡🔴|\n||Systemkomponenten|Mediator|\n||Release-Beschreibung|TBD|\n||Abhängigkeiten|[Linux, Subsysteme, 3rd-Party] - OpenJDK 21.x\n - Red Hat Enterprise Linux 8.10 (Ootpa) 64bit|\n||Bemerkungen|Zur Lieferung für Aufbau in Test-/Referenz-/Produktiv-Umgebung der D-Trust|\n||Inhalt| |\nh1. Test and Quality Reports\n||Sonar Report|[https://partner.bdr.de/artifactory/cer-generic-dsl/AVS-Ceroma-Mediator/\\{{mediatorVersion}}-TBD/reports/|https://partner.bdr.de/artifactory/cer-generic-dsl/AVS-Ceroma-Mediator/%7B%7BmediatorVersion%7D%7D-TBD/reports/]|\n||SBOM Report|[https://partner.bdr.de/artifactory/cer-generic-dsl/AVS-Ceroma-Mediator/\\{{mediatorVersion}}-TBD/reports/|https://partner.bdr.de/artifactory/cer-generic-dsl/AVS-Ceroma-Mediator/%7B%7BmediatorVersion%7D%7D-TBD/reports/]|\n||Systemtest Report|Siehe Anhang (Testprotokoll)|\n||Vorläufige Freigabeempfehlung|<Datum>TBD|\n||Freigabeempfehlung|<Datum>TBD|\nh1. Installationsinformation\n\nSiehe Anhang (Installationscheckliste).\n|h3. Zusatzinformationen zur Installation:|\n|*HINWEISE:*\nTBD|"
+                  },
+                  {
+                    "fieldId": "project",
+                    "fieldType": "project",
+                    "type": "SET",
+                    "value": {
+                      "type": "ID",
+                      "value": "11215"
+                    }
+                  },
+                  {
+                    "fieldId": "issuetype",
+                    "fieldType": "issuetype",
+                    "type": "SET",
+                    "value": {
+                      "type": "ID",
+                      "value": "10200"
+                    }
+                  },
+                  {
+                    "fieldId": "customfield_10004",
+                    "fieldType": "com.pyxis.greenhopper.jira:gh-sprint",
+                    "type": "SET",
+                    "value": {
+                      "type": "SMART",
+                      "value": "{{sprintId}}"
+                    }
+                  },
+                  {
+                    "fieldId": "components",
+                    "fieldType": "components",
+                    "type": "SET",
+                    "value": [
+                      {
+                        "type": "NAME",
+                        "value": "Mediator"
+                      }
+                    ]
+                  },
+                  {
+                    "fieldId": "fixVersions",
+                    "fieldType": "fixVersions",
+                    "type": "SET",
+                    "value": [
+                      {
+                        "type": "SMART",
+                        "value": "{{mediatorFixVersion}}"
+                      }
+                    ]
+                  }
+                ],
+                "advancedFields": "",
+                "sendNotifications": false,
+                "useLegacyRendering": false
+              },
+              "children": [],
+              "conditions": []
+            },
+            {
+              "id": "135698",
+              "component": "ACTION",
+              "parentId": "135691",
+              "schemaVersion": 1,
+              "type": "jira.create.variable",
+              "value": {
+                "id": "_customsmartvalue_id_1768393702393",
+                "name": {
+                  "type": "FREE",
+                  "value": "mediatorReleaseKey"
+                },
+                "type": "SMART",
+                "query": {
+                  "type": "SMART",
+                  "value": "{{createdIssue.key}}"
+                },
+                "lazy": false
+              },
+              "children": [],
+              "conditions": []
+            },
+            {
+              "id": "135699",
+              "component": "BRANCH",
+              "parentId": "135691",
+              "schemaVersion": 1,
+              "type": "jira.issue.related",
+              "value": {
+                "relatedType": "jql",
+                "jql": "key = {{mediatorReleaseKey}}",
+                "linkTypes": [],
+                "onlyUpdatedIssues": false,
+                "processIssuesInBulk": false
+              },
+              "children": [
+                {
+                  "id": "135700",
+                  "component": "ACTION",
+                  "parentId": "135699",
+                  "schemaVersion": 1,
+                  "type": "jira.issue.comment",
+                  "value": {
+                    "comment": "Release-Ticket {{issue.key}} created by Jira Automation [{{rule.name}}|https://partner.bdr.de/jira/secure/AutomationProjectAdminAction!default.jspa?projectKey=CER#/rule/{{ruleId}}]",
+                    "publicComment": false,
+                    "sendNotifications": true,
+                    "addCommentOnce": false,
+                    "useLegacyRendering": false
+                  },
+                  "children": [],
+                  "conditions": []
+                }
+              ],
+              "conditions": []
+            }
+          ],
+          "conditions": [
+            {
+              "id": "135692",
+              "component": "CONDITION",
+              "conditionParentId": "135691",
+              "schemaVersion": 1,
+              "type": "jira.comparator.condition",
+              "value": {
+                "first": "{{sprintGoal}}",
+                "second": "Mediator",
+                "operator": "CONTAINS"
+              },
+              "children": [],
+              "conditions": []
+            }
+          ]
+        }
+      ],
+      "conditions": []
+    },
+    {
+      "id": "135701",
+      "component": "CONDITION",
+      "schemaVersion": 1,
+      "type": "jira.condition.container.block",
+      "children": [
+        {
+          "id": "135702",
+          "component": "CONDITION_BLOCK",
+          "parentId": "135701",
+          "schemaVersion": 1,
+          "type": "jira.condition.if.block",
+          "value": {
+            "conditionMatchType": "ALL"
+          },
+          "children": [
+            {
+              "id": "135704",
+              "component": "ACTION",
+              "parentId": "135702",
+              "schemaVersion": 1,
+              "type": "jira.create.variable",
+              "value": {
+                "id": "_customsmartvalue_id_1765200817878",
+                "name": {
+                  "type": "FREE",
+                  "value": "postIdentServiceVersion"
+                },
+                "type": "SMART",
+                "query": {
+                  "type": "SMART",
+                  "value": "{{sprintGoal.substringAfter(\"PostIdentService\").trim().split(\"\\n\").first.trim}}"
+                },
+                "lazy": false
+              },
+              "children": [],
+              "conditions": []
+            },
+            {
+              "id": "135705",
+              "component": "ACTION",
+              "parentId": "135702",
+              "schemaVersion": 1,
+              "type": "jira.create.variable",
+              "value": {
+                "id": "_customsmartvalue_id_1765200860736",
+                "name": {
+                  "type": "FREE",
+                  "value": "postIdentServiceFixVersion"
+                },
+                "type": "SMART",
+                "query": {
+                  "type": "SMART",
+                  "value": "PostIdentService {{postIdentServiceVersion}}"
+                },
+                "lazy": false
+              },
+              "children": [],
+              "conditions": []
+            },
+            {
+              "id": "135706",
+              "component": "ACTION",
+              "parentId": "135702",
+              "schemaVersion": 1,
+              "type": "codebarrel.action.log",
+              "value": "postIdentServiceVersion: {{postIdentServiceVersion}}",
+              "children": [],
+              "conditions": []
+            },
+            {
+              "id": "135707",
+              "component": "ACTION",
+              "parentId": "135702",
+              "schemaVersion": 1,
+              "type": "jira.version.create",
+              "value": {
+                "versionName": "{{postIdentServiceFixVersion}}",
+                "project": {
+                  "type": "ID",
+                  "value": "11215",
+                  "additional": "software"
+                },
+                "overrideReleaseDate": "SET_ON_EMPTY"
+              },
+              "children": [],
+              "conditions": []
+            },
+            {
+              "id": "135708",
+              "component": "ACTION",
+              "parentId": "135702",
+              "schemaVersion": 6,
+              "type": "jira.issue.create",
+              "value": {
+                "operations": [
+                  {
+                    "fieldId": "summary",
+                    "fieldType": "summary",
+                    "type": "SET",
+                    "value": "PostIdentService Release {{postIdentServiceVersion}}"
+                  },
+                  {
+                    "fieldId": "description",
+                    "fieldType": "description",
+                    "type": "SET",
+                    "value": "h1. Release Summary\n||Produkt|_PostIdentService_|\n||Release-Version|{{{}postIdentServiceVersion{}}}-TBD|\n||Changeset|TBD|\n||Lieferort|[https://partner.bdr.de/artifactory/cer-generic-dsl/PostidentService/\\{{postIdentServiceVersion}}-TBD/|https://partner.bdr.de/artifactory/cer-generic-dsl/PostidentService/%7B%7BpostIdentServiceVersion%7D%7D-TBD/]|\n||_Checkliste zur Sicherheitsbewertung_|{{postIdentServiceFixVersion}} DE Checkliste zur Sicherheitsbewertung eines Software-Releases|\n||Code-Report-Analyse|🟢🟡🔴|\n||Systemkomponenten|PostIdentService, PostIdentService-Proxy|\n||Release-Beschreibung|TBD|\n||Abhängigkeiten|[Linux, Subsysteme, 3rd-Party] - OpenJDK 21.x\n - MySQL 8.4.x\n - Red Hat Enterprise Linux 8.10 (Ootpa) 64bit|\n||Bemerkungen|Zur Lieferung für Aufbau in Test-/Referenz-/Produktiv-Umgebung der D-Trust|\n||Inhalt| |\nh1. Test and Quality Reports\n||Sonar Report|[https://partner.bdr.de/artifactory/cer-generic-dsl/PostidentService/\\{{postIdentServiceVersion}}-TBD/reports/|https://partner.bdr.de/artifactory/cer-generic-dsl/PostidentService/%7B%7BpostIdentServiceVersion%7D%7D-TBD/reports/]|\n||SBOM Report|[https://partner.bdr.de/artifactory/cer-generic-dsl/PostidentService/\\{{postIdentServiceVersion}}-TBD/reports/|https://partner.bdr.de/artifactory/cer-generic-dsl/PostidentService/%7B%7BpostIdentServiceVersion%7D%7D-TBD/reports/]|\n||Systemtest Report|Siehe Anhang (Testprotokoll)|\n||Vorläufige Freigabeempfehlung|<Datum>TBD|\n||Freigabeempfehlung|<Datum>TBD|\nh1. Installationsinformation\n\nSiehe Anhang (Installationscheckliste).\n|h3. Zusatzinformationen zur Installation:|\n|*HINWEISE:*\nTBD|"
+                  },
+                  {
+                    "fieldId": "project",
+                    "fieldType": "project",
+                    "type": "SET",
+                    "value": {
+                      "type": "ID",
+                      "value": "11215"
+                    }
+                  },
+                  {
+                    "fieldId": "issuetype",
+                    "fieldType": "issuetype",
+                    "type": "SET",
+                    "value": {
+                      "type": "ID",
+                      "value": "10200"
+                    }
+                  },
+                  {
+                    "fieldId": "customfield_10004",
+                    "fieldType": "com.pyxis.greenhopper.jira:gh-sprint",
+                    "type": "SET",
+                    "value": {
+                      "type": "SMART",
+                      "value": "{{sprintId}}"
+                    }
+                  },
+                  {
+                    "fieldId": "components",
+                    "fieldType": "components",
+                    "type": "SET",
+                    "value": [
+                      {
+                        "type": "NAME",
+                        "value": "PostIdentService"
+                      },
+                      {
+                        "type": "NAME",
+                        "value": "PostIdentService-Proxy"
+                      }
+                    ]
+                  },
+                  {
+                    "fieldId": "fixVersions",
+                    "fieldType": "fixVersions",
+                    "type": "SET",
+                    "value": [
+                      {
+                        "type": "SMART",
+                        "value": "{{postIdentServiceFixVersion}}"
+                      }
+                    ]
+                  }
+                ],
+                "sendNotifications": false,
+                "useLegacyRendering": false
+              },
+              "children": [],
+              "conditions": []
+            },
+            {
+              "id": "135709",
+              "component": "ACTION",
+              "parentId": "135702",
+              "schemaVersion": 1,
+              "type": "jira.create.variable",
+              "value": {
+                "id": "_customsmartvalue_id_1768393746903",
+                "name": {
+                  "type": "FREE",
+                  "value": "postIdentReleaseKey"
+                },
+                "type": "SMART",
+                "query": {
+                  "type": "SMART",
+                  "value": "{{createdIssue.key}}"
+                },
+                "lazy": false
+              },
+              "children": [],
+              "conditions": []
+            },
+            {
+              "id": "135710",
+              "component": "BRANCH",
+              "parentId": "135702",
+              "schemaVersion": 1,
+              "type": "jira.issue.related",
+              "value": {
+                "relatedType": "jql",
+                "jql": "key = {{postIdentReleaseKey}}",
+                "linkTypes": [],
+                "onlyUpdatedIssues": false,
+                "processIssuesInBulk": false
+              },
+              "children": [
+                {
+                  "id": "135711",
+                  "component": "ACTION",
+                  "parentId": "135710",
+                  "schemaVersion": 1,
+                  "type": "jira.issue.comment",
+                  "value": {
+                    "comment": "Release-Ticket {{issue.key}} created by Jira Automation [{{rule.name}}|https://partner.bdr.de/jira/secure/AutomationProjectAdminAction!default.jspa?projectKey=CER#/rule/{{ruleId}}]",
+                    "publicComment": false,
+                    "sendNotifications": true,
+                    "addCommentOnce": true,
+                    "useLegacyRendering": false
+                  },
+                  "children": [],
+                  "conditions": []
+                }
+              ],
+              "conditions": []
+            }
+          ],
+          "conditions": [
+            {
+              "id": "135703",
+              "component": "CONDITION",
+              "conditionParentId": "135702",
+              "schemaVersion": 1,
+              "type": "jira.comparator.condition",
+              "value": {
+                "first": "{{sprintGoal}}",
+                "second": "PostIdentService",
+                "operator": "CONTAINS"
+              },
+              "children": [],
+              "conditions": []
+            }
+          ]
+        }
+      ],
+      "conditions": []
+    },
+    {
+      "id": "135712",
+      "component": "ACTION",
+      "schemaVersion": 3,
+      "type": "jira.issue.outgoing.email",
+      "value": {
+        "from": "",
+        "fromName": "",
+        "replyTo": "",
+        "to": [
+          {
+            "type": "FREE",
+            "value": "matthias.kozlowski.extern@bdr.de"
+          },
+          {
+            "type": "FREE",
+            "value": "adrian.laska@bdr.de"
+          },
+          {
+            "type": "FREE",
+            "value": "alexander.kuehl@bdr.de"
+          }
+        ],
+        "cc": [],
+        "bcc": [],
+        "subject": "Release-Tickets für Sprint {{sprint.name}} wurden erstellt",
+        "body": "<p>Hallo,</p>\n<p>folgende Release-Tickets wurden beim Sprint-Start automatisch erstellt</p>\n<ul>\n  <li>Ceroma Release  {{ceromaVersion}}: <a href=\"https://partner.bdr.de/jira/browse/{{ceromaReleaseKey}}\">{{ceromaReleaseKey}}</a></li>\n  <li>Ceroma Benutzerhandbuch {{ceromaVersion}}: <a href=\"https://partner.bdr.de/jira/browse/{{ceromaManualKey}}\">{{ceromaManualKey}}</a></li>\n{{#if(mediatorReleaseKey.isNotEmpty)}}\n  <li>Mediator Release {{mediatorVersion}}: <a href=\"https://partner.bdr.de/jira/browse/{{mediatorReleaseKey}}\">{{mediatorReleaseKey}}</a></li>\n{{/}}\n{{#if(postIdentReleaseKey.isNotEmpty)}}\n  <li>PostIdentService Release {{postIdentServiceVersion}}: <a href=\"https://partner.bdr.de/jira/browse/{{postIdentReleaseKey}}\">{{postIdentReleaseKey}}</a></li>\n{{/}}\n</ul>\n<p><strong>Sprint:</strong><br>{{sprintName}}<br>\n<strong>Goal:</strong><br>{{sprintGoal}}</p>\n<p>Viele Grüße</p>\n<p>\n  Deine Jira-Automation\n  <a href=\"https://partner.bdr.de/jira/secure/AutomationProjectAdminAction!default.jspa?projectKey=CER#/rule/{{ruleId}}\">\n    {{rule.name}}\n  </a>\n</p>",
+        "mimeType": "text/html",
+        "convertLineBreaks": false
+      },
+      "children": [],
+      "conditions": []
+    }
+  ],
+  "projects": [
+    {
+      "projectId": "11215",
+      "projectTypeKey": "software"
+    }
+  ],
+  "labels": [
+    31
+  ],
+  "tags": []
+}

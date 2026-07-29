@@ -1,0 +1,57 @@
+{
+  "id": 218,
+  "clientKey": "com.codebarrel.tenant.global",
+  "name": "MS Teams notification about ticket transitions",
+  "state": "DISABLED",
+  "canOtherRuleTrigger": false,
+  "notifyOnError": "FIRSTERROR",
+  "authorAccountId": "JIRAUSER15085",
+  "actorAccountId": "JIRAUSER23851",
+  "created": 1688624615950,
+  "updated": 1739537325898,
+  "trigger": {
+    "id": "46434",
+    "component": "TRIGGER",
+    "schemaVersion": 1,
+    "type": "jira.issue.event.trigger:transitioned",
+    "value": {
+      "synchronous": false,
+      "eventKey": "jira:issue_updated",
+      "issueEvent": "issue_generic",
+      "fromStatus": [],
+      "toStatus": []
+    },
+    "children": [],
+    "conditions": []
+  },
+  "components": [
+    {
+      "id": "46435",
+      "component": "ACTION",
+      "schemaVersion": 2,
+      "type": "msteams.notification",
+      "value": {
+        "webhookUrl": {
+          "key": "MS Teams Kanal \"Jira\" in Team \"Ceroma\""
+        },
+        "title": "Jira-Ticket was transitioned",
+        "subTitle": "",
+        "imageUrl": "https://d283vu6e5qi87p.cloudfront.net/automation/prod/automation-logo.svg",
+        "body": "Hi, Jira-Ticket {{issue.key}} was transitioned",
+        "includeIssueSummary": true
+      },
+      "children": [],
+      "conditions": []
+    }
+  ],
+  "projects": [
+    {
+      "projectId": "11215",
+      "projectTypeKey": "software"
+    }
+  ],
+  "labels": [
+    30
+  ],
+  "tags": []
+}

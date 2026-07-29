@@ -1,0 +1,154 @@
+{
+  "id": 439,
+  "clientKey": "com.codebarrel.tenant.global",
+  "name": "E-Mail notification about failed merge requests",
+  "state": "ENABLED",
+  "canOtherRuleTrigger": false,
+  "notifyOnError": "FIRSTERROR",
+  "authorAccountId": "JIRAUSER15085",
+  "actorAccountId": "JIRAUSER23851",
+  "created": 1718640341475,
+  "updated": 1778059057615,
+  "trigger": {
+    "id": "113136",
+    "component": "TRIGGER",
+    "schemaVersion": 1,
+    "type": "jira.jql.scheduled",
+    "value": {
+      "schedule": {
+        "cronExpression": "0 30 15 ? * TUE,THU *",
+        "method": "CRON",
+        "rate": 0,
+        "rateInterval": 86400
+      },
+      "jql": "project = CER AND status = \"Component Test completed\" AND type in (Story, Bug, Task)",
+      "executionMode": "jql",
+      "onlyUpdatedIssues": false,
+      "processIssuesInBulk": true
+    },
+    "children": [],
+    "conditions": []
+  },
+  "components": [
+    {
+      "id": "113137",
+      "component": "CONDITION",
+      "schemaVersion": 1,
+      "type": "jira.condition.container.block",
+      "children": [
+        {
+          "id": "113138",
+          "component": "CONDITION_BLOCK",
+          "parentId": "113137",
+          "schemaVersion": 1,
+          "type": "jira.condition.if.block",
+          "value": {
+            "conditionMatchType": "ALL"
+          },
+          "children": [
+            {
+              "id": "113140",
+              "component": "ACTION",
+              "parentId": "113138",
+              "schemaVersion": 3,
+              "type": "jira.issue.outgoing.email",
+              "value": {
+                "from": "",
+                "fromName": "",
+                "replyTo": "",
+                "to": [
+                  {
+                    "type": "FREE",
+                    "value": "\"Kozlowski, Matthias (extern)\" <Matthias.Kozlowski.extern@BDR.de>"
+                  },
+                  {
+                    "type": "FREE",
+                    "value": "\"Kiepke, Gerald\" <Gerald.Kiepke@BDR.de>"
+                  },
+                  {
+                    "type": "FREE",
+                    "value": "\"Laska, Adrian\" <Adrian.Laska@bdr.de>"
+                  }
+                ],
+                "cc": [],
+                "bcc": [],
+                "subject": "Tickets im Status \"Component Test Completed\"",
+                "body": "Hallo,\n\ndie folgenden Tickets:\n\n{{#issues}}\n<a href=\"{{url}}\">{{key}} - {{summary}}</a> \n{{/issues}}\n\nbefinden sich noch im Status \"Component Test Completed\". Anscheinend konnten die Merge Requests nicht automatisiert durchgeführt werden. Bitte prüfe die Merge Requests dieser Tickets in GitLab.\n\nViele Grüße\n\nDeine Jira-Automation <a href=\"https://partner.bdr.de/jira/secure/AutomationProjectAdminAction!default.jspa?projectKey=CER#/rule/439\">{{rule.name}}</a>",
+                "mimeType": "text/html",
+                "convertLineBreaks": true
+              },
+              "children": [],
+              "conditions": []
+            }
+          ],
+          "conditions": [
+            {
+              "id": "113139",
+              "component": "CONDITION",
+              "conditionParentId": "113138",
+              "schemaVersion": 1,
+              "type": "jira.comparator.condition",
+              "value": {
+                "first": "{{issues.size}}",
+                "second": "0",
+                "operator": "GREATER_THAN"
+              },
+              "children": [],
+              "conditions": []
+            }
+          ]
+        },
+        {
+          "id": "113141",
+          "component": "CONDITION_BLOCK",
+          "parentId": "113137",
+          "schemaVersion": 1,
+          "type": "jira.condition.if.block",
+          "value": {
+            "conditionMatchType": "ALL"
+          },
+          "children": [
+            {
+              "id": "113142",
+              "component": "ACTION",
+              "parentId": "113141",
+              "schemaVersion": 3,
+              "type": "jira.issue.outgoing.email",
+              "value": {
+                "from": "",
+                "fromName": "",
+                "replyTo": "",
+                "to": [
+                  {
+                    "type": "FREE",
+                    "value": "matthias.kozlowski.extern@bdr.de"
+                  }
+                ],
+                "cc": [],
+                "bcc": [],
+                "subject": "Tickets im Status \"Component Test Completed\"",
+                "body": "Hallo,\n\naktuell befinden sich keine Tickets im Status \"Component Test Completed\". Anscheinend konnten alle Merge Requests automatisiert durchgeführt werden.\n\nViele Grüße\n\nDeine Jira-Automation <a href=\"https://partner.bdr.de/jira/secure/AutomationProjectAdminAction!default.jspa?projectKey=CER#/rule/439\">{{rule.name}}</a>",
+                "mimeType": "text/html",
+                "convertLineBreaks": true
+              },
+              "children": [],
+              "conditions": []
+            }
+          ],
+          "conditions": []
+        }
+      ],
+      "conditions": []
+    }
+  ],
+  "projects": [
+    {
+      "projectId": "11215",
+      "projectTypeKey": "software"
+    }
+  ],
+  "labels": [
+    30
+  ],
+  "tags": []
+}

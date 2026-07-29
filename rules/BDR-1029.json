@@ -1,0 +1,457 @@
+{
+  "id": 1029,
+  "clientKey": "com.codebarrel.tenant.global",
+  "name": "GitLab: Security Alert – HIGH/CRITICAL-Schwachstellen im Trivy-Scan",
+  "state": "ENABLED",
+  "description": "CER-8164: Die Regel verarbeitet eine Ceroma-Pipeline, ermittelt den Job trivy:scan:sbom im Stage sbom-vun, lädt dessen Job-Trace und prüft, ob der Trivy-Scan mindestens eine Schwachstelle mit dem Schweregrad HIGH oder CRITICAL gefunden hat. In diesem Fall wird eine HTML-E-Mail mit Links auf Pipeline, Job und Automation-Regel versendet.",
+  "canOtherRuleTrigger": false,
+  "notifyOnError": "FIRSTERROR",
+  "authorAccountId": "JIRAUSER15085",
+  "actorAccountId": "JIRAUSER15085",
+  "created": 1783437537682,
+  "updated": 1783675778279,
+  "trigger": {
+    "id": "129909",
+    "component": "TRIGGER",
+    "schemaVersion": 1,
+    "type": "jira.jql.scheduled",
+    "value": {
+      "schedule": {
+        "cronExpression": "0 0 6 * * ?",
+        "method": "CRON",
+        "rate": 0,
+        "rateInterval": 86400
+      },
+      "jql": "",
+      "executionMode": "nosearch",
+      "onlyUpdatedIssues": true,
+      "processIssuesInBulk": false
+    },
+    "children": [],
+    "conditions": []
+  },
+  "components": [
+    {
+      "id": "129910",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "codebarrel.action.log",
+      "value": "Starte Security-Check: Prüfe Trivy-Scan auf HIGH/CRITICAL-Schwachstellen",
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "129911",
+      "component": "ACTION",
+      "schemaVersion": 2,
+      "type": "jira.issue.outgoing.webhook",
+      "value": {
+        "url": "https://gitlab.partner.bdr.de/api/v4/projects/5629/pipelines/3303026",
+        "headers": [
+          {
+            "id": "_header_1783437179415",
+            "name": "Content-Type",
+            "value": {
+              "keyOrValue": "application/json",
+              "secret": false
+            }
+          },
+          {
+            "id": "_header_1783437202183",
+            "name": "PRIVATE-TOKEN",
+            "value": {
+              "keyOrValue": "Gitlab-Token zz-sys-cer",
+              "secret": true
+            }
+          }
+        ],
+        "sendIssue": false,
+        "contentType": "empty",
+        "method": "GET",
+        "responseEnabled": true,
+        "usedSecretsKeys": [
+          "Gitlab-Token zz-sys-cer"
+        ]
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "129912",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "codebarrel.action.log",
+      "value": "📊 Verarbeite Pipeline: {{webhookResponse.body}}",
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "129913",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "jira.create.variable",
+      "value": {
+        "id": "_customsmartvalue_id_1783437308658",
+        "name": {
+          "type": "FREE",
+          "value": "pipelineId"
+        },
+        "type": "SMART",
+        "query": {
+          "type": "SMART",
+          "value": "{{webhookResponse.body.id}}"
+        },
+        "lazy": false
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "129914",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "jira.create.variable",
+      "value": {
+        "id": "_customsmartvalue_id_1783437321461",
+        "name": {
+          "type": "FREE",
+          "value": "pipelineUrl"
+        },
+        "type": "SMART",
+        "query": {
+          "type": "SMART",
+          "value": "{{webhookResponse.body.web_url}}"
+        },
+        "lazy": false
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "129915",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "codebarrel.action.log",
+      "value": "Prüfe Jobs der Pipeline #{{pipelineId}}",
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "129916",
+      "component": "ACTION",
+      "schemaVersion": 2,
+      "type": "jira.issue.outgoing.webhook",
+      "value": {
+        "url": "https://gitlab.partner.bdr.de/api/v4/projects/5629/pipelines/{{pipelineId}}/jobs",
+        "headers": [
+          {
+            "id": "_header_1783437357468",
+            "name": "Content-Type",
+            "value": {
+              "keyOrValue": "application/json",
+              "secret": false
+            }
+          },
+          {
+            "id": "_header_1783437378700",
+            "name": "PRIVATE-TOKEN",
+            "value": {
+              "keyOrValue": "Gitlab-Token zz-sys-cer",
+              "secret": true
+            }
+          }
+        ],
+        "sendIssue": false,
+        "contentType": "empty",
+        "method": "GET",
+        "responseEnabled": true,
+        "usedSecretsKeys": [
+          "Gitlab-Token zz-sys-cer"
+        ]
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "129917",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "codebarrel.action.log",
+      "value": "Jobs in Pipeline #{{pipelineId}} gefunden: {{webhookResponses.last.body.size}}",
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "129918",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "jira.create.variable",
+      "value": {
+        "id": "_customsmartvalue_id_1783609407603",
+        "name": {
+          "type": "FREE",
+          "value": "trivyJobId"
+        },
+        "type": "SMART",
+        "query": {
+          "type": "SMART",
+          "value": "{{#webhookResponse.body}}{{#if(equals(name,\"trivy:scan:sbom: [trivy, $TRIVY_SBOM]\"))}}{{id}}{{/}}{{/}}"
+        },
+        "lazy": false
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "129919",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "jira.create.variable",
+      "value": {
+        "id": "_customsmartvalue_id_1783609420015",
+        "name": {
+          "type": "FREE",
+          "value": "trivyJobUrl"
+        },
+        "type": "SMART",
+        "query": {
+          "type": "SMART",
+          "value": "{{#webhookResponse.body}}{{#if(equals(name,\"trivy:scan:sbom: [trivy, $TRIVY_SBOM]\"))}}{{web_url}}{{/}}{{/}}"
+        },
+        "lazy": false
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "129920",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "jira.create.variable",
+      "value": {
+        "id": "_customsmartvalue_id_1783609432070",
+        "name": {
+          "type": "FREE",
+          "value": "trivyJobStage"
+        },
+        "type": "SMART",
+        "query": {
+          "type": "SMART",
+          "value": "{{#webhookResponse.body}}{{#if(equals(name,\"trivy:scan:sbom: [trivy, $TRIVY_SBOM]\"))}}{{stage}}{{/}}{{/}}"
+        },
+        "lazy": false
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "129921",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "jira.create.variable",
+      "value": {
+        "id": "_customsmartvalue_id_1783674322304",
+        "name": {
+          "type": "FREE",
+          "value": "trivyJobStatus"
+        },
+        "type": "SMART",
+        "query": {
+          "type": "SMART",
+          "value": "{{#webhookResponse.body}}{{#if(equals(name,\"trivy:scan:sbom: [trivy, $TRIVY_SBOM]\"))}}{{status}}{{/}}{{/}}"
+        },
+        "lazy": false
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "129922",
+      "component": "CONDITION",
+      "schemaVersion": 1,
+      "type": "jira.comparator.condition",
+      "value": {
+        "first": "{{trivyJobId}}",
+        "second": "",
+        "operator": "NOT_EQUALS"
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "129923",
+      "component": "CONDITION",
+      "schemaVersion": 1,
+      "type": "jira.comparator.condition",
+      "value": {
+        "first": "{{trivyJobStage}}",
+        "second": "sbom-vun",
+        "operator": "EQUALS"
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "129924",
+      "component": "CONDITION",
+      "schemaVersion": 1,
+      "type": "jira.comparator.condition",
+      "value": {
+        "first": "{{trivyJobStatus}}",
+        "second": "failed",
+        "operator": "EQUALS"
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "129925",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "codebarrel.action.log",
+      "value": "https://gitlab.partner.bdr.de/api/v4/projects/5629/jobs/{{trivyJobId}}/trace",
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "129926",
+      "component": "ACTION",
+      "schemaVersion": 2,
+      "type": "jira.issue.outgoing.webhook",
+      "value": {
+        "url": "https://gitlab.partner.bdr.de/api/v4/projects/5629/jobs/{{trivyJobId}}/trace",
+        "headers": [
+          {
+            "id": "_header_1783609480091",
+            "name": "Content-Type",
+            "value": {
+              "keyOrValue": "application/json",
+              "secret": false
+            }
+          },
+          {
+            "id": "_header_1783609518435",
+            "name": "PRIVATE-TOKEN",
+            "value": {
+              "keyOrValue": "Gitlab-Token zz-sys-cer",
+              "secret": true
+            }
+          }
+        ],
+        "sendIssue": false,
+        "contentType": "empty",
+        "method": "GET",
+        "responseEnabled": true,
+        "usedSecretsKeys": [
+          "Gitlab-Token zz-sys-cer"
+        ]
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "129927",
+      "component": "CONDITION",
+      "schemaVersion": 1,
+      "type": "jira.condition.container.block",
+      "children": [
+        {
+          "id": "129928",
+          "component": "CONDITION_BLOCK",
+          "parentId": "129927",
+          "schemaVersion": 1,
+          "type": "jira.condition.if.block",
+          "value": {
+            "conditionMatchType": "ALL"
+          },
+          "children": [
+            {
+              "id": "129930",
+              "component": "ACTION",
+              "parentId": "129928",
+              "schemaVersion": 3,
+              "type": "jira.issue.outgoing.email",
+              "value": {
+                "from": "",
+                "fromName": "",
+                "replyTo": "",
+                "to": [
+                  {
+                    "type": "FREE",
+                    "value": "matthias.kozlowski.extern@bdr.de"
+                  }
+                ],
+                "cc": [],
+                "bcc": [],
+                "subject": "🚨 Ceroma Security Alert: HIGH/CRITICAL-Schwachstellen gefunden (Pipeline #{{pipelineId}})",
+                "body": "<p>Hallo,</p>\n\n<p>\nIm Trivy-Sicherheits-Scan der Ceroma-Pipeline wurden Schwachstellen\nmit dem Schweregrad <strong>HIGH</strong> oder\n<strong>CRITICAL</strong> gefunden.\n</p>\n\n<h3>Details</h3>\n\n<ul>\n<li>\n  <strong>Projekt:</strong>\n  <a href=\"https://gitlab.partner.bdr.de/cer/ceroma/app\">Ceroma</a>\n</li>\n<li>\n  <strong>Pipeline:</strong>\n  <a href=\"{{pipelineUrl}}\">#{{pipelineId}}</a>\n</li>\n\n<li>\n  <strong>Job:</strong>\n  <a href=\"{{trivyJobUrl}}\">\n    trivy:scan:sbom (#{{trivyJobId}})\n  </a>\n</li>\n</ul>\n\n<h3>Ergebnis</h3>\n\n<p>\nDer Trivy-Scan hat mindestens eine Schwachstelle mit dem Schweregrad\n<strong>HIGH</strong> oder <strong>CRITICAL</strong> erkannt.\nDie vollständige Ausgabe des Trivy-Scans befindet sich im Job-Log.\n</p>\n\n<p>\n<a href=\"{{trivyJobUrl}}\">\n➡ Trivy-Job in GitLab öffnen\n</a>\n</p>\n\n<h3>Nächste Schritte</h3>\n\n<ol>\n  <li>Den Trivy-Job öffnen und die gemeldeten Schwachstellen prüfen.</li>\n  <li>Bewerten, ob die betroffenen Abhängigkeiten aktualisiert werden können.</li>\n  <li>Falls erforderlich, Tickets gemäß der\n      <a href=\"https://partner.bdr.de/confluence/x/fak5Hg\">\n      Vorlage für CVE-Tickets\n      </a>\n      erstellen.\n  </li>\n</ol>\n\n<hr>\n\n<p style=\"font-size:12px;color:#666;\">\nDiese Benachrichtigung wurde automatisch durch die\n<a href=\"https://partner.bdr.de/jira/secure/AutomationProjectAdminAction!default.jspa?projectKey=CER#/rule/1029\">\nJira-Automation-Regel <strong>GitLab: Security Alert – HIGH/CRITICAL-Schwachstellen im Trivy-Scan</strong>\n</a>\nerstellt.\n</p>",
+                "mimeType": "text/html",
+                "convertLineBreaks": false
+              },
+              "children": [],
+              "conditions": []
+            },
+            {
+              "id": "129931",
+              "component": "ACTION",
+              "parentId": "129928",
+              "schemaVersion": 1,
+              "type": "codebarrel.action.log",
+              "value": "✅ E-Mail-Benachrichtigung gesendet an: matthias.kozlowski.extern@bdr.de",
+              "children": [],
+              "conditions": []
+            }
+          ],
+          "conditions": [
+            {
+              "id": "129929",
+              "component": "CONDITION",
+              "conditionParentId": "129928",
+              "schemaVersion": 1,
+              "type": "jira.comparator.condition",
+              "value": {
+                "first": "{{webhookResponse.body}}",
+                "second": "HIGH:\\s*[1-9][0-9]*|CRITICAL:\\s*[1-9][0-9]*",
+                "operator": "REGEX_CONTAINS"
+              },
+              "children": [],
+              "conditions": []
+            }
+          ]
+        },
+        {
+          "id": "129932",
+          "component": "CONDITION_BLOCK",
+          "parentId": "129927",
+          "schemaVersion": 1,
+          "type": "jira.condition.if.block",
+          "value": {
+            "conditionMatchType": "ALL"
+          },
+          "children": [
+            {
+              "id": "129933",
+              "component": "ACTION",
+              "parentId": "129932",
+              "schemaVersion": 1,
+              "type": "codebarrel.action.log",
+              "value": "Keine HIGH|CRITICAL issues enthalten",
+              "children": [],
+              "conditions": []
+            }
+          ],
+          "conditions": []
+        }
+      ],
+      "conditions": []
+    }
+  ],
+  "projects": [
+    {
+      "projectId": "11215",
+      "projectTypeKey": "software"
+    }
+  ],
+  "labels": [],
+  "tags": []
+}

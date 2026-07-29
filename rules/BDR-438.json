@@ -1,0 +1,95 @@
+{
+  "id": 438,
+  "clientKey": "com.codebarrel.tenant.global",
+  "name": "GitLab: Log Pull request merged events",
+  "state": "ENABLED",
+  "description": "Sample reaction to a pull (merge) request merge. Creates only a log item.",
+  "canOtherRuleTrigger": false,
+  "notifyOnError": "FIRSTERROR",
+  "authorAccountId": "JIRAUSER15085",
+  "actorAccountId": "JIRAUSER23851",
+  "created": 1718394030350,
+  "updated": 1771574340312,
+  "trigger": {
+    "id": "101303",
+    "component": "TRIGGER",
+    "schemaVersion": 1,
+    "type": "com.xiplink.jira.git.jira_git_plugin:pull-request-merged-trigger",
+    "value": {
+      "prMode": 16,
+      "isCustomized": false
+    },
+    "children": [],
+    "conditions": []
+  },
+  "components": [
+    {
+      "id": "101304",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "codebarrel.action.log",
+      "value": "pullRequest.title: {{pullRequest.title}} pullRequest.url: {{pullRequest.url}} pullRequest.state: {{pullRequest.state}} ",
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "101305",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "codebarrel.action.log",
+      "value": "pullRequest.updatedDate: {{pullRequest.updatedDate}}",
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "101306",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "codebarrel.action.log",
+      "value": "pullRequest.destinationBranch.repository.name: {{pullRequest.destinationBranch.repository.name}}",
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "101307",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "codebarrel.action.log",
+      "value": "pullRequest.sourceBranch.name: {{pullRequest.sourceBranch.name}} pullRequest.destinationBranch.name: {{pullRequest.destinationBranch.name}}",
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "101308",
+      "component": "CONDITION",
+      "schemaVersion": 1,
+      "type": "jira.comparator.condition",
+      "value": {
+        "first": "{{pullRequest.destinationBranch.name}} ",
+        "second": "develop",
+        "operator": "STARTS_WITH"
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "101309",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "codebarrel.action.log",
+      "value": "{{pullRequest.destinationBranch.name}} starts with develop!",
+      "children": [],
+      "conditions": []
+    }
+  ],
+  "projects": [
+    {
+      "projectId": "11215",
+      "projectTypeKey": "software"
+    }
+  ],
+  "labels": [
+    29
+  ],
+  "tags": []
+}

@@ -1,0 +1,44 @@
+{
+  "id": 913,
+  "clientKey": "com.codebarrel.tenant.global",
+  "name": "Dummy 3",
+  "state": "DISABLED",
+  "description": "Leere Regel mit angepasstem Actor als Vorbereitung für neue Anforderungen.",
+  "canOtherRuleTrigger": false,
+  "notifyOnError": "FIRSTERROR",
+  "authorAccountId": "JIRAUSER15085",
+  "actorAccountId": "JIRAUSER15085",
+  "created": 1771327111999,
+  "updated": 1771327489184,
+  "trigger": {
+    "id": "100372",
+    "component": "TRIGGER",
+    "schemaVersion": 1,
+    "type": "jira.sprint.event.trigger:started",
+    "value": {
+      "boardId": 639,
+      "sprintNameFilter": ""
+    },
+    "children": [],
+    "conditions": []
+  },
+  "components": [
+    {
+      "id": "100373",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "codebarrel.action.log",
+      "value": "Test",
+      "children": [],
+      "conditions": []
+    }
+  ],
+  "projects": [
+    {
+      "projectId": "11215",
+      "projectTypeKey": "software"
+    }
+  ],
+  "labels": [],
+  "tags": []
+}

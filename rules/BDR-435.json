@@ -1,0 +1,488 @@
+{
+  "id": 435,
+  "clientKey": "com.codebarrel.tenant.global",
+  "name": "GitLab: Move ticket to \"READY FOR TESTING / SYSTEM TEST\"",
+  "state": "ENABLED",
+  "description": "CER-6540: Wenn in GitLab der Merge request approved wurde, dann wird das zugehörige Ticket in Jira automatisiert vom Status \"IMPLEMENTED\" nach \"READY FOR TESTING\" überführt.\nCER-6530: Wenn in GitLab der Merge request durchgeführt wurde, dann wird das zugehörige Ticket in Jira automatisiert vom Status \"COMPONENT TEST COMPLETED\" nach \"READY FOR SYSTEM TEST\" überführt.\nIn beiden Fällen ist der Trigger ein Webhook aus GitLab",
+  "canOtherRuleTrigger": false,
+  "notifyOnError": "FIRSTERROR",
+  "authorAccountId": "JIRAUSER15085",
+  "actorAccountId": "JIRAUSER23851",
+  "created": 1718103235777,
+  "updated": 1765802738324,
+  "trigger": {
+    "id": "88621",
+    "component": "TRIGGER",
+    "schemaVersion": 1,
+    "type": "jira.incoming.webhook",
+    "value": {
+      "webhookToken": "09cf7162d6ead826cda4812931ca817cf14ac3cb",
+      "searchOrProvide": "none",
+      "jql": "ID = {{webhookData.object_attributes.source_branch.remove(\"feature/\")}}",
+      "processIssuesInBulk": false
+    },
+    "children": [],
+    "conditions": []
+  },
+  "components": [
+    {
+      "id": "88622",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "codebarrel.action.log",
+      "value": "project: {{webhookData.project.name}}",
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "88623",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "codebarrel.action.log",
+      "value": "event_type: {{webhookData.event_type}}",
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "88624",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "codebarrel.action.log",
+      "value": "action: {{webhookData.object_attributes.action}}",
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "88625",
+      "component": "CONDITION",
+      "schemaVersion": 1,
+      "type": "jira.comparator.condition",
+      "value": {
+        "first": "{{webhookData.event_type}}",
+        "second": "merge_request",
+        "operator": "EQUALS"
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "88626",
+      "component": "CONDITION",
+      "schemaVersion": 1,
+      "type": "jira.comparator.condition",
+      "value": {
+        "first": "{{webhookData.object_attributes.action}}",
+        "second": "(approved|merge)",
+        "operator": "REGEX_CONTAINS"
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "88627",
+      "component": "CONDITION",
+      "schemaVersion": 1,
+      "type": "jira.comparator.condition",
+      "value": {
+        "first": "{{webhookData.project.name}}",
+        "second": "documentation",
+        "operator": "NOT_CONTAINS"
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "88628",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "codebarrel.action.log",
+      "value": "Merge request iid: {{webhookData.object_attributes.iid}}",
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "88629",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "codebarrel.action.log",
+      "value": "Source branch: {{webhookData.object_attributes.source_branch}}",
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "88630",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "codebarrel.action.log",
+      "value": "Title: {{webhookData.object_attributes.title}}",
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "88631",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "jira.create.variable",
+      "value": {
+        "id": "_customsmartvalue_id_1722266891869",
+        "name": {
+          "type": "FREE",
+          "value": "TicketID"
+        },
+        "type": "SMART",
+        "query": {
+          "type": "SMART",
+          "value": "NONE"
+        },
+        "lazy": false
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "88632",
+      "component": "CONDITION",
+      "schemaVersion": 1,
+      "type": "jira.condition.container.block",
+      "children": [
+        {
+          "id": "88633",
+          "component": "CONDITION_BLOCK",
+          "parentId": "88632",
+          "schemaVersion": 1,
+          "type": "jira.condition.if.block",
+          "value": {
+            "conditionMatchType": "ALL"
+          },
+          "children": [
+            {
+              "id": "88635",
+              "component": "ACTION",
+              "parentId": "88633",
+              "schemaVersion": 1,
+              "type": "jira.create.variable",
+              "value": {
+                "id": "_customsmartvalue_id_1722265970574",
+                "name": {
+                  "type": "FREE",
+                  "value": "TicketID"
+                },
+                "type": "SMART",
+                "query": {
+                  "type": "SMART",
+                  "value": "{{webhookData.object_attributes.source_branch.remove(\"feature/\")}}"
+                },
+                "lazy": false
+              },
+              "children": [],
+              "conditions": []
+            }
+          ],
+          "conditions": [
+            {
+              "id": "88634",
+              "component": "CONDITION",
+              "conditionParentId": "88633",
+              "schemaVersion": 1,
+              "type": "jira.comparator.condition",
+              "value": {
+                "first": "{{webhookData.object_attributes.source_branch}}",
+                "second": "CER-",
+                "operator": "CONTAINS"
+              },
+              "children": [],
+              "conditions": []
+            }
+          ]
+        },
+        {
+          "id": "88636",
+          "component": "CONDITION_BLOCK",
+          "parentId": "88632",
+          "schemaVersion": 1,
+          "type": "jira.condition.if.block",
+          "value": {
+            "conditionMatchType": "ALL"
+          },
+          "children": [
+            {
+              "id": "88638",
+              "component": "ACTION",
+              "parentId": "88636",
+              "schemaVersion": 1,
+              "type": "jira.create.variable",
+              "value": {
+                "id": "_customsmartvalue_id_1722266193963",
+                "name": {
+                  "type": "FREE",
+                  "value": "TicketID"
+                },
+                "type": "SMART",
+                "query": {
+                  "type": "SMART",
+                  "value": "{{webhookData.object_attributes.title.split(\" \").first}}"
+                },
+                "lazy": false
+              },
+              "children": [],
+              "conditions": []
+            }
+          ],
+          "conditions": [
+            {
+              "id": "88637",
+              "component": "CONDITION",
+              "conditionParentId": "88636",
+              "schemaVersion": 1,
+              "type": "jira.comparator.condition",
+              "value": {
+                "first": "{{webhookData.object_attributes.title}}",
+                "second": "CER-",
+                "operator": "CONTAINS"
+              },
+              "children": [],
+              "conditions": []
+            }
+          ]
+        }
+      ],
+      "conditions": []
+    },
+    {
+      "id": "88639",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "codebarrel.action.log",
+      "value": "Ticket ID = {{TicketID}}",
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "88640",
+      "component": "CONDITION",
+      "schemaVersion": 1,
+      "type": "jira.comparator.condition",
+      "value": {
+        "first": "{{TicketID}}",
+        "second": "CER-",
+        "operator": "STARTS_WITH"
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "88641",
+      "component": "CONDITION",
+      "schemaVersion": 1,
+      "type": "jira.condition.container.block",
+      "children": [
+        {
+          "id": "88642",
+          "component": "CONDITION_BLOCK",
+          "parentId": "88641",
+          "schemaVersion": 1,
+          "type": "jira.condition.if.block",
+          "value": {
+            "conditionMatchType": "ALL"
+          },
+          "children": [
+            {
+              "id": "88644",
+              "component": "BRANCH",
+              "parentId": "88642",
+              "schemaVersion": 1,
+              "type": "jira.issue.related",
+              "value": {
+                "relatedType": "jql",
+                "jql": "ID = {{TicketID}}",
+                "linkTypes": [],
+                "onlyUpdatedIssues": false,
+                "processIssuesInBulk": false
+              },
+              "children": [
+                {
+                  "id": "88645",
+                  "component": "ACTION",
+                  "parentId": "88644",
+                  "schemaVersion": 1,
+                  "type": "codebarrel.action.log",
+                  "value": "issue.key: {{issue.key}} status: {{issue.status.name}}",
+                  "children": [],
+                  "conditions": []
+                },
+                {
+                  "id": "88646",
+                  "component": "CONDITION",
+                  "parentId": "88644",
+                  "schemaVersion": 3,
+                  "type": "jira.issue.condition",
+                  "value": {
+                    "selectedField": {
+                      "type": "ID",
+                      "value": "status"
+                    },
+                    "comparison": "ONE_OF",
+                    "compareValue": {
+                      "type": "ID",
+                      "value": "[\"11007\"]",
+                      "multiValue": true
+                    }
+                  },
+                  "children": [],
+                  "conditions": []
+                },
+                {
+                  "id": "88647",
+                  "component": "ACTION",
+                  "parentId": "88644",
+                  "schemaVersion": 6,
+                  "type": "jira.issue.transition",
+                  "value": {
+                    "operations": [],
+                    "sendNotifications": true,
+                    "useLegacyRendering": false,
+                    "transitionMode": "status",
+                    "destinationStatus": {
+                      "type": "ID",
+                      "value": "11502"
+                    },
+                    "transitionMatch": "",
+                    "ignoreConditions": false
+                  },
+                  "children": [],
+                  "conditions": []
+                }
+              ],
+              "conditions": []
+            }
+          ],
+          "conditions": [
+            {
+              "id": "88643",
+              "component": "CONDITION",
+              "conditionParentId": "88642",
+              "schemaVersion": 1,
+              "type": "jira.comparator.condition",
+              "value": {
+                "first": "{{webhookData.object_attributes.action}}",
+                "second": "approved",
+                "operator": "EQUALS"
+              },
+              "children": [],
+              "conditions": []
+            }
+          ]
+        },
+        {
+          "id": "88648",
+          "component": "CONDITION_BLOCK",
+          "parentId": "88641",
+          "schemaVersion": 1,
+          "type": "jira.condition.if.block",
+          "value": {
+            "conditionMatchType": "ALL"
+          },
+          "children": [
+            {
+              "id": "88650",
+              "component": "BRANCH",
+              "parentId": "88648",
+              "schemaVersion": 1,
+              "type": "jira.issue.related",
+              "value": {
+                "relatedType": "jql",
+                "jql": "ID = {{TicketID}}",
+                "linkTypes": [],
+                "onlyUpdatedIssues": false,
+                "processIssuesInBulk": false
+              },
+              "children": [
+                {
+                  "id": "88651",
+                  "component": "ACTION",
+                  "parentId": "88650",
+                  "schemaVersion": 1,
+                  "type": "codebarrel.action.log",
+                  "value": "issue.key: {{issue.key}} status: {{issue.status.name}}",
+                  "children": [],
+                  "conditions": []
+                },
+                {
+                  "id": "88652",
+                  "component": "CONDITION",
+                  "parentId": "88650",
+                  "schemaVersion": 3,
+                  "type": "jira.issue.condition",
+                  "value": {
+                    "selectedField": {
+                      "type": "ID",
+                      "value": "status"
+                    },
+                    "comparison": "ONE_OF",
+                    "compareValue": {
+                      "type": "ID",
+                      "value": "[\"13700\"]",
+                      "multiValue": true
+                    }
+                  },
+                  "children": [],
+                  "conditions": []
+                },
+                {
+                  "id": "88653",
+                  "component": "ACTION",
+                  "parentId": "88650",
+                  "schemaVersion": 6,
+                  "type": "jira.issue.transition",
+                  "value": {
+                    "operations": [],
+                    "sendNotifications": true,
+                    "useLegacyRendering": false,
+                    "transitionMode": "status",
+                    "destinationStatus": {
+                      "type": "ID",
+                      "value": "12207"
+                    },
+                    "transitionMatch": "",
+                    "ignoreConditions": false
+                  },
+                  "children": [],
+                  "conditions": []
+                }
+              ],
+              "conditions": []
+            }
+          ],
+          "conditions": [
+            {
+              "id": "88649",
+              "component": "CONDITION",
+              "conditionParentId": "88648",
+              "schemaVersion": 1,
+              "type": "jira.comparator.condition",
+              "value": {
+                "first": "{{webhookData.object_attributes.action}}",
+                "second": "merge",
+                "operator": "EQUALS"
+              },
+              "children": [],
+              "conditions": []
+            }
+          ]
+        }
+      ],
+      "conditions": []
+    }
+  ],
+  "projects": [
+    {
+      "projectId": "11215",
+      "projectTypeKey": "software"
+    }
+  ],
+  "labels": [
+    31,
+    29
+  ],
+  "tags": []
+}

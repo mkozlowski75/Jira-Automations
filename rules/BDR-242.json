@@ -1,0 +1,142 @@
+{
+  "id": 242,
+  "clientKey": "com.codebarrel.tenant.global",
+  "name": "E-Mail notification after \"Vorläufige Freigabeempfehlung Bdr\"",
+  "state": "ENABLED",
+  "description": "When a release ticket is transfered to status \"Vorläufige Freigabeempfehlung Bdr\":\n- Sends an email to Brigitte and Matthias about documentation",
+  "canOtherRuleTrigger": false,
+  "notifyOnError": "EVERYERROR",
+  "authorAccountId": "JIRAUSER15085",
+  "actorAccountId": "JIRAUSER23851",
+  "created": 1694693448918,
+  "updated": 1773388573757,
+  "trigger": {
+    "id": "104395",
+    "component": "TRIGGER",
+    "schemaVersion": 1,
+    "type": "jira.issue.event.trigger:transitioned",
+    "value": {
+      "synchronous": false,
+      "eventKey": "jira:issue_updated",
+      "issueEvent": "issue_generic",
+      "fromStatus": [
+        {
+          "type": "ID",
+          "value": "10202"
+        }
+      ],
+      "toStatus": [
+        {
+          "type": "ID",
+          "value": "12501"
+        }
+      ]
+    },
+    "children": [],
+    "conditions": []
+  },
+  "components": [
+    {
+      "id": "104396",
+      "component": "CONDITION",
+      "schemaVersion": 3,
+      "type": "jira.issue.condition",
+      "value": {
+        "selectedField": {
+          "type": "ID",
+          "value": "issuetype"
+        },
+        "selectedFieldType": "issuetype",
+        "comparison": "EQUALS",
+        "compareValue": {
+          "type": "ID",
+          "value": "10200",
+          "multiValue": false
+        }
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "104397",
+      "component": "CONDITION",
+      "schemaVersion": 3,
+      "type": "jira.issue.condition",
+      "value": {
+        "selectedField": {
+          "type": "ID",
+          "value": "components"
+        },
+        "selectedFieldType": "components",
+        "comparison": "CONTAINS_ANY",
+        "compareValue": {
+          "type": "NAME",
+          "value": "[\"CeromaCore\"]",
+          "multiValue": true
+        }
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "104398",
+      "component": "CONDITION",
+      "schemaVersion": 3,
+      "type": "jira.issue.condition",
+      "value": {
+        "selectedField": {
+          "type": "ID",
+          "value": "summary"
+        },
+        "selectedFieldType": "summary",
+        "comparison": "ENDS_WITH",
+        "compareValue": {
+          "type": "VALUE",
+          "value": ".0",
+          "multiValue": false
+        }
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "104399",
+      "component": "ACTION",
+      "schemaVersion": 3,
+      "type": "jira.issue.outgoing.email",
+      "value": {
+        "from": "",
+        "fromName": "",
+        "replyTo": "",
+        "to": [
+          {
+            "type": "FREE",
+            "value": "b.nemeth@d-trust.net"
+          },
+          {
+            "type": "FREE",
+            "value": "Matthias.Kozlowski.extern@BDR.de"
+          }
+        ],
+        "cc": [],
+        "bcc": [],
+        "subject": "Sprint {{issue.fields.sprint}}: Dokumentationsrelevante Tickets kennzeichnen",
+        "body": "Hallo,\n\ndie vorläufige Freigabe für {{issue.fields.summary}} wurde erteilt. Bitte denkt daran die dokumentationsrelevanten Tickets für Sprint {{issue.fields.sprint}} zu kennzeichnen.\n\nViele Grüße\n\nDeine Jira-Automation <a href=\"https://partner.bdr.de/jira/secure/AutomationProjectAdminAction!default.jspa?projectKey=CER#/rule/242\">{{rule.name}}</a>",
+        "mimeType": "text/html",
+        "convertLineBreaks": true
+      },
+      "children": [],
+      "conditions": []
+    }
+  ],
+  "projects": [
+    {
+      "projectId": "11215",
+      "projectTypeKey": "software"
+    }
+  ],
+  "labels": [
+    30
+  ],
+  "tags": []
+}

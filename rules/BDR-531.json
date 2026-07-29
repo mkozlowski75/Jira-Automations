@@ -1,0 +1,142 @@
+{
+  "id": 531,
+  "clientKey": "com.codebarrel.tenant.global",
+  "name": "E-Mail notifications after \"Finale Freigabeempfehlung Bdr\"",
+  "state": "ENABLED",
+  "description": "When a release ticket is transfered to status \"Finale Freigabeempfehlung Bdr\":\n- Sends an email to Matthias about email and meeting before sprint start",
+  "canOtherRuleTrigger": false,
+  "notifyOnError": "FIRSTERROR",
+  "authorAccountId": "JIRAUSER15085",
+  "actorAccountId": "JIRAUSER23851",
+  "created": 1730745278593,
+  "updated": 1773051243421,
+  "trigger": {
+    "id": "103925",
+    "component": "TRIGGER",
+    "schemaVersion": 1,
+    "type": "jira.issue.event.trigger:transitioned",
+    "value": {
+      "synchronous": false,
+      "eventKey": "jira:issue_updated",
+      "issueEvent": "issue_generic",
+      "fromStatus": [
+        {
+          "type": "ID",
+          "value": "12501"
+        }
+      ],
+      "toStatus": [
+        {
+          "type": "ID",
+          "value": "12503"
+        }
+      ]
+    },
+    "children": [],
+    "conditions": []
+  },
+  "components": [
+    {
+      "id": "103926",
+      "component": "CONDITION",
+      "schemaVersion": 3,
+      "type": "jira.issue.condition",
+      "value": {
+        "selectedField": {
+          "type": "ID",
+          "value": "components"
+        },
+        "selectedFieldType": "components",
+        "comparison": "CONTAINS_ANY",
+        "compareValue": {
+          "type": "NAME",
+          "value": "[\"CeromaCore\"]",
+          "multiValue": true
+        }
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "103927",
+      "component": "CONDITION",
+      "schemaVersion": 3,
+      "type": "jira.issue.condition",
+      "value": {
+        "selectedField": {
+          "type": "ID",
+          "value": "summary"
+        },
+        "selectedFieldType": "summary",
+        "comparison": "ENDS_WITH",
+        "compareValue": {
+          "type": "VALUE",
+          "value": ".0",
+          "multiValue": false
+        }
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "103928",
+      "component": "ACTION",
+      "schemaVersion": 3,
+      "type": "jira.issue.outgoing.email",
+      "value": {
+        "from": "",
+        "fromName": "",
+        "replyTo": "",
+        "to": [
+          {
+            "type": "FREE",
+            "value": "matthias.kozlowski.extern@bdr.de"
+          }
+        ],
+        "cc": [],
+        "bcc": [],
+        "subject": "Sprint {{issue.fields.sprint}}: Changelogs erstellen",
+        "body": "Hallo,\n\ndie finale Freigabe für {{issue.fields.summary}} wurde erteilt. Bitte denke daran die <a href=\"https://partner.bdr.de/confluence/x/UBxSBg\">Changelogs in Confluence></a> für die aktualisierten Komponenten zu erstellen und zu veröffentlichen.\n\nViele Grüße\n\nDeine Jira-Automation <a href=\"https://partner.bdr.de/jira/secure/AutomationProjectAdminAction!default.jspa?projectKey=CER#/rule/531\">{{rule.name}}</a>",
+        "mimeType": "text/html",
+        "convertLineBreaks": true
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "103929",
+      "component": "ACTION",
+      "schemaVersion": 3,
+      "type": "jira.issue.outgoing.email",
+      "value": {
+        "from": "",
+        "fromName": "",
+        "replyTo": "",
+        "to": [
+          {
+            "type": "FREE",
+            "value": "matthias.kozlowski.extern@bdr.de"
+          }
+        ],
+        "cc": [],
+        "bcc": [],
+        "subject": "Sprint {{issue.fields.sprint}}: Sprint Review erstellen",
+        "body": "Hallo,\n\ndie finale Freigabe für {{issue.fields.summary}} wurde erteilt. Bitte denke daran die <a href=\"https://partner.bdr.de/confluence/x/qA4ABg\">Sprint Review in Confluence></a> für den Sprint {{issue.fields.sprint}} zu erstellen und zu veröffentlichen:\n\n<ul>\n   <li>Neue Seite erstellen</li>\n   <li>Kurze Beschreibung der nutzerrelevanten Tickets erstellen</li>\n   <li>Freigabe von Philipp einfordern</li>\n   <li>Freigabe von Philipp abwarten</li>\n   <li>die Verteiler \"Sprint Review \" und \"Ceroma-Team erweitern\" (CC) aus meinem Outlook verwenden</li>\n</ul>\n\nViele Grüße\n\nDeine Jira-Automation <a href=\"https://partner.bdr.de/jira/secure/AutomationProjectAdminAction!default.jspa?projectKey=CER#/rule/531\">{{rule.name}}</a>",
+        "mimeType": "text/html",
+        "convertLineBreaks": true
+      },
+      "children": [],
+      "conditions": []
+    }
+  ],
+  "projects": [
+    {
+      "projectId": "11215",
+      "projectTypeKey": "software"
+    }
+  ],
+  "labels": [
+    30
+  ],
+  "tags": []
+}

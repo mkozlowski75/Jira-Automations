@@ -1,0 +1,178 @@
+{
+  "id": 490,
+  "clientKey": "com.codebarrel.tenant.global",
+  "name": "Jira: Move user manual tickets to READY FOR ACCEPTANCE",
+  "state": "ENABLED",
+  "description": "Move user manual tickets from \"READY FOR TESTING\" to \"READY FOR ACCEPTANCE\", because user manual tickets are not tested neither in component nor system test.",
+  "canOtherRuleTrigger": false,
+  "notifyOnError": "FIRSTERROR",
+  "authorAccountId": "JIRAUSER15085",
+  "actorAccountId": "JIRAUSER23851",
+  "created": 1724762878648,
+  "updated": 1765280168903,
+  "trigger": {
+    "id": "86215",
+    "component": "TRIGGER",
+    "schemaVersion": 1,
+    "type": "jira.issue.event.trigger:transitioned",
+    "value": {
+      "synchronous": false,
+      "eventKey": "jira:issue_updated",
+      "issueEvent": "issue_generic",
+      "fromStatus": [],
+      "toStatus": [
+        {
+          "type": "ID",
+          "value": "11502"
+        }
+      ]
+    },
+    "children": [],
+    "conditions": []
+  },
+  "components": [
+    {
+      "id": "86216",
+      "component": "CONDITION",
+      "schemaVersion": 3,
+      "type": "jira.issue.condition",
+      "value": {
+        "selectedField": {
+          "type": "ID",
+          "value": "components"
+        },
+        "selectedFieldType": "components",
+        "comparison": "CONTAINS_ANY",
+        "compareValue": {
+          "type": "NAME",
+          "value": "[\"Benutzerhandbuch\"]",
+          "multiValue": true
+        }
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "86217",
+      "component": "ACTION",
+      "schemaVersion": 6,
+      "type": "jira.issue.transition",
+      "value": {
+        "operations": [],
+        "sendNotifications": true,
+        "useLegacyRendering": false,
+        "transitionMode": "status",
+        "destinationStatus": {
+          "type": "ID",
+          "value": "12206"
+        },
+        "transitionMatch": "",
+        "ignoreConditions": false
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "86218",
+      "component": "ACTION",
+      "schemaVersion": 6,
+      "type": "jira.issue.transition",
+      "value": {
+        "operations": [],
+        "sendNotifications": true,
+        "useLegacyRendering": false,
+        "transitionMode": "status",
+        "destinationStatus": {
+          "type": "ID",
+          "value": "13700"
+        },
+        "transitionMatch": "",
+        "ignoreConditions": false
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "86219",
+      "component": "ACTION",
+      "schemaVersion": 6,
+      "type": "jira.issue.transition",
+      "value": {
+        "operations": [],
+        "sendNotifications": true,
+        "useLegacyRendering": false,
+        "transitionMode": "status",
+        "destinationStatus": {
+          "type": "ID",
+          "value": "12207"
+        },
+        "transitionMatch": "",
+        "ignoreConditions": false
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "86220",
+      "component": "ACTION",
+      "schemaVersion": 6,
+      "type": "jira.issue.transition",
+      "value": {
+        "operations": [],
+        "sendNotifications": true,
+        "useLegacyRendering": false,
+        "transitionMode": "status",
+        "destinationStatus": {
+          "type": "ID",
+          "value": "10202"
+        },
+        "transitionMatch": "",
+        "ignoreConditions": false
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "86221",
+      "component": "ACTION",
+      "schemaVersion": 6,
+      "type": "jira.issue.transition",
+      "value": {
+        "operations": [],
+        "sendNotifications": true,
+        "useLegacyRendering": false,
+        "transitionMode": "status",
+        "destinationStatus": {
+          "type": "ID",
+          "value": "10709"
+        },
+        "transitionMatch": "",
+        "ignoreConditions": false
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "86222",
+      "component": "ACTION",
+      "schemaVersion": 3,
+      "type": "jira.issue.assign",
+      "value": {
+        "excludedUsers": [],
+        "assignType": "UNASSIGNED"
+      },
+      "children": [],
+      "conditions": []
+    }
+  ],
+  "projects": [
+    {
+      "projectId": "11215",
+      "projectTypeKey": "software"
+    }
+  ],
+  "labels": [
+    31
+  ],
+  "tags": []
+}

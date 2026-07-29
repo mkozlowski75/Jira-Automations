@@ -18,14 +18,18 @@ import { jiraGet, jiraPost, jiraPut, jiraRawGet, jiraConfig } from './lib/api-he
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rulesDir = join(__dirname, '..', 'rules');
 
-// --- Automation API (Data Center, anderer Basis-Pfad) ---
-async function getAutomationRules() {
+// --- Automation API (Data Center) ---
+async function getAutomationRules(projectKey) {
   const { base } = jiraConfig();
-  // Automation for Jira Data Center: /jira/rest/automation/1.0/rule
-  const url = `${base}/jira/rest/automation/1.0/rule`;
+  // 1. Projekt-ID ermitteln (die API braucht numerische ID, nicht den Key)
+  const proj = await jiraGet(`/project/${projectKey}`);
+  const projectId = proj.id;
+  // 2. Automation-Regeln abrufen
+  // GET /jira/rest/cb-automation/latest/project/{numericId}/rule
+  const url = `${base}/jira/rest/cb-automation/latest/project/${projectId}/rule`;
   const res = await jiraRawGet(url);
-  if (res.values) return res.values;
   if (Array.isArray(res)) return res;
+  if (res.values) return res.values;
   return res;
 }
 
@@ -41,9 +45,10 @@ async function getTransitions(issueKey) {
 
 // --- CLI ---
 const mode = process.argv[2];
+const projectKey = process.argv[3] || process.env.JIRA_DEFAULT_PROJECT || 'CER';
 
 if (!mode || !['--pull', '--push', '--diff'].includes(mode)) {
-  console.log('Usage: node scripts/sync-rules.mjs [--pull | --push | --diff]');
+  console.log('Usage: node scripts/sync-rules.mjs [--pull | --push | --diff] [PROJECT_KEY]');
   console.log('  --pull   Regeln aus Jira Data Center abrufen und lokal speichern');
   console.log('  --push   Lokale Regeln nach Jira Data Center übertragen');
   console.log('  --diff   Unterschiede zwischen lokal und Jira anzeigen');
@@ -52,7 +57,8 @@ if (!mode || !['--pull', '--push', '--diff'].includes(mode)) {
 
 async function main() {
   const { base, path, email } = jiraConfig();
-  console.log(`🔗 Verbinde mit ${base}${path} …\n`);
+  console.log(`🔗 Verbinde mit ${base}${path} …`);
+  console.log(`   Projekt: ${projectKey}\n`);
 
   try {
     const myself = await jiraGet('/myself');
@@ -65,7 +71,7 @@ async function main() {
   if (mode === '--pull') {
     console.log('📥 Rufe Automatisierungsregeln aus Jira ab …\n');
     try {
-      const rules = await getAutomationRules();
+      const rules = await getAutomationRules(projectKey);
       console.log(`${rules.length} Regeln gefunden.`);
       for (const rule of rules) {
         const filename = `BDR-${String(rule.id).padStart(3, '0')}.json`;
@@ -90,7 +96,7 @@ async function main() {
     console.log('🔍 Diff-Modus: Vergleiche lokal ↔ Jira Data Center …\n');
     const localFiles = readdirSync(rulesDir).filter(f => f.endsWith('.json') && !f.startsWith('_') && f !== 'rule-schema.json');
     try {
-      const remoteRules = await getAutomationRules();
+      const remoteRules = await getAutomationRules(projectKey);
       console.log(`  Lokal:  ${localFiles.length} Regeln`);
       console.log(`  Remote: ${remoteRules.length} Regeln`);
       const onlyLocal = localFiles.length - remoteRules.length;

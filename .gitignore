@@ -11,4 +11,4 @@ Thumbs.db
 .DS_Store
 
 # IDE
-*.code-workspace
+# Workspace configuration is intentionally versioned.

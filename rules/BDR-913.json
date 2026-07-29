@@ -31,6 +31,15 @@
       "value": "Test",
       "children": [],
       "conditions": []
+    },
+    {
+      "id": "100374",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "codebarrel.action.log",
+      "value": "Test 2",
+      "children": [],
+      "conditions": []
     }
   ],
   "projects": [

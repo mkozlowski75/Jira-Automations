@@ -1,5 +1,6 @@
 ﻿# Secrets
 config/.env
+backups/
 
 # Node
 node_modules/

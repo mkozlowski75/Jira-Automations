@@ -37,7 +37,7 @@ if (CERT_PATH && existsSync(CERT_PATH)) {
       rejectUnauthorized: false,
     });
   } catch (err) {
-    console.error(`⚠️  Konnte Client-Zertifikat nicht laden: ${err.message}`);
+    console.error('⚠️  Konnte Client-Zertifikat nicht laden.');
   }
 }
 
@@ -106,8 +106,7 @@ function request(method, url, opts = {}) {
 async function httpGetJson(url, headers = {}) {
   const res = await request('GET', url, { headers });
   if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`GET ${url} → ${res.status} ${res.statusText}\n${body.substring(0, 500)}`);
+    throw new Error(`GET ${url} → ${res.status} ${res.statusText}`);
   }
   return res.json();
 }
@@ -118,8 +117,7 @@ async function httpPostJson(url, body, headers = {}) {
     body,
   });
   if (!res.ok) {
-    const errBody = await res.text();
-    throw new Error(`POST ${url} → ${res.status}: ${errBody.substring(0, 500)}`);
+    throw new Error(`POST ${url} → ${res.status} ${res.statusText}`);
   }
   return res.json();
 }
@@ -130,10 +128,11 @@ async function httpPutJson(url, body, headers = {}) {
     body,
   });
   if (!res.ok) {
-    const errBody = await res.text();
-    throw new Error(`PUT ${url} → ${res.status}: ${errBody.substring(0, 500)}`);
+    throw new Error(`PUT ${url} → ${res.status} ${res.statusText}`);
   }
-  return res.status === 204 ? null : res.json();
+  if (res.status === 204) return null;
+  const responseBody = await res.text();
+  return responseBody ? JSON.parse(responseBody) : null;
 }
 
 // ─── Jira API ───────────────────────────────────────────────
@@ -157,9 +156,14 @@ export async function jiraPut(path, body) {
   return httpPutJson(url, body, jiraAuthHeaders);
 }
 
-export async function jiraRawGet(url) {
+export async function jiraRawGet(url, headers = {}) {
   // Für Endpunkte, die nicht unter JIRA_PATH liegen (z.B. Automation-API)
-  return httpGetJson(url, jiraAuthHeaders);
+  return httpGetJson(url, { ...jiraAuthHeaders, ...headers });
+}
+
+export async function jiraRawPut(url, body) {
+  // Für Endpunkte, die nicht unter JIRA_PATH liegen (z.B. Automation-API)
+  return httpPutJson(url, body, jiraAuthHeaders);
 }
 
 export function jiraConfig() {

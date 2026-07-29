@@ -1,0 +1,43 @@
+{
+  "id": 999999,
+  "clientKey": "com.codebarrel.tenant.global",
+  "name": "NICHT DEPLOYBARES LERNBEISPIEL",
+  "state": "DISABLED",
+  "description": "Bereinigtes Beispiel ohne produktive Metadaten.",
+  "canOtherRuleTrigger": false,
+  "notifyOnError": "FIRSTERROR",
+  "authorAccountId": "JIRAUSER_EXAMPLE",
+  "actorAccountId": "JIRAUSER_EXAMPLE",
+  "created": 0,
+  "updated": 0,
+  "trigger": {
+    "id": "9000001",
+    "component": "TRIGGER",
+    "schemaVersion": 1,
+    "type": "jira.manual.trigger.issue",
+    "value": {
+      "groups": []
+    },
+    "children": [],
+    "conditions": []
+  },
+  "components": [
+    {
+      "id": "9000002",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "codebarrel.action.log",
+      "value": "Bereinigtes Lernbeispiel",
+      "children": [],
+      "conditions": []
+    }
+  ],
+  "projects": [
+    {
+      "projectId": "99999",
+      "projectTypeKey": "software"
+    }
+  ],
+  "labels": [],
+  "tags": []
+}

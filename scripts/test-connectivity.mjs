@@ -27,7 +27,7 @@ const CERT_PASS  = process.env.CLIENT_CERT_PASSPHRASE || '';
 let sslAgent;
 
 if (CERT_PATH && existsSync(CERT_PATH)) {
-  console.log(`🔐 Lade Client-Zertifikat: ${CERT_PATH}`);
+  console.log('🔐 Lade konfiguriertes Client-Zertifikat.');
   try {
     const pfx = readFileSync(CERT_PATH);
     sslAgent = new https.Agent({
@@ -37,10 +37,10 @@ if (CERT_PATH && existsSync(CERT_PATH)) {
     });
     console.log('   ✅ Zertifikat geladen');
   } catch (err) {
-    console.log(`   ⚠️  Zertifikat-Fehler: ${err.message}`);
+    console.log('   ⚠️  Zertifikat konnte nicht geladen werden.');
   }
 } else if (CERT_PATH) {
-  console.log(`⚠️  Zertifikat nicht gefunden: ${CERT_PATH}`);
+  console.log('⚠️  Konfiguriertes Zertifikat wurde nicht gefunden.');
 }
 
 // ─── HTTP-Request mit nativen https-Modul (mTLS-kompatibel) ─
@@ -93,8 +93,6 @@ function httpsRequest(url, opts = {}) {
 async function testJira() {
   console.log('\n═══════════════════════════════════════');
   console.log('🔵 JIRA DATA CENTER Verbindungstest');
-  console.log(`   URL: ${JIRA_BASE}`);
-  console.log(`   User: ${JIRA_EMAIL}`);
   console.log(`   mTLS: ${sslAgent ? '✅ Zertifikat aktiv' : '❌ Kein Zertifikat'}`);
   console.log('═══════════════════════════════════════');
 
@@ -128,9 +126,8 @@ async function testJira() {
       }
       console.log(`   ⚠️  ${meRes.status}`);
       if (meRes.status !== 404) {
-        // Nicht 404 -> Authentifizierungs-/anderer Fehler, zeige Body
-        const body = await meRes.text();
-        console.log(`   Body: ${body.substring(0, 200)}`);
+        // Nicht 404 -> Authentifizierungs- oder anderer Fehler; Body nicht ausgeben.
+        console.log('   Antwortinhalt aus Sicherheitsgründen nicht ausgegeben.');
       }
     }
     if (!meRes || !meRes.ok) {
@@ -138,8 +135,7 @@ async function testJira() {
       return false;
     }
     const me = await meRes.json();
-    console.log(`   ✅ Verbunden als: ${me.displayName} (${me.emailAddress})`);
-    console.log(`   Account ID: ${me.accountId}`);
+    console.log(`   ✅ Authentifizierung erfolgreich: ${Boolean(me) ? 'ja' : 'nein'}`);
 
     // Basis-Pfad extrahieren für weitere Tests
     const basePath = usedPath.replace('/myself', '');
@@ -151,26 +147,23 @@ async function testJira() {
       const info = await infoRes.json();
       console.log(`   ✅ Version: ${info.version}`);
       console.log(`   Build: ${info.buildNumber}`);
-      console.log(`   Title: ${info.serverTitle}`);
     } else {
       console.log(`   ⚠️  Server-Info nicht abrufbar: ${infoRes.status}`);
     }
 
     // Test 3: Projekt-Zugriff prüfen
     const project = process.env.JIRA_DEFAULT_PROJECT || 'CER';
-    console.log(`\n📡 Teste Zugriff auf Projekt "${project}" ...`);
+    console.log('\n📡 Teste Zugriff auf das konfigurierte Projekt ...');
     const projRes = await httpsRequest(`${JIRA_BASE}${basePath}project/${project}`, { headers });
     if (projRes.ok) {
-      const proj = await projRes.json();
-      console.log(`   ✅ Projekt gefunden: ${proj.name} (Key: ${proj.key})`);
+      console.log('   ✅ Projekt erreichbar');
     } else {
       console.log(`   ⚠️  Projekt nicht erreichbar: ${projRes.status} ${projRes.statusText}`);
     }
 
     return true;
   } catch (err) {
-    console.log(`   ❌ Verbindungsfehler: ${err.message}`);
-    if (err.cause) console.log(`   Cause: ${err.cause.message}`);
+    console.log('   ❌ Verbindungsfehler; Details werden nicht ausgegeben.');
     return false;
   }
 }
@@ -179,7 +172,6 @@ async function testJira() {
 async function testGitLab() {
   console.log('\n═══════════════════════════════════════');
   console.log('🟠 GITLAB Verbindungstest');
-  console.log(`   URL: ${GITLAB_BASE}`);
   console.log(`   mTLS: ${sslAgent ? '✅ Zertifikat aktiv' : '❌ Kein Zertifikat'}`);
   console.log('═══════════════════════════════════════');
 
@@ -199,13 +191,11 @@ async function testGitLab() {
     const userRes = await httpsRequest(`${GITLAB_BASE}/api/v4/user`, { headers });
     if (!userRes.ok) {
       console.log(`   ❌ Fehler: ${userRes.status} ${userRes.statusText}`);
-      const body = await userRes.text();
-      console.log(`   Body: ${body.substring(0, 300)}`);
+      console.log('   Antwortinhalt aus Sicherheitsgründen nicht ausgegeben.');
       return false;
     }
     const user = await userRes.json();
-    console.log(`   ✅ Verbunden als: ${user.name} (@${user.username})`);
-    console.log(`   Email: ${user.email || 'nicht öffentlich'}`);
+    console.log(`   ✅ Authentifizierung erfolgreich: ${Boolean(user) ? 'ja' : 'nein'}`);
 
     // Test 2: GitLab Version
     console.log('\n📡 Teste /api/v4/version ...');
@@ -220,19 +210,17 @@ async function testGitLab() {
 
     // Test 3: Group-Zugriff prüfen
     const group = process.env.GITLAB_DEFAULT_GROUP || 'cer';
-    console.log(`\n📡 Teste Zugriff auf Group "${group}" ...`);
+    console.log('\n📡 Teste Zugriff auf die konfigurierte Gruppe ...');
     const groupRes = await httpsRequest(`${GITLAB_BASE}/api/v4/groups/${encodeURIComponent(group)}`, { headers });
     if (groupRes.ok) {
-      const grp = await groupRes.json();
-      console.log(`   ✅ Gruppe gefunden: ${grp.full_name} (ID: ${grp.id})`);
+      console.log('   ✅ Gruppe erreichbar');
     } else {
       console.log(`   ⚠️  Gruppe nicht erreichbar: ${groupRes.status} ${groupRes.statusText}`);
     }
 
     return true;
   } catch (err) {
-    console.log(`   ❌ Verbindungsfehler: ${err.message}`);
-    if (err.cause) console.log(`   Cause: ${err.cause.message}`);
+    console.log('   ❌ Verbindungsfehler; Details werden nicht ausgegeben.');
     return false;
   }
 }

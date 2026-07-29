@@ -34,6 +34,21 @@ Für eine neue Regel zuerst in Jira eine leere, deaktivierte Regel anlegen und
 exportieren. Erst danach den Export lokal bearbeiten. Dadurch bleiben die von
 Jira vergebenen Regel-, Component-, Actor- und Zeitstempelwerte erhalten.
 
+## Sicherer Änderungsablauf
+
+1. Serverregel mit `scripts/pull-rule.mjs` read-only prüfen.
+2. IDs und Strukturen ausschließlich aus aktuellen Jira-Metadaten oder
+   Referenzregeln übernehmen.
+3. `npm run validate` mit 0 Fehlern und 0 Warnungen abschließen.
+4. `scripts/push-rule.mjs` ohne `--apply` als Preflight ausführen.
+5. Redigierten Diff prüfen und ausdrückliche Freigabe einholen.
+6. Erst danach denselben Befehl mit `--apply` ausführen.
+
+Der Push prüft Git-HEAD gegen den aktuellen Serverstand, blockiert Drift und
+geschützte Feldänderungen, legt unter `backups/` eine lokale Serverkopie an und
+ruft die Regel nach dem PUT erneut ab. `sync-rules.mjs` ist nicht Teil dieses
+Produktionsworkflows.
+
 ## API-Authentifizierung (Data Center)
 
 Für API-Zugriffe wird ein **Personal Access Token (PAT)** benötigt:

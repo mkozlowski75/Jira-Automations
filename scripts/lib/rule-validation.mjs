@@ -112,6 +112,19 @@ function visitComponent(node, context, parent = null, relation = null, path = ''
     }
   }
 
+  if (node.type === 'jira.issue.outgoing.webhook' && Array.isArray(node.value?.headers)) {
+    node.value.headers.forEach((header, index) => {
+      const name = typeof header?.name === 'string' ? header.name : '';
+      if (/(authorization|password|secret|token)/i.test(name) && header?.value?.secret !== true) {
+        errors.push(issue(
+          file,
+          `${path}/value/headers/${index}/value/secret`,
+          `Sicherheitsrelevanter Header "${name}" muss als Jira-Secret referenziert werden.`,
+        ));
+      }
+    });
+  }
+
   if (Array.isArray(node.children)) {
     node.children.forEach((child, index) => {
       visitComponent(child, context, node, 'children', `${path}/children/${index}`);
@@ -153,6 +166,23 @@ export function createRuleSetValidator(schema) {
 
       // Pflichtfelder werden durch das JSON-Schema geprüft.
 
+      if (rule.clientKey !== 'com.codebarrel.tenant.global') {
+        errors.push(issue(
+          file,
+          '/clientKey',
+          `Nicht unterstützter clientKey "${rule.clientKey}"; erwartet wird ein Data-Center-Code-Barrel-Export.`,
+        ));
+      }
+
+      if (Array.isArray(rule.projects)) {
+        const projectIds = rule.projects
+          .map(project => project?.projectId)
+          .filter(projectId => typeof projectId === 'string');
+        if (new Set(projectIds).size !== projectIds.length) {
+          errors.push(issue(file, '/projects', 'Projekt-Scope enthält doppelte projectId-Werte.'));
+        }
+      }
+
       // ID-Format
       const filenameMatch = /^BDR-(\d+)\.json$/.exec(file);
       if (filenameMatch && Number(filenameMatch[1]) !== rule.id) {
@@ -193,7 +223,7 @@ export function createRuleSetValidator(schema) {
         });
       }
 
-      // Template-Warnung: Eine generische Template-Regel wird nicht mehr unterstützt.
+      // Generische Vorlagen scheitern bereits an Schema und Pflichtfeldern; keine Sonderbehandlung.
     }
 
     return { errors, warnings };

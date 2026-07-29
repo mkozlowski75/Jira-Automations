@@ -1,97 +1,145 @@
-﻿/**
+/**
  * Push eine einzelne Regel-Datei nach Jira Data Center (Automation API).
  * Usage: node scripts/push-rule.mjs rules/BDR-913.json
+ *
+ * Ohne --apply wird ausschließlich ein read-only Preflight ausgeführt.
  */
-import { readFileSync, existsSync } from 'node:fs';
-import { resolve, join, dirname } from 'node:path';
+import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import https from 'node:https';
-import dotenv from 'dotenv';
+import {
+  fetchAutomationRule,
+  putAutomationRule,
+} from './lib/automation-api.mjs';
+import {
+  loadGitHeadRule,
+  parseJsonFile,
+  resolveBackupFile,
+  resolveTrackedRuleFile,
+  validateCandidateRule,
+} from './lib/rule-repository.mjs';
+import {
+  performDeployment,
+  writeServerBackup,
+} from './lib/rule-workflow.mjs';
 
 const __dir = dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: join(__dir, '..', 'config', '.env') });
+const repositoryRoot = join(__dir, '..');
+const rulesDir = join(repositoryRoot, 'rules');
+const backupsRoot = join(repositoryRoot, 'backups');
 
-const ruleFile = process.argv[2];
-if (!ruleFile) {
-  console.log('Usage: node scripts/push-rule.mjs <rule-file.json>');
-  process.exit(0);
+function parseArguments(args) {
+  const ruleFile = args.find(argument => !argument.startsWith('--'));
+  const allowedFields = args
+    .filter(argument => argument.startsWith('--allow-field='))
+    .map(argument => argument.slice('--allow-field='.length))
+    .filter(Boolean);
+  const baselineArgument = args
+    .find(argument => argument.startsWith('--baseline='))
+    ?.slice('--baseline='.length);
+  return {
+    ruleFile,
+    apply: args.includes('--apply'),
+    allowedFields,
+    baselineArgument,
+  };
 }
 
-const JIRA_BASE = process.env.JIRA_BASE_URL;
-const JIRA_PAT  = process.env.JIRA_PERSONAL_ACCESS_TOKEN;
-const CERT_PATH = process.env.CLIENT_CERT_PATH;
-const CERT_PASS = process.env.CLIENT_CERT_PASSPHRASE || '';
-
-if (!JIRA_BASE || !JIRA_PAT) {
-  console.error('❌ JIRA_BASE_URL oder JIRA_PERSONAL_ACCESS_TOKEN nicht in config/.env gesetzt.');
-  process.exit(1);
+function safeErrorMessage(error) {
+  const firstLine = String(error?.message || error).split(/\r?\n/, 1)[0];
+  return firstLine
+    .replace(/(→\s*\d+).*/, '$1')
+    .replace(/Bearer\s+\S+/gi, 'Bearer [REDACTED]');
 }
 
-// mTLS Agent
-let sslAgent;
-if (CERT_PATH && existsSync(CERT_PATH)) {
-  sslAgent = new https.Agent({
-    pfx: readFileSync(CERT_PATH),
-    passphrase: CERT_PASS,
-    rejectUnauthorized: false,
+function formatValue(value) {
+  const formatted = JSON.stringify(value);
+  if (formatted === undefined) return 'undefined';
+  return formatted.length > 180 ? `${formatted.slice(0, 177)}...` : formatted;
+}
+
+function printPreflight(preflight) {
+  const { summary } = preflight;
+  console.log(`Regel: ${summary.rule.name} (ID ${summary.rule.id})`);
+  console.log(`Projekt-Scope: ${formatValue(summary.rule.projects)}`);
+  console.log(`Trigger: ${summary.rule.trigger?.type || 'nicht vorhanden'}`);
+  console.log(`Components hinzugefügt: ${summary.components.added.length}`);
+  console.log(`Components entfernt: ${summary.components.removed.length}`);
+  console.log(`Components typseitig geändert: ${summary.components.changed.length}`);
+
+  if (summary.guardedFields.length > 0) {
+    console.log(`Geschützte Felder geändert: ${summary.guardedFields.map(change => change.field).join(', ')}`);
+  }
+
+  console.log('Änderungen:');
+  for (const change of summary.changes) {
+    console.log(`  ${change.path}: ${formatValue(change.before)} -> ${formatValue(change.after)}`);
+  }
+  if (summary.changes.length === 0) console.log('  keine');
+
+  for (const error of preflight.errors) console.error(`❌ ${error}`);
+  for (const warning of preflight.warnings) {
+    console.error(`⚠️  ${warning.file} ${warning.path}: ${warning.message}`);
+  }
+}
+
+async function main() {
+  const {
+    ruleFile,
+    apply,
+    allowedFields,
+    baselineArgument,
+  } = parseArguments(process.argv.slice(2));
+  if (!ruleFile) {
+    console.log('Usage: node scripts/push-rule.mjs <rule-file.json> [--baseline=<backup>] [--apply] [--allow-field=<field>]');
+    process.exitCode = 1;
+    return;
+  }
+
+  // mTLS Agent wird zentral durch api-helper.mjs aus der Konfiguration geladen.
+
+  // Regel laden
+  const resolved = resolveTrackedRuleFile(repositoryRoot, ruleFile);
+  const localRule = parseJsonFile(resolved.absolutePath);
+  const baselineRule = baselineArgument
+    ? parseJsonFile(resolveBackupFile(repositoryRoot, baselineArgument))
+    : loadGitHeadRule(repositoryRoot, resolved.repositoryPath);
+  const schema = parseJsonFile(join(rulesDir, 'rule-schema.json'));
+  const validation = validateCandidateRule({
+    rulesDir,
+    schema,
+    file: resolved.file,
+    rule: localRule,
   });
-}
 
-// Regel laden
-const raw = readFileSync(resolve(ruleFile), 'utf-8');
-const rule = JSON.parse(raw);
-const projectId = rule.projects?.[0]?.projectId;
-const ruleId = rule.id;
-
-if (!projectId || !ruleId) {
-  console.error('❌ Regel-Datei enthält keine projectId oder ruleId.');
-  process.exit(1);
-}
-
-const apiPath = `/jira/rest/cb-automation/latest/project/${projectId}/rule/${ruleId}`;
-const body = JSON.stringify(rule);
-const parsed = new URL(JIRA_BASE);
-
-console.log(`📤 Übertrage Regel ${ruleId} („${rule.name}") nach Jira …`);
-console.log(`   PUT ${JIRA_BASE}${apiPath}`);
-
-const options = {
-  hostname: parsed.hostname,
-  port: parsed.port || 443,
-  path: apiPath,
-  method: 'PUT',
-  headers: {
-    'Authorization': `Bearer ${JIRA_PAT}`,
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    'Content-Length': Buffer.byteLength(body),
-  },
-  agent: sslAgent,
-  rejectUnauthorized: false,
-};
-
-const req = https.request(options, (res) => {
-  const chunks = [];
-  res.on('data', (c) => chunks.push(c));
-  res.on('end', () => {
-    const resp = Buffer.concat(chunks).toString('utf-8');
-    if (res.statusCode >= 200 && res.statusCode < 300) {
-      console.log(`✅ Regel ${ruleId} erfolgreich aktualisiert (Status ${res.statusCode}).`);
-    } else if ([301, 302, 303, 307, 308].includes(res.statusCode)) {
-      console.error(`❌ Redirect ${res.statusCode} → ${res.headers.location || '?'} – Zugriff verweigert oder Login erforderlich.`);
-      process.exit(1);
-    } else {
-      console.error(`❌ Fehler ${res.statusCode}:`);
-      try { console.error(JSON.stringify(JSON.parse(resp), null, 2)); } catch { console.error(resp.substring(0, 1000)); }
-      process.exit(1);
-    }
+  const result = await performDeployment({
+    localRule,
+    baselineRule,
+    validation,
+    allowedFields,
+    apply,
+    fetchRemote: fetchAutomationRule,
+    putRemote: putAutomationRule,
+    createBackup: remoteRule => writeServerBackup(backupsRoot, remoteRule),
   });
-});
 
-req.on('error', (err) => {
-  console.error(`❌ Verbindungsfehler: ${err.message}`);
-  process.exit(1);
-});
+  printPreflight(result.preflight);
 
-req.write(body);
-req.end();
+  if (!result.preflight.ok) {
+    process.exitCode = 1;
+    return;
+  }
+
+  if (!apply) {
+    console.log('\nℹ️  Read-only Preflight erfolgreich. Kein PUT wurde ausgeführt.');
+    console.log('   Ein Push erfordert eine ausdrückliche Benutzerfreigabe und anschließend --apply.');
+    return;
+  }
+
+  console.log(`\n✅ Regel aktualisiert und remote verifiziert.`);
+  console.log(`   Server-Backup: ${result.backupPath}`);
+}
+
+main().catch(error => {
+  console.error(`❌ Sicherer Push abgebrochen: ${safeErrorMessage(error)}`);
+  process.exitCode = 1;
+});

@@ -1,0 +1,47 @@
+{
+  "id": "9000100",
+  "component": "CONDITION",
+  "schemaVersion": 1,
+  "type": "jira.condition.container.block",
+  "children": [
+    {
+      "id": "9000101",
+      "component": "CONDITION_BLOCK",
+      "parentId": "9000100",
+      "schemaVersion": 1,
+      "type": "jira.condition.if.block",
+      "value": {
+        "conditionMatchType": "ALL"
+      },
+      "children": [
+        {
+          "id": "9000103",
+          "component": "ACTION",
+          "parentId": "9000101",
+          "schemaVersion": 1,
+          "type": "codebarrel.action.log",
+          "value": "Bereinigtes Lernbeispiel",
+          "children": [],
+          "conditions": []
+        }
+      ],
+      "conditions": [
+        {
+          "id": "9000102",
+          "component": "CONDITION",
+          "conditionParentId": "9000101",
+          "schemaVersion": 1,
+          "type": "jira.comparator.condition",
+          "value": {
+            "first": "{{issue.key}}",
+            "second": "EXAMPLE-1",
+            "operator": "EQUALS"
+          },
+          "children": [],
+          "conditions": []
+        }
+      ]
+    }
+  ],
+  "conditions": []
+}

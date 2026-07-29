@@ -1,9 +1,28 @@
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync } from 'node:fs';
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
+import { createServer } from 'node:http';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { createRuleSetValidator } from '../scripts/lib/rule-validation.mjs';
+import { findAutomationPluginInfo } from '../scripts/lib/automation-api.mjs';
+import { loadBackupRule } from '../scripts/lib/rule-repository.mjs';
+import {
+  diffRules,
+  nextComponentId,
+  performDeployment,
+  prepareDeployment,
+  redactSensitive,
+  writeServerBackup,
+} from '../scripts/lib/rule-workflow.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = join(__dirname, '..');
@@ -178,4 +197,462 @@ test('meldet unbekannte Typen und Versionen als Warnung', () => {
   assert.deepEqual(result.errors, []);
   assert.ok(result.warnings.some(warning => warning.message.includes('Unbekannte Schema-Version 2')));
   assert.ok(result.warnings.some(warning => warning.message.includes('Unbekannter Automation-Typ')));
+});
+
+test('blockiert Cloud-clientKey, doppelte Projekte und ungeschützte Auth-Header', () => {
+  const rule = cloneFixture();
+  rule.clientKey = 'com.atlassian.automation.cloud';
+  rule.projects = [
+    { projectId: '99999', projectTypeKey: 'software' },
+    { projectId: '99999', projectTypeKey: 'software' },
+  ];
+  rule.components.push(component(1002, 'ACTION', 2, 'jira.issue.outgoing.webhook', {
+    contentType: 'empty',
+    headers: [
+      {
+        id: '_header_example',
+        name: 'Authorization',
+        value: {
+          keyOrValue: 'literal-value',
+          secret: false,
+        },
+      },
+    ],
+    method: 'GET',
+    responseEnabled: true,
+    sendIssue: false,
+    url: 'https://example.invalid/api',
+    usedSecretsKeys: [],
+  }));
+
+  const result = validate(rule);
+
+  assert.ok(result.errors.some(error => error.path === '/clientKey'));
+  assert.ok(result.errors.some(error => error.path === '/projects'));
+  assert.ok(result.errors.some(error => error.message.includes('muss als Jira-Secret referenziert werden')));
+});
+
+test('redigiert Secret-Werte in Objekten und Diffs', () => {
+  const before = {
+    webhookToken: 'before-value',
+    headers: [
+      {
+        name: 'Authorization',
+        value: {
+          keyOrValue: 'before-secret',
+          secret: true,
+        },
+      },
+    ],
+  };
+  const after = structuredClone(before);
+  after.webhookToken = 'after-value';
+  after.headers[0].value.keyOrValue = 'after-secret';
+
+  const redacted = redactSensitive(after);
+  const changes = diffRules(before, after);
+
+  assert.equal(redacted.webhookToken, '[REDACTED]');
+  assert.equal(redacted.headers[0].value, '[REDACTED]');
+  assert.ok(changes.every(change => change.sensitive));
+  assert.ok(changes.every(change => change.before === '[REDACTED]' && change.after === '[REDACTED]'));
+
+  const unsafeBefore = {
+    headers: [{
+      name: 'Authorization',
+      value: { keyOrValue: 'unsafe-before', secret: false },
+    }],
+  };
+  const unsafeAfter = structuredClone(unsafeBefore);
+  unsafeAfter.headers[0].value.keyOrValue = 'unsafe-after';
+  const unsafeChanges = diffRules(unsafeBefore, unsafeAfter);
+  assert.deepEqual(unsafeChanges, [{
+    path: '/headers/0/value',
+    before: '[REDACTED]',
+    after: '[REDACTED]',
+    sensitive: true,
+  }]);
+});
+
+test('ermittelt Component-IDs repositoryweit statt pro Regel', () => {
+  const first = cloneFixture();
+  const second = cloneFixture();
+  second.id = 101;
+  second.trigger.id = '7000';
+  second.components[0].id = '9000';
+
+  assert.equal(nextComponentId([
+    { file: 'BDR-100.json', rule: first },
+    { file: 'BDR-101.json', rule: second },
+  ]), '9001');
+});
+
+test('ermittelt Automation-Version und Build aus einer UPM-Antwort', () => {
+  const result = findAutomationPluginInfo({
+    plugins: [
+      {
+        key: 'example.unrelated.plugin',
+        name: 'Unrelated Plugin',
+        version: '1.0.0',
+      },
+      {
+        key: 'com.example.codebarrel.automation',
+        name: 'Automation for Jira',
+        version: '9.1.2',
+        buildNumber: 90102,
+      },
+    ],
+  });
+
+  assert.deepEqual(result, {
+    key: 'com.example.codebarrel.automation',
+    version: '9.1.2',
+    build: '90102',
+  });
+  assert.equal(findAutomationPluginInfo({ plugins: [] }), null);
+});
+
+test('Preflight blockiert Drift, Warnungen, Schutzfelder und Secret-Änderungen', () => {
+  const remote = cloneFixture();
+  const local = cloneFixture();
+  local.state = 'ENABLED';
+  local.trigger.value.groups = ['example-group'];
+
+  const result = prepareDeployment({
+    localRule: local,
+    remoteRule: remote,
+    baselineRule: { ...remote, name: 'Abweichender Git-Basisstand' },
+    validation: {
+      errors: [],
+      warnings: [{ file: 'BDR-100.json', path: '/components/0/type', message: 'unbekannt' }],
+    },
+  });
+
+  assert.equal(result.ok, false);
+  assert.ok(result.errors.some(error => error.includes('Serverstand')));
+  assert.ok(result.errors.some(error => error.includes('0 Validierungswarnungen')));
+  assert.ok(result.errors.some(error => error.includes('state')));
+
+  const secretLocal = cloneFixture();
+  secretLocal.trigger = component(1000, 'TRIGGER', 1, 'jira.incoming.webhook', {
+    webhookToken: 'changed-secret',
+    searchOrProvide: 'none',
+    processIssuesInBulk: false,
+  });
+  const secretRemote = structuredClone(secretLocal);
+  secretRemote.trigger.value.webhookToken = 'original-secret';
+  const secretResult = prepareDeployment({
+    localRule: secretLocal,
+    remoteRule: secretRemote,
+    baselineRule: secretRemote,
+    validation: { errors: [], warnings: [] },
+  });
+  assert.ok(secretResult.errors.some(error => error.includes('Secret- oder Tokenwerte')));
+});
+
+test('geschütztes Feld benötigt explizite allow-field-Freigabe', () => {
+  const remote = cloneFixture();
+  remote.projects = [{ projectId: '99999', projectTypeKey: 'software' }];
+  const local = structuredClone(remote);
+  local.state = 'ENABLED';
+
+  const blocked = prepareDeployment({
+    localRule: local,
+    remoteRule: remote,
+    baselineRule: remote,
+    validation: { errors: [], warnings: [] },
+  });
+  const allowed = prepareDeployment({
+    localRule: local,
+    remoteRule: remote,
+    baselineRule: remote,
+    validation: { errors: [], warnings: [] },
+    allowedFields: ['state'],
+  });
+
+  assert.equal(blocked.ok, false);
+  assert.equal(allowed.ok, true);
+});
+
+test('Deployment nutzt lokalen Mock-Endpunkt, sichert und verifiziert', async () => {
+  const initial = cloneFixture();
+  initial.projects = [{ projectId: '99999', projectTypeKey: 'software' }];
+  const desired = structuredClone(initial);
+  desired.name = 'Geänderte Testregel';
+  let serverRule = structuredClone(initial);
+  let putCount = 0;
+
+  const server = createServer((request, response) => {
+    if (request.method === 'GET') {
+      response.setHeader('Content-Type', 'application/json');
+      response.end(JSON.stringify(serverRule));
+      return;
+    }
+    if (request.method === 'PUT') {
+      const chunks = [];
+      request.on('data', chunk => chunks.push(chunk));
+      request.on('end', () => {
+        serverRule = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+        serverRule.updated += 1;
+        putCount += 1;
+        response.statusCode = 204;
+        response.end();
+      });
+      return;
+    }
+    response.statusCode = 405;
+    response.end();
+  });
+  await new Promise(resolveListen => server.listen(0, '127.0.0.1', resolveListen));
+  const address = server.address();
+  const url = `http://127.0.0.1:${address.port}/automation-rule`;
+  const tempRoot = mkdtempSync(join(tmpdir(), 'jira-rule-workflow-'));
+
+  try {
+    const fetchRemote = async () => {
+      const response = await fetch(url);
+      return response.json();
+    };
+    const putRemote = async rule => {
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(rule),
+      });
+      assert.equal(response.status, 204);
+    };
+
+    const result = await performDeployment({
+      localRule: desired,
+      baselineRule: initial,
+      validation: { errors: [], warnings: [] },
+      apply: true,
+      fetchRemote,
+      putRemote,
+      createBackup: rule => writeServerBackup(tempRoot, rule, new Date('2026-07-29T12:00:00Z')),
+    });
+
+    assert.equal(result.applied, true);
+    assert.equal(putCount, 1);
+    assert.equal(serverRule.name, desired.name);
+    assert.ok(existsSync(result.backupPath));
+    assert.deepEqual(JSON.parse(readFileSync(result.backupPath, 'utf8')), initial);
+  } finally {
+    await new Promise(resolveClose => server.close(resolveClose));
+    const resolvedTempRoot = join(tmpdir(), tempRoot.slice(tmpdir().length + 1));
+    assert.equal(resolvedTempRoot, tempRoot);
+    rmSync(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('Deployment führt ohne --apply weder Backup noch PUT aus', async () => {
+  const remote = cloneFixture();
+  remote.projects = [{ projectId: '99999', projectTypeKey: 'software' }];
+  const local = structuredClone(remote);
+  local.name = 'Nur Preflight';
+  let backupCount = 0;
+  let putCount = 0;
+
+  const result = await performDeployment({
+    localRule: local,
+    baselineRule: remote,
+    validation: { errors: [], warnings: [] },
+    apply: false,
+    fetchRemote: async () => structuredClone(remote),
+    putRemote: async () => { putCount += 1; },
+    createBackup: async () => {
+      backupCount += 1;
+      return 'unused';
+    },
+  });
+
+  assert.equal(result.applied, false);
+  assert.equal(result.preflight.ok, true);
+  assert.equal(backupCount, 0);
+  assert.equal(putCount, 0);
+});
+
+test('Deployment bricht bei fehlendem Backup vor dem PUT ab', async () => {
+  const remote = cloneFixture();
+  remote.projects = [{ projectId: '99999', projectTypeKey: 'software' }];
+  const local = structuredClone(remote);
+  local.name = 'Backup muss zuerst funktionieren';
+  let putCount = 0;
+
+  await assert.rejects(
+    performDeployment({
+      localRule: local,
+      baselineRule: remote,
+      validation: { errors: [], warnings: [] },
+      apply: true,
+      fetchRemote: async () => structuredClone(remote),
+      putRemote: async () => { putCount += 1; },
+      createBackup: async () => null,
+    }),
+    /Backup konnte nicht erstellt werden/,
+  );
+  assert.equal(putCount, 0);
+});
+
+test('Deployment blockiert einen Push ohne fachliche Änderung', async () => {
+  const remote = cloneFixture();
+  remote.projects = [{ projectId: '99999', projectTypeKey: 'software' }];
+  let backupCount = 0;
+  let putCount = 0;
+
+  const result = await performDeployment({
+    localRule: structuredClone(remote),
+    baselineRule: remote,
+    validation: { errors: [], warnings: [] },
+    apply: true,
+    fetchRemote: async () => structuredClone(remote),
+    putRemote: async () => { putCount += 1; },
+    createBackup: async () => {
+      backupCount += 1;
+      return 'unused';
+    },
+  });
+
+  assert.equal(result.applied, false);
+  assert.ok(result.preflight.errors.some(error => error.includes('keine Änderungen')));
+  assert.equal(backupCount, 0);
+  assert.equal(putCount, 0);
+});
+
+test('Deployment meldet eine fehlgeschlagene Remote-Verifikation', async () => {
+  const remote = cloneFixture();
+  remote.projects = [{ projectId: '99999', projectTypeKey: 'software' }];
+  const local = structuredClone(remote);
+  local.name = 'Gewünschter Name';
+  let fetchCount = 0;
+  let putCount = 0;
+
+  await assert.rejects(
+    performDeployment({
+      localRule: local,
+      baselineRule: remote,
+      validation: { errors: [], warnings: [] },
+      apply: true,
+      fetchRemote: async () => {
+        fetchCount += 1;
+        if (fetchCount === 1) return structuredClone(remote);
+        return { ...structuredClone(remote), name: 'Abweichender Serverstand' };
+      },
+      putRemote: async () => { putCount += 1; },
+      createBackup: async () => 'backups/BDR-100/test.server.json',
+    }),
+    /Remote-Verifikation nach dem Push ist fehlgeschlagen/,
+  );
+
+  assert.equal(putCount, 1);
+  assert.equal(fetchCount, 2);
+});
+
+test('Rollback-Backup muss zur Regel-ID seines BDR-Ordners passen', () => {
+  const tempRepository = mkdtempSync(join(tmpdir(), 'jira-rule-backup-identity-'));
+  const backupsRoot = join(tempRepository, 'backups');
+
+  try {
+    const backupPath = writeServerBackup(
+      backupsRoot,
+      fixture,
+      new Date('2026-07-29T14:00:00Z'),
+    );
+    assert.equal(loadBackupRule(tempRepository, backupPath).rule.id, fixture.id);
+
+    writeFileSync(
+      backupPath,
+      `${JSON.stringify({ ...fixture, id: fixture.id + 1 }, null, 2)}\n`,
+      'utf8',
+    );
+    assert.throws(
+      () => loadBackupRule(tempRepository, backupPath),
+      /Backup-Inhalt und BDR-\{id\}-Ordner stimmen nicht überein/,
+    );
+  } finally {
+    const resolvedTempRepository = join(
+      tmpdir(),
+      tempRepository.slice(tmpdir().length + 1),
+    );
+    assert.equal(resolvedTempRepository, tempRepository);
+    rmSync(tempRepository, { recursive: true, force: true });
+  }
+});
+
+test('Rollback nutzt lokalen Mock-Endpunkt, sichert den aktuellen Stand und verifiziert', async () => {
+  const current = cloneFixture();
+  current.projects = [{ projectId: '99999', projectTypeKey: 'software' }];
+  current.name = 'Aktueller Serverstand';
+  current.updated = 2000;
+  const backupRule = structuredClone(current);
+  backupRule.name = 'Gesicherter alter Stand';
+  backupRule.updated = 1000;
+  const rollbackRule = {
+    ...backupRule,
+    updated: current.updated,
+  };
+  let serverRule = structuredClone(current);
+  let putCount = 0;
+
+  const server = createServer((request, response) => {
+    if (request.method === 'GET') {
+      response.setHeader('Content-Type', 'application/json');
+      response.end(JSON.stringify(serverRule));
+      return;
+    }
+    if (request.method === 'PUT') {
+      const chunks = [];
+      request.on('data', chunk => chunks.push(chunk));
+      request.on('end', () => {
+        serverRule = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+        serverRule.updated += 1;
+        putCount += 1;
+        response.statusCode = 204;
+        response.end();
+      });
+      return;
+    }
+    response.statusCode = 405;
+    response.end();
+  });
+  await new Promise(resolveListen => server.listen(0, '127.0.0.1', resolveListen));
+  const address = server.address();
+  const url = `http://127.0.0.1:${address.port}/automation-rule`;
+  const tempRoot = mkdtempSync(join(tmpdir(), 'jira-rule-rollback-'));
+
+  try {
+    const result = await performDeployment({
+      localRule: rollbackRule,
+      baselineRule: current,
+      validation: { errors: [], warnings: [] },
+      apply: true,
+      fetchRemote: async () => {
+        const response = await fetch(url);
+        return response.json();
+      },
+      putRemote: async rule => {
+        const response = await fetch(url, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(rule),
+        });
+        assert.equal(response.status, 204);
+      },
+      createBackup: rule => writeServerBackup(
+        tempRoot,
+        rule,
+        new Date('2026-07-29T13:00:00Z'),
+      ),
+    });
+
+    assert.equal(result.applied, true);
+    assert.equal(putCount, 1);
+    assert.equal(serverRule.name, backupRule.name);
+    assert.deepEqual(JSON.parse(readFileSync(result.backupPath, 'utf8')), current);
+  } finally {
+    await new Promise(resolveClose => server.close(resolveClose));
+    const resolvedTempRoot = join(tmpdir(), tempRoot.slice(tmpdir().length + 1));
+    assert.equal(resolvedTempRoot, tempRoot);
+    rmSync(tempRoot, { recursive: true, force: true });
+  }
 });

@@ -1,0 +1,36 @@
+{
+  "id": "9000200",
+  "component": "ACTION",
+  "schemaVersion": 2,
+  "type": "jira.issue.outgoing.webhook",
+  "value": {
+    "url": "https://example.invalid/api",
+    "headers": [
+      {
+        "id": "_header_example_1",
+        "name": "Content-Type",
+        "value": {
+          "keyOrValue": "application/json",
+          "secret": false
+        }
+      },
+      {
+        "id": "_header_example_2",
+        "name": "Authorization",
+        "value": {
+          "keyOrValue": "EXAMPLE_SECRET_REFERENCE",
+          "secret": true
+        }
+      }
+    ],
+    "sendIssue": false,
+    "contentType": "empty",
+    "method": "GET",
+    "responseEnabled": true,
+    "usedSecretsKeys": [
+      "EXAMPLE_SECRET_REFERENCE"
+    ]
+  },
+  "children": [],
+  "conditions": []
+}

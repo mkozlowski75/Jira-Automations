@@ -92,7 +92,7 @@ test('validiert alle produktiven Exporte ohne Fehler oder Warnungen', () => {
 
   const result = validateRuleSet(entries);
 
-  assert.equal(entries.length, 28);
+  assert.equal(entries.length, 29);
   assert.deepEqual(result.errors, []);
   assert.deepEqual(result.warnings, []);
 });
@@ -110,12 +110,17 @@ test('stellt eine eindeutige und vollständige Befehlsoberfläche bereit', () =>
     'push-rule',
     'rollback-rule',
     'jira-ticket',
+    'gitlab-api',
     'lint',
   ]);
   assert.equal(packageJson.scripts['push-rule'], 'node scripts/push-rule.mjs');
   assert.equal(
     packageJson.scripts['jira-ticket'],
     'node .github/skills/jira-tickets/scripts/jira-ticket.mjs',
+  );
+  assert.equal(
+    packageJson.scripts['gitlab-api'],
+    'node .github/skills/gitlab-access/scripts/gitlab-api.mjs',
   );
   assert.equal(packageJson.scripts.verify, 'npm test && npm run validate');
 });

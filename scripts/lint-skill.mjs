@@ -71,9 +71,17 @@ for (const type of Object.keys(KNOWN_COMPONENTS)) {
   if (!catalog.includes(`\`${type}\``)) errors.push(`Component-Typ fehlt in Referenzen: ${type}`);
 }
 
+const gitlabSkillRoot = join(__dir, '..', '.github', 'skills', 'gitlab-access');
+const gitlabSkillPath = join(gitlabSkillRoot, 'SKILL.md');
+const gitlabReferencePath = join(gitlabSkillRoot, 'references', 'rest-api.md');
+const gitlabScriptPath = join(gitlabSkillRoot, 'scripts', 'gitlab-api.mjs');
+const gitlabAgentPath = join(gitlabSkillRoot, 'agents', 'openai.yaml');
+
 const documentationFiles = [
   ...markdownFiles,
   ...readdirSync(examplesDir).map(file => join(examplesDir, file)),
+  gitlabSkillPath,
+  gitlabReferencePath,
 ];
 const documentation = [...new Set(documentationFiles)]
   .map(file => readFileSync(file, 'utf8'))
@@ -135,6 +143,57 @@ for (const match of ticketSkill.matchAll(/\]\(([^)]+)\)/g)) {
   if (!existsSync(path)) errors.push(`Fehlender Link in ${ticketSkillPath}: ${target}`);
 }
 
+const gitlabSkill = readFileSync(gitlabSkillPath, 'utf8');
+const gitlabReference = readFileSync(gitlabReferencePath, 'utf8');
+const gitlabAgent = readFileSync(gitlabAgentPath, 'utf8');
+const gitlabFrontmatter = /^---\r?\n([\s\S]*?)\r?\n---\r?\n/.exec(gitlabSkill);
+
+if (!gitlabFrontmatter) {
+  errors.push('gitlab-access/SKILL.md besitzt kein gültiges YAML-Frontmatter.');
+} else {
+  const fields = [...gitlabFrontmatter[1].matchAll(/^([a-zA-Z][\w-]*):\s*(.+)$/gm)]
+    .map(match => ({ name: match[1], value: match[2].trim() }));
+  if (fields.map(field => field.name).join(',') !== 'name,description') {
+    errors.push('gitlab-access-Frontmatter muss genau name und description enthalten.');
+  }
+  if (fields.find(field => field.name === 'name')?.value !== 'gitlab-access') {
+    errors.push('gitlab-access-Frontmatter-name muss gitlab-access sein.');
+  }
+}
+
+for (const [label, content] of [
+  ['gitlab-access/SKILL.md', gitlabSkill],
+  ['gitlab-access/references/rest-api.md', gitlabReference],
+  ['gitlab-access/agents/openai.yaml', gitlabAgent],
+]) {
+  if (content.includes('TODO')) errors.push(`${label} enthält noch TODO-Platzhalter.`);
+}
+
+for (const requiredText of [
+  'GITLAB_API_TOKEN',
+  'CLIENT_CERT_PATH',
+  'read-only',
+  'npm run gitlab-api',
+]) {
+  if (!gitlabSkill.includes(requiredText)) {
+    errors.push(`gitlab-access/SKILL.md dokumentiert "${requiredText}" nicht.`);
+  }
+}
+
+if (!existsSync(gitlabScriptPath)) {
+  errors.push('gitlab-access/scripts/gitlab-api.mjs fehlt.');
+}
+if (!gitlabAgent.includes('$gitlab-access')) {
+  errors.push('gitlab-access/agents/openai.yaml muss $gitlab-access im default_prompt nennen.');
+}
+
+for (const match of gitlabSkill.matchAll(/\]\(([^)]+)\)/g)) {
+  const target = match[1];
+  if (/^(https?:|#)/.test(target)) continue;
+  const path = resolve(dirname(gitlabSkillPath), target);
+  if (!existsSync(path)) errors.push(`Fehlender Link in ${gitlabSkillPath}: ${target}`);
+}
+
 const forbiddenPatterns = [
   { pattern: /\bJIRAUSER\d+\b/, label: 'produktive Jira-Benutzer-ID' },
   { pattern: /\bcustomfield_\d+\b/, label: 'produktive Customfield-ID' },
@@ -155,4 +214,5 @@ if (errors.length > 0) {
     + `${Object.keys(KNOWN_COMPONENTS).length} Typen dokumentiert.`,
   );
   console.log('✅ Jira-Ticket-Skill geprüft: Frontmatter, Links, CLI, Referenz und Schutzworkflow gültig.');
+  console.log('✅ GitLab-Skill geprüft: Frontmatter, Links, CLI, Referenz und read-only Schutz gültig.');
 }

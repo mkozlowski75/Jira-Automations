@@ -1,0 +1,4 @@
+interface:
+  display_name: "GitLab Access"
+  short_description: "GitLab sicher lesen und untersuchen"
+  default_prompt: "Use $gitlab-access to inspect GitLab projects, merge requests, pipelines, and jobs safely."

@@ -109,9 +109,14 @@ test('stellt eine eindeutige und vollständige Befehlsoberfläche bereit', () =>
     'pull-rule',
     'push-rule',
     'rollback-rule',
+    'jira-ticket',
     'lint',
   ]);
   assert.equal(packageJson.scripts['push-rule'], 'node scripts/push-rule.mjs');
+  assert.equal(
+    packageJson.scripts['jira-ticket'],
+    'node .github/skills/jira-tickets/scripts/jira-ticket.mjs',
+  );
   assert.equal(packageJson.scripts.verify, 'npm test && npm run validate');
 });
 

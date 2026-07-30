@@ -87,11 +87,15 @@ Export als `rules/BDR-{id}.json` aufnehmen und erst danach bearbeiten.
 | `npm run push-rule -- <regeldatei> --apply` | Backup, PUT und Remote-Verifikation | Ja |
 | `npm run rollback-rule -- <backup>` | Rollback-Preflight | Nein |
 | `npm run rollback-rule -- <backup> --apply` | Aktuellen Stand sichern und Backup einspielen | Ja |
+| `npm run jira-ticket -- get <KEY>` | Jira-Ticket mit ausgewählten Feldern lesen | Nein |
+| `npm run jira-ticket -- search --jql "<JQL>"` | Jira-Tickets per JQL suchen | Nein |
+| `npm run jira-ticket -- comment/edit/transition ...` | Ticketänderung vorbereiten; erst `--apply` schreibt | Standardmäßig nein |
 
 ## Projektstruktur
 
 ```text
 .github/skills/jira-automation-rules/  Verbindlicher KI-Workflow und Referenzen
+.github/skills/jira-tickets/           Sicherer Lese- und Änderungsworkflow für Tickets
 .vscode/settings.json                  Schema-Zuordnung für Visual Studio Code
 config/.env.example                    Bereinigte Verbindungskonfiguration
 rules/BDR-*.json                       Produktive Jira-Exporte
@@ -114,4 +118,5 @@ Push.
 - IDs und Component-Strukturen niemals erfinden.
 - `.env`, Zertifikate, Backups und Secret-Werte nicht ungefiltert anzeigen.
 - Ohne `--apply` findet niemals ein PUT statt.
+- Ticketänderungen benötigen zusätzlich den unveränderten `updated`-Wert aus dem Preflight.
 - Bei Drift, Fehlern oder Warnungen nicht pushen.

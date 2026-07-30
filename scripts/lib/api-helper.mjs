@@ -140,6 +140,19 @@ async function httpPutJson(url, body, headers = {}) {
   return responseBody ? JSON.parse(responseBody) : null;
 }
 
+async function httpPostJson(url, body, headers = {}) {
+  const res = await request('POST', url, {
+    headers: { ...headers, 'Content-Type': 'application/json' },
+    body,
+  });
+  if (!res.ok) {
+    throw new Error(`POST ${url} → ${res.status} ${res.statusText}`);
+  }
+  if (res.status === 204) return null;
+  const responseBody = await res.text();
+  return responseBody ? JSON.parse(responseBody) : null;
+}
+
 // ─── Jira API ───────────────────────────────────────────────
 const jiraAuthHeaders = {
   'Authorization': `Bearer ${JIRA_PAT}`,
@@ -156,6 +169,18 @@ export async function jiraGet(path) {
   assertJiraConfigured();
   const url = `${JIRA_BASE}${JIRA_PATH}${path}`;
   return httpGetJson(url, jiraAuthHeaders);
+}
+
+export async function jiraPut(path, body) {
+  assertJiraConfigured();
+  const url = `${JIRA_BASE}${JIRA_PATH}${path}`;
+  return httpPutJson(url, body, jiraAuthHeaders);
+}
+
+export async function jiraPost(path, body) {
+  assertJiraConfigured();
+  const url = `${JIRA_BASE}${JIRA_PATH}${path}`;
+  return httpPostJson(url, body, jiraAuthHeaders);
 }
 
 export async function jiraRawGet(url, headers = {}) {

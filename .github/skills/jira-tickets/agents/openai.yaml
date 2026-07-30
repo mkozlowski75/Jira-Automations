@@ -1,0 +1,4 @@
+interface:
+  display_name: "Jira Tickets"
+  short_description: "Jira-Tickets sicher lesen und ändern"
+  default_prompt: "Use $jira-tickets to search, read, or safely prepare a Jira ticket change."

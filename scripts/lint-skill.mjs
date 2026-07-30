@@ -79,6 +79,62 @@ const documentation = [...new Set(documentationFiles)]
   .map(file => readFileSync(file, 'utf8'))
   .join('\n');
 
+const ticketSkillRoot = join(__dir, '..', '.github', 'skills', 'jira-tickets');
+const ticketSkillPath = join(ticketSkillRoot, 'SKILL.md');
+const ticketReferencePath = join(ticketSkillRoot, 'references', 'rest-api.md');
+const ticketScriptPath = join(ticketSkillRoot, 'scripts', 'jira-ticket.mjs');
+const ticketAgentPath = join(ticketSkillRoot, 'agents', 'openai.yaml');
+const ticketSkill = readFileSync(ticketSkillPath, 'utf8');
+const ticketReference = readFileSync(ticketReferencePath, 'utf8');
+const ticketAgent = readFileSync(ticketAgentPath, 'utf8');
+const ticketFrontmatter = /^---\r?\n([\s\S]*?)\r?\n---\r?\n/.exec(ticketSkill);
+
+if (!ticketFrontmatter) {
+  errors.push('jira-tickets/SKILL.md besitzt kein gültiges YAML-Frontmatter.');
+} else {
+  const fields = [...ticketFrontmatter[1].matchAll(/^([a-zA-Z][\w-]*):\s*(.+)$/gm)]
+    .map(match => ({ name: match[1], value: match[2].trim() }));
+  if (fields.map(field => field.name).join(',') !== 'name,description') {
+    errors.push('jira-tickets-Frontmatter muss genau name und description enthalten.');
+  }
+  if (fields.find(field => field.name === 'name')?.value !== 'jira-tickets') {
+    errors.push('jira-tickets-Frontmatter-name muss jira-tickets sein.');
+  }
+}
+
+for (const [label, content] of [
+  ['jira-tickets/SKILL.md', ticketSkill],
+  ['jira-tickets/references/rest-api.md', ticketReference],
+  ['jira-tickets/agents/openai.yaml', ticketAgent],
+]) {
+  if (content.includes('TODO')) errors.push(`${label} enthält noch TODO-Platzhalter.`);
+}
+
+for (const requiredText of [
+  '--apply',
+  '--expected-updated',
+  'editmeta',
+  'Transition-ID',
+]) {
+  if (!ticketSkill.includes(requiredText)) {
+    errors.push(`jira-tickets/SKILL.md dokumentiert "${requiredText}" nicht.`);
+  }
+}
+
+if (!existsSync(ticketScriptPath)) {
+  errors.push('jira-tickets/scripts/jira-ticket.mjs fehlt.');
+}
+if (!ticketAgent.includes('$jira-tickets')) {
+  errors.push('jira-tickets/agents/openai.yaml muss $jira-tickets im default_prompt nennen.');
+}
+
+for (const match of ticketSkill.matchAll(/\]\(([^)]+)\)/g)) {
+  const target = match[1];
+  if (/^(https?:|#)/.test(target)) continue;
+  const path = resolve(dirname(ticketSkillPath), target);
+  if (!existsSync(path)) errors.push(`Fehlender Link in ${ticketSkillPath}: ${target}`);
+}
+
 const forbiddenPatterns = [
   { pattern: /\bJIRAUSER\d+\b/, label: 'produktive Jira-Benutzer-ID' },
   { pattern: /\bcustomfield_\d+\b/, label: 'produktive Customfield-ID' },
@@ -98,4 +154,5 @@ if (errors.length > 0) {
     `✅ Skill geprüft: ${lineCount} Zeilen, Frontmatter, Links und Beispiele gültig, `
     + `${Object.keys(KNOWN_COMPONENTS).length} Typen dokumentiert.`,
   );
+  console.log('✅ Jira-Ticket-Skill geprüft: Frontmatter, Links, CLI, Referenz und Schutzworkflow gültig.');
 }

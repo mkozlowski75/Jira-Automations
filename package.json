@@ -5,7 +5,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test test/rule-validation.test.mjs && node scripts/lint-skill.mjs",
+    "test": "node --test test/rule-validation.test.mjs test/ticket-api.test.mjs && node scripts/lint-skill.mjs",
     "validate": "node scripts/validate-rules.mjs",
     "verify": "npm test && npm run validate",
     "next-component-id": "node scripts/next-component-id.mjs",
@@ -13,6 +13,7 @@
     "pull-rule": "node scripts/pull-rule.mjs",
     "push-rule": "node scripts/push-rule.mjs",
     "rollback-rule": "node scripts/rollback-rule.mjs",
+    "jira-ticket": "node .github/skills/jira-tickets/scripts/jira-ticket.mjs",
     "lint": "node scripts/lint-skill.mjs"
   },
   "dependencies": {

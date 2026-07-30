@@ -39,13 +39,21 @@ eine unsichere Umgehung.
 npm run gitlab-api -- projects
 npm run gitlab-api -- projects --search "service"
 npm run gitlab-api -- project <Projekt-ID-oder-Pfad>
+npm run gitlab-api -- members <Projekt-ID-oder-Pfad>
 npm run gitlab-api -- branches <Projekt-ID-oder-Pfad> --search "feature/"
+npm run gitlab-api -- repository-tree <Projekt-ID-oder-Pfad> --ref main
+npm run gitlab-api -- repository-file <Projekt-ID-oder-Pfad> README.md --ref main
 ```
 
 Ohne `--search` werden höchstens 20 Einträge ausgegeben. Erhöhe den Wert nur
 bei Bedarf mit `--max-results`; erlaubt sind maximal 100. Verwende eine
 numerische Projekt-ID, wenn sie bekannt ist. Übergib alternativ den vollständigen
 Namespace-Pfad; das Skript kodiert ihn für den API-Aufruf.
+
+Lies Repository-Dateien nur dann, wenn der Benutzer das konkrete Repository oder
+die konkrete Datei in den Auftrag einbezogen hat. Die Dateiausgabe ist auf
+textuelle Dateien bis 1 MiB begrenzt. Verwende diese Befehle nicht für
+Job-Traces, Artefakte, Secret-Dateien oder CI/CD-Variablen.
 
 ## Merge Requests analysieren
 

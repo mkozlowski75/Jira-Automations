@@ -21,7 +21,10 @@ TLS-Zertifikatsprüfung bleibt immer aktiviert.
 | `user` | `/user` |
 | `projects` | `/groups/:group/projects` oder `/projects?membership=true` |
 | `project <Projekt>` | `/projects/:id` |
+| `members <Projekt>` | `/projects/:id/members/all` |
 | `branches <Projekt>` | `/projects/:id/repository/branches` |
+| `repository-tree <Projekt>` | `/projects/:id/repository/tree` |
+| `repository-file <Projekt> <Dateipfad>` | `/projects/:id/repository/files/:file_path` |
 | `merge-requests <Projekt>` | `/projects/:id/merge_requests` |
 | `merge-request <Projekt> <IID>` | `/projects/:id/merge_requests/:iid` |
 | `pipelines <Projekt>` | `/projects/:id/pipelines` |
@@ -36,6 +39,7 @@ angeforderten Umfang aus.
 - `--search <Text>`: Projekte, Branches oder Merge Requests filtern
 - `--state opened|closed|merged|locked|all`: Merge Requests filtern
 - `--ref <Branch-oder-Tag>`: Pipelines nach Ref filtern
+- `--path <Repository-Pfad>`: Repository-Baum auf einen Ordner begrenzen
 - `--status <Status>`: Pipelines nach Status filtern
 - `--max-results <1..100>`: maximale Listengröße, Standard 20
 
@@ -44,6 +48,13 @@ angeforderten Umfang aus.
 Die CLI gibt nur ausgewählte Felder aus. Unter anderem werden Token, Header,
 vollständige Benutzerprofile, Berechtigungsstrukturen, Repository-Statistiken,
 Commit-Nachrichten, Job-Traces und Artefakte nicht ausgegeben.
+
+`members` gibt ausschließlich Benutzer-ID, Benutzername, Anzeigename,
+GitLab-Zugriffsstufe, Status und Profil-URL aus. E-Mail-Adressen und weitere
+Profildaten werden nicht ausgegeben.
+
+`repository-file` gibt ausschließlich explizit angeforderte, UTF-8-lesbare
+Repository-Dateien bis 1 MiB aus. Binärdateien werden abgewiesen.
 
 Fehlertexte redigieren URLs, Token-Header und tokenähnliche Werte. Eine
 ungefilterte Serverantwort darf auch im Fehlerfall nicht an den Benutzer

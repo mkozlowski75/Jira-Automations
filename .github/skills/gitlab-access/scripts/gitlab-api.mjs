@@ -17,7 +17,10 @@ function usage() {
     '  gitlab-api.mjs user',
     '  gitlab-api.mjs projects [--search text] [--max-results 20]',
     '  gitlab-api.mjs project <project-id-or-path>',
+    '  gitlab-api.mjs members <project> [--max-results 20]',
     '  gitlab-api.mjs branches <project> [--search text] [--max-results 20]',
+    '  gitlab-api.mjs repository-tree <project> [--path value] [--ref value] [--max-results 20]',
+    '  gitlab-api.mjs repository-file <project> <file-path> [--ref value]',
     '  gitlab-api.mjs merge-requests <project> [--state opened] [--search text] [--max-results 20]',
     '  gitlab-api.mjs merge-request <project> <iid>',
     '  gitlab-api.mjs pipelines <project> [--ref value] [--status value] [--max-results 20]',
@@ -224,12 +227,38 @@ const projectView = project => ({
   webUrl: project.web_url,
 });
 
+const accessLevelNames = new Map([
+  [5, 'Minimal access'],
+  [10, 'Guest'],
+  [15, 'Planner'],
+  [20, 'Reporter'],
+  [30, 'Developer'],
+  [40, 'Maintainer'],
+  [50, 'Owner'],
+]);
+
+const memberView = member => ({
+  id: member.id,
+  username: member.username,
+  name: member.name,
+  accessLevel: member.access_level,
+  role: accessLevelNames.get(member.access_level) || `Unknown (${member.access_level})`,
+  state: member.state,
+  webUrl: member.web_url,
+});
+
 const branchView = branch => ({
   name: branch.name,
   merged: branch.merged,
   protected: branch.protected,
   default: branch.default,
   webUrl: branch.web_url,
+});
+
+const repositoryEntryView = entry => ({
+  name: entry.name,
+  path: entry.path,
+  type: entry.type,
 });
 
 const mergeRequestView = mergeRequest => ({
@@ -304,6 +333,16 @@ export async function runCli(
     return projectView(await get(configuration, `/projects/${encodeProject(project)}`));
   }
 
+  if (command === 'members') {
+    const maxResults = parseMaxResults(options['max-results']);
+    const result = await get(
+      configuration,
+      `/projects/${encodeProject(project)}/members/all`,
+      { per_page: maxResults },
+    );
+    return result.map(memberView);
+  }
+
   if (command === 'branches') {
     const maxResults = parseMaxResults(options['max-results']);
     const result = await get(
@@ -312,6 +351,44 @@ export async function runCli(
       { search: options.search, per_page: maxResults },
     );
     return result.map(branchView);
+  }
+
+  if (command === 'repository-tree') {
+    const maxResults = parseMaxResults(options['max-results']);
+    const result = await get(
+      configuration,
+      `/projects/${encodeProject(project)}/repository/tree`,
+      {
+        path: options.path,
+        ref: options.ref,
+        per_page: maxResults,
+      },
+    );
+    return result.map(repositoryEntryView);
+  }
+
+  if (command === 'repository-file') {
+    if (!itemId) throw new Error('Repository-Dateipfad fehlt.');
+    const result = await get(
+      configuration,
+      `/projects/${encodeProject(project)}/repository/files/${encodeURIComponent(itemId)}`,
+      { ref: options.ref || 'HEAD' },
+    );
+    if (result.encoding !== 'base64' || typeof result.content !== 'string') {
+      throw new Error('Repository-Datei besitzt keine unterstützte Base64-Kodierung.');
+    }
+    const content = Buffer.from(result.content, 'base64');
+    if (content.length > 1024 * 1024) {
+      throw new Error('Repository-Datei überschreitet das Leselimit von 1 MiB.');
+    }
+    if (content.includes(0)) {
+      throw new Error('Binäre Repository-Dateien werden nicht ausgegeben.');
+    }
+    return {
+      filePath: result.file_path,
+      ref: result.ref,
+      content: content.toString('utf8'),
+    };
   }
 
   if (command === 'merge-requests') {

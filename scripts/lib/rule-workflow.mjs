@@ -42,6 +42,30 @@ function rulesEqual(left, right, { ignoreUpdated = false } = {}) {
     === JSON.stringify(canonicalize(right, ignoredKeys));
 }
 
+function businessRule(rule) {
+  const result = structuredClone(rule);
+  delete result.id;
+  delete result.updated;
+
+  function removeServerManagedComponentFields(node) {
+    if (!isPlainObject(node)) return;
+    delete node.id;
+    delete node.parentId;
+    delete node.conditionParentId;
+    for (const key of ['children', 'conditions']) {
+      if (Array.isArray(node[key])) {
+        node[key].forEach(removeServerManagedComponentFields);
+      }
+    }
+  }
+
+  removeServerManagedComponentFields(result.trigger);
+  if (Array.isArray(result.components)) {
+    result.components.forEach(removeServerManagedComponentFields);
+  }
+  return result;
+}
+
 function remoteVerificationError(path, reason) {
   return new Error(`Remote-Verifikation nach dem Push ist fehlgeschlagen (${path}: ${reason}).`);
 }
@@ -316,6 +340,10 @@ function summarizeRuleChanges(remoteRule, localRule) {
         after: redactSensitive(localRule[field]),
       })),
     changes: diffRules(remoteRule, localRule),
+    businessChanges: diffRules(
+      businessRule(remoteRule),
+      businessRule(localRule),
+    ),
   };
 }
 
@@ -346,11 +374,14 @@ export function prepareDeployment({
   baselineRule,
   validation,
   allowedFields = [],
+  forceDrift = false,
 }) {
   const errors = [];
   const warnings = [...(validation?.warnings || [])];
   const allowed = new Set(allowedFields);
   const summary = summarizeRuleChanges(remoteRule, localRule);
+  const serverDrift = Boolean(baselineRule && !rulesEqual(remoteRule, baselineRule));
+  summary.serverDrift = serverDrift;
 
   for (const validationError of validation?.errors || []) {
     errors.push(`Validierung: ${validationError.file} ${validationError.path} ${validationError.message}`);
@@ -361,7 +392,7 @@ export function prepareDeployment({
 
   if (!baselineRule) {
     errors.push('Kein Git-HEAD-Basisstand für die Drift-Prüfung gefunden.');
-  } else if (!rulesEqual(remoteRule, baselineRule)) {
+  } else if (serverDrift && !forceDrift) {
     errors.push('Der aktuelle Serverstand weicht vom Git-HEAD-Basisstand ab.');
   }
 
@@ -371,7 +402,12 @@ export function prepareDeployment({
     }
   }
 
-  if (!rulesEqual(remoteRule?.updated, localRule?.updated)) {
+  if (
+    baselineRule
+    && !rulesEqual(baselineRule?.updated, localRule?.updated)
+  ) {
+    errors.push('Das serververwaltete Feld updated darf nicht lokal geändert werden.');
+  } else if (!forceDrift && !rulesEqual(remoteRule?.updated, localRule?.updated)) {
     errors.push('Das serververwaltete Feld updated darf nicht lokal geändert werden.');
   }
 
@@ -389,7 +425,7 @@ export function prepareDeployment({
   if (sensitiveChanges.length > 0) {
     errors.push('Secret- oder Tokenwerte dürfen nicht durch den lokalen Push geändert werden.');
   }
-  if (summary.changes.length === 0) {
+  if (summary.businessChanges.length === 0) {
     errors.push('Es liegen keine Änderungen für einen Push vor.');
   }
 
@@ -423,11 +459,17 @@ export async function performDeployment({
   validation,
   allowedFields = [],
   apply = false,
+  forceDrift = false,
   fetchRemote,
   putRemote,
   createBackup,
   persistSynchronizedRule,
+  reportPreflight,
 }) {
+  if (forceDrift && !apply) {
+    throw new Error('--force-drift darf nur zusammen mit --apply verwendet werden.');
+  }
+
   const remoteRule = await fetchRemote(localRule);
   const preflight = prepareDeployment({
     localRule,
@@ -435,7 +477,9 @@ export async function performDeployment({
     baselineRule,
     validation,
     allowedFields,
+    forceDrift,
   });
+  if (reportPreflight) await reportPreflight(preflight);
 
   if (!apply || !preflight.ok) {
     return {
@@ -448,7 +492,10 @@ export async function performDeployment({
   const backupPath = await createBackup(remoteRule);
   if (!backupPath) throw new Error('Backup konnte nicht erstellt werden.');
 
-  await putRemote(localRule);
+  const deploymentRule = forceDrift && preflight.summary.serverDrift
+    ? { ...localRule, updated: remoteRule.updated }
+    : localRule;
+  await putRemote(deploymentRule);
   const verifiedRule = await fetchRemote(localRule);
   const synchronization = synchronizeVerifiedRule(localRule, verifiedRule);
   if (persistSynchronizedRule) {

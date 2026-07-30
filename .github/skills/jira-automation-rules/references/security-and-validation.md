@@ -27,6 +27,49 @@ Regel. Bei Abweichung wird der Push blockiert. Geschützte Felder benötigen neb
 dem ausdrücklichen Benutzerauftrag ein passendes
 `--allow-field=<feld>`.
 
+### Break-glass: Drift bewusst überschreiben
+
+Der Break-glass-Workflow ist eine ausdrücklich freizugebende Ausnahme und kein
+Standard-Deployment. Der normale read-only Preflight bleibt:
+
+```powershell
+npm run push-rule -- rules/BDR-913.json
+```
+
+Er zeigt redigiert Regel-ID, Name, Projekt-Scope, Trigger, die erkannte
+Abweichung zu Git HEAD und die fachlichen Änderungen des lokalen Entwurfs
+gegenüber dem aktuellen Serverstand. Dieser Preflight erteilt keine Freigabe
+für einen späteren PUT.
+
+Nur ein ausdrücklich freigegebener Benutzer darf anschließend in derselben
+Unterhaltung den folgenden eigenständigen Aufruf beauftragen:
+
+```powershell
+npm run push-rule -- rules/BDR-913.json --apply --force-drift
+```
+
+`--force-drift` wird ohne `--apply` abgewiesen. Auch nach einem früheren
+Preflight müssen beide Schalter im schreibenden Aufruf stehen. Dieser Aufruf
+liest den Serverstand erneut, validiert die lokale Regel, erzeugt vor dem PUT
+das vollständige Backup und hebt ausschließlich die Abweichung zwischen
+aktuellem Jira-Serverstand und Git HEAD als Blocker auf. Folgende Sperren gelten
+unverändert:
+
+- fehlender Git-HEAD-Basisstand,
+- Validierungsfehler und sämtliche Validierungswarnungen,
+- Secret-, Token- oder sicherheitsrelevante Header-Änderungen,
+- unveränderliche Top-Level-Felder,
+- geschützte Top-Level-Felder ohne passendes `--allow-field=<feld>`,
+- fehlgeschlagenes oder unvollständiges Backup.
+
+Nach dem PUT lädt das Werkzeug die Regel erneut und verifiziert den fachlichen
+Inhalt, die Component-Reihenfolge und sämtliche `parentId`- und
+`conditionParentId`-Beziehungen. Nur nach erfolgreicher Verifikation werden die
+serververwalteten Component-IDs und `updated` in den lokalen Export
+synchronisiert. Bei jeder Abweichung bleibt die lokale Regel unverändert.
+Ausgaben enthalten weder Tokens, Header, Zertifikate und Secrets noch rohe
+Serverantworten.
+
 ## Secret-Behandlung
 
 - `.env` und Zertifikate nicht öffnen.

@@ -1,6 +1,6 @@
 /**
  * Push eine einzelne Regel-Datei nach Jira Data Center (Automation API).
- * Usage: npm run push-rule -- rules/BDR-913.json
+ * Usage: npm run push-rule -- rules/BDR-913.json [--apply] [--force-drift]
  *
  * Ohne --apply wird ausschließlich ein read-only Preflight ausgeführt.
  */
@@ -36,6 +36,7 @@ function parseArguments(args) {
   return {
     ruleFile,
     apply: args.includes('--apply'),
+    forceDrift: args.includes('--force-drift'),
     allowedFields,
   };
 }
@@ -58,6 +59,9 @@ function printPreflight(preflight) {
   console.log(`Regel: ${summary.rule.name} (ID ${summary.rule.id})`);
   console.log(`Projekt-Scope: ${formatValue(summary.rule.projects)}`);
   console.log(`Trigger: ${summary.rule.trigger?.type || 'nicht vorhanden'}`);
+  if (summary.serverDrift) {
+    console.log('Serverdrift: Der aktuelle Serverstand weicht von Git HEAD ab.');
+  }
   console.log(`Components hinzugefügt: ${summary.components.added.length}`);
   console.log(`Components entfernt: ${summary.components.removed.length}`);
   console.log(`Components typseitig geändert: ${summary.components.changed.length}`);
@@ -66,11 +70,11 @@ function printPreflight(preflight) {
     console.log(`Geschützte Felder geändert: ${summary.guardedFields.map(change => change.field).join(', ')}`);
   }
 
-  console.log('Änderungen:');
-  for (const change of summary.changes) {
+  console.log('Vorgesehene fachliche Änderungen gegenüber dem Server:');
+  for (const change of summary.businessChanges) {
     console.log(`  ${change.path}: ${formatValue(change.before)} -> ${formatValue(change.after)}`);
   }
-  if (summary.changes.length === 0) console.log('  keine');
+  if (summary.businessChanges.length === 0) console.log('  keine');
 
   for (const error of preflight.errors) console.error(`❌ ${error}`);
   for (const warning of preflight.warnings) {
@@ -82,10 +86,18 @@ async function main() {
   const {
     ruleFile,
     apply,
+    forceDrift,
     allowedFields,
   } = parseArguments(process.argv.slice(2));
   if (!ruleFile) {
-    console.log('Usage: npm run push-rule -- <rule-file.json> [--apply] [--allow-field=<field>]');
+    console.log(
+      'Usage: npm run push-rule -- <rule-file.json> [--apply] [--force-drift] [--allow-field=<field>]',
+    );
+    process.exitCode = 1;
+    return;
+  }
+  if (forceDrift && !apply) {
+    console.error('❌ --force-drift darf nur zusammen mit --apply verwendet werden.');
     process.exitCode = 1;
     return;
   }
@@ -110,6 +122,7 @@ async function main() {
     validation,
     allowedFields,
     apply,
+    forceDrift,
     fetchRemote: fetchAutomationRule,
     putRemote: putAutomationRule,
     createBackup: remoteRule => writeServerBackup(backupsRoot, remoteRule),
@@ -117,9 +130,8 @@ async function main() {
       resolved.absolutePath,
       synchronizedRule,
     ),
+    reportPreflight: printPreflight,
   });
-
-  printPreflight(result.preflight);
 
   if (!result.preflight.ok) {
     process.exitCode = 1;
@@ -132,6 +144,9 @@ async function main() {
     return;
   }
 
+  if (forceDrift) {
+    console.log('\n⚠️  Break-glass-Deployment mit bewusst akzeptierter Serverdrift.');
+  }
   console.log(`\n✅ Regel aktualisiert und remote verifiziert.`);
   console.log(`   Server-Backup: ${result.backupPath}`);
   console.log(

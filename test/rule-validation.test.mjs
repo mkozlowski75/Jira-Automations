@@ -432,6 +432,148 @@ test('Preflight blockiert Drift, Warnungen, Schutzfelder und Secret-Änderungen'
   assert.ok(secretResult.errors.some(error => error.includes('Secret- oder Tokenwerte')));
 });
 
+test('Drift blockiert ohne --force-drift', () => {
+  const baseline = cloneFixture();
+  baseline.projects = [{ projectId: '99999', projectTypeKey: 'software' }];
+  const remote = structuredClone(baseline);
+  remote.name = 'Serverseitig geänderte Regel';
+  remote.updated += 1;
+  const local = structuredClone(baseline);
+  local.name = 'Lokal gewünschte Regel';
+
+  const result = prepareDeployment({
+    localRule: local,
+    remoteRule: remote,
+    baselineRule: baseline,
+    validation: { errors: [], warnings: [] },
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.summary.serverDrift, true);
+  assert.ok(result.errors.some(error => error.includes('Serverstand')));
+});
+
+test('--force-drift ohne --apply wird abgewiesen', async () => {
+  let fetchCount = 0;
+
+  await assert.rejects(
+    performDeployment({
+      localRule: cloneFixture(),
+      baselineRule: cloneFixture(),
+      validation: { errors: [], warnings: [] },
+      apply: false,
+      forceDrift: true,
+      fetchRemote: async () => {
+        fetchCount += 1;
+        return cloneFixture();
+      },
+    }),
+    /--force-drift darf nur zusammen mit --apply/,
+  );
+
+  assert.equal(fetchCount, 0);
+});
+
+test('Force-Drift-Deployment erzeugt Backup, PUT und Verifikation', async () => {
+  const baseline = cloneFixture();
+  baseline.projects = [{ projectId: '99999', projectTypeKey: 'software' }];
+  const remote = structuredClone(baseline);
+  remote.name = 'Serverseitig geänderte Regel';
+  remote.updated = 20;
+  const local = structuredClone(baseline);
+  local.name = 'Bewusst gewünschte lokale Regel';
+  const verified = structuredClone(local);
+  verified.updated = 21;
+
+  let fetchCount = 0;
+  let backupRule = null;
+  let putRule = null;
+  let persistedRule = null;
+  const events = [];
+  const result = await performDeployment({
+    localRule: local,
+    baselineRule: baseline,
+    validation: { errors: [], warnings: [] },
+    apply: true,
+    forceDrift: true,
+    fetchRemote: async () => {
+      fetchCount += 1;
+      events.push(`fetch-${fetchCount}`);
+      return structuredClone(fetchCount === 1 ? remote : verified);
+    },
+    putRemote: async rule => {
+      events.push('put');
+      putRule = structuredClone(rule);
+    },
+    createBackup: async rule => {
+      events.push('backup');
+      backupRule = structuredClone(rule);
+      return 'backups/BDR-100/force-drift.server.json';
+    },
+    persistSynchronizedRule: async rule => {
+      events.push('persist');
+      persistedRule = structuredClone(rule);
+    },
+    reportPreflight: async preflight => {
+      events.push('preflight');
+      assert.equal(preflight.summary.serverDrift, true);
+    },
+  });
+
+  assert.equal(result.applied, true);
+  assert.equal(result.preflight.summary.serverDrift, true);
+  assert.equal(fetchCount, 2);
+  assert.deepEqual(backupRule, remote);
+  assert.equal(putRule.name, local.name);
+  assert.equal(putRule.updated, remote.updated);
+  assert.equal(persistedRule.name, local.name);
+  assert.equal(persistedRule.updated, verified.updated);
+  assert.deepEqual(events, [
+    'fetch-1',
+    'preflight',
+    'backup',
+    'put',
+    'fetch-2',
+    'persist',
+  ]);
+});
+
+test('Fehlgeschlagene Force-Drift-Verifikation synchronisiert keine lokale Regel', async () => {
+  const baseline = cloneFixture();
+  baseline.projects = [{ projectId: '99999', projectTypeKey: 'software' }];
+  const remote = structuredClone(baseline);
+  remote.name = 'Serverseitig geänderte Regel';
+  remote.updated = 20;
+  const local = structuredClone(baseline);
+  local.name = 'Bewusst gewünschte lokale Regel';
+
+  let fetchCount = 0;
+  let putCount = 0;
+  let persistCount = 0;
+  await assert.rejects(
+    performDeployment({
+      localRule: local,
+      baselineRule: baseline,
+      validation: { errors: [], warnings: [] },
+      apply: true,
+      forceDrift: true,
+      fetchRemote: async () => {
+        fetchCount += 1;
+        if (fetchCount === 1) return structuredClone(remote);
+        return { ...structuredClone(local), name: 'Nicht übernommener Serverstand', updated: 21 };
+      },
+      putRemote: async () => { putCount += 1; },
+      createBackup: async () => 'backups/BDR-100/force-drift.server.json',
+      persistSynchronizedRule: async () => { persistCount += 1; },
+    }),
+    /Remote-Verifikation nach dem Push ist fehlgeschlagen/,
+  );
+
+  assert.equal(fetchCount, 2);
+  assert.equal(putCount, 1);
+  assert.equal(persistCount, 0);
+});
+
 test('geschütztes Feld benötigt explizite allow-field-Freigabe', () => {
   const remote = cloneFixture();
   remote.projects = [{ projectId: '99999', projectTypeKey: 'software' }];

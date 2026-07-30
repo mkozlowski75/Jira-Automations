@@ -69,6 +69,38 @@ Lernartefakte. Übernimm keine Beispiel-ID in eine produktive Regel.
     verifizierten lokalen Export in Git, bevor du den nächsten Push vorbereitest.
     Die folgende Drift-Prüfung verwendet diesen Git-HEAD-Stand als Basis.
 
+## Break-glass bei bewusst akzeptierter Serverdrift
+
+Dieser Ausnahme-Workflow ist kein Standard-Deployment. Verwende ihn nur, wenn
+ein ausdrücklich freigegebener Benutzer in der aktuellen Unterhaltung das
+bewusste Überschreiben des vom Git-HEAD abweichenden Jira-Serverstands
+beauftragt.
+
+1. Führe zuerst den normalen read-only Preflight aus:
+   `npm run push-rule -- <regeldatei>`. Er muss redigiert Regel-ID, Name, Scope,
+   Trigger, die Abweichung des Serverstands von Git HEAD und die vorgesehenen
+   fachlichen Änderungen der lokalen Regel gegenüber dem aktuellen Serverstand
+   zeigen.
+2. Prüfe die angezeigten fachlichen Änderungen mit dem Benutzer. Der Preflight
+   selbst ist keine Freigabe und kann nicht für einen späteren Schreibzugriff
+   wiederverwendet werden.
+3. Verwende nach ausdrücklicher Freigabe in derselben Unterhaltung
+   `npm run push-rule -- <regeldatei> --apply --force-drift`. Das Werkzeug liest
+   den Serverstand erneut und führt den PUT nur aus, wenn beide Schalter in
+   diesem Aufruf gesetzt sind.
+4. `--force-drift` hebt ausschließlich die Drift-Sperre auf. Fehlender
+   Git-Basisstand, Validierungsfehler oder -warnungen, Secret-Änderungen,
+   unveränderliche Felder sowie nicht mit `--allow-field=<feld>` freigegebene
+   geschützte Felder bleiben blockierend.
+5. Vor dem PUT muss das vollständige lokale Server-Backup unter
+   `backups/BDR-{id}/` erfolgreich angelegt sein. Nach dem PUT muss der
+   Serverstand erneut geladen und fachlich einschließlich Component-Reihenfolge
+   und `parentId`-/`conditionParentId`-Beziehungen verifiziert werden. Erst
+   danach dürfen serververwaltete Component-IDs und `updated` in den lokalen
+   Export synchronisiert werden.
+6. Brich bei jedem Lese-, Backup-, PUT- oder Verifikationsfehler ab. Gib niemals
+   Tokens, Header, Zertifikate, Secrets oder rohe Serverantworten aus.
+
 ## Neue Regeln
 
 Erzeuge keine Rule-ID und keine leere Regel per vermuteter API. Der Benutzer muss
@@ -89,7 +121,8 @@ unveränderte Export muss als Git-Basisstand vorliegen, bevor er bearbeitet und
 - Ein unbekannter Component-Typ oder eine unbekannte Schema-Version ist vor einem
   Push blockierend, auch wenn der Validator dies zur Vorwärtskompatibilität als
   Warnung meldet.
-- Bei Serverdrift, fehlendem Git-Basisstand, fehlgeschlagenem Backup,
+- Bei Serverdrift ohne den ausdrücklich freigegebenen Break-glass-Aufruf
+  `--apply --force-drift`, fehlendem Git-Basisstand, fehlgeschlagenem Backup,
   Validierungsfehlern oder Warnungen: nicht pushen.
 - Akzeptiere neu vergebene Server-IDs nur bei identischer Component-Reihenfolge,
   identischem fachlichem Inhalt und gültigen `parentId`-/`conditionParentId`-
@@ -97,7 +130,8 @@ unveränderte Export muss als Git-Basisstand vorliegen, bevor er bearbeitet und
 - Melde nach jedem Schreibversuch, ob Backup, PUT und Remote-Verifikation
   erfolgreich waren. Zeige dabei keine ungefilterten Regel- oder Response-Daten.
 - Verwende ausschließlich `pull-rule`, `push-rule` und `rollback-rule` für den
-  Serverabgleich. `push-rule` ist ohne `--apply` immer read-only.
+  Serverabgleich. `push-rule` ist ohne `--apply` immer read-only;
+  `--force-drift` ohne `--apply` wird abgewiesen.
 
 ## Rollback
 

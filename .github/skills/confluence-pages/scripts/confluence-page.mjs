@@ -257,6 +257,18 @@ function pageSummary(page) {
   };
 }
 
+function normalizeStorageForComparison(value) {
+  return String(value ?? '')
+    .replace(/\r\n?/g, '\n')
+    .trim()
+    .replace(/<([A-Za-z][\w:.-]*)([^<>]*)><\/\1>/g, '<$1$2/>')
+    .replace(/\s*\/>/g, '/>');
+}
+
+function storageValuesEqual(left, right) {
+  return normalizeStorageForComparison(left) === normalizeStorageForComparison(right);
+}
+
 function createConfluencePageService({ request, configuration }) {
   const getPageRaw = pageId => request(
     configuration,
@@ -370,7 +382,7 @@ function createConfluencePageService({ request, configuration }) {
     const verified = normalized.title === input.title
       && normalized.spaceKey === input.spaceKey
       && normalized.parentId === (input.parentId ? String(input.parentId) : undefined)
-      && normalized.bodyStorage === input.bodyStorage;
+      && storageValuesEqual(normalized.bodyStorage, input.bodyStorage);
     if (!verified) throw new Error('Remote-Verifikation der erstellten Seite fehlgeschlagen.');
     return {
       ...preflight,
@@ -432,7 +444,7 @@ function createConfluencePageService({ request, configuration }) {
     const remote = pageView(await getPageRaw(current.id), { includeBody: true });
     const verified = remote.version === current.version + 1
       && remote.title === title
-      && remote.bodyStorage === bodyStorage;
+      && storageValuesEqual(remote.bodyStorage, bodyStorage);
     if (!verified) throw new Error('Remote-Verifikation der aktualisierten Seite fehlgeschlagen.');
     return {
       applied: true,
@@ -550,4 +562,5 @@ export {
   parseMaxResults,
   runCli,
   safeErrorMessage,
+  normalizeStorageForComparison,
 };

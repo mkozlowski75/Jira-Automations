@@ -3,6 +3,7 @@ import test from 'node:test';
 import {
   createConfluencePageService,
   normalizeApiBase,
+  normalizeStorageForComparison,
   parseMaxResults,
   runCli,
   safeErrorMessage,
@@ -56,6 +57,16 @@ test('liest Seiten normalisiert und Inhalt nur auf Wunsch', async () => {
   assert.equal(withBody.bodyStorage, '<p>Alt</p>');
 });
 
+test('normalisiert nur Confluence-äquivalentes Storage-Markup für Vergleiche', () => {
+  assert.equal(normalizeStorageForComparison('<p></p>\r\n'), '<p/>');
+  assert.equal(normalizeStorageForComparison('<p />'), '<p/>');
+  assert.equal(normalizeStorageForComparison('<p> </p>'), '<p> </p>');
+  assert.notEqual(
+    normalizeStorageForComparison('<p>Inhalt A</p>'),
+    normalizeStorageForComparison('<p>Inhalt B</p>'),
+  );
+});
+
 test('Create-Preflight ist read-only und erkennt freie Titel', async () => {
   const methods = [];
   const service = createConfluencePageService({
@@ -96,6 +107,66 @@ test('Create-Preflight blockiert vorhandenen Titel', async () => {
       bodyStorage: '<p>Neu</p>',
     }),
     /existiert bereits/,
+  );
+});
+
+test('Create akzeptiert Confluence-Normalisierung leerer Tags und Schlusszeilen', async () => {
+  let reads = 0;
+  const service = createConfluencePageService({
+    configuration: {},
+    request: async (configuration, method, path) => {
+      if (path.startsWith('/space/')) return { key: 'CER' };
+      if (path === '/content' && method === 'GET') return { results: [] };
+      if (method === 'POST') return { id: '21074849' };
+      reads += 1;
+      return reads === 1
+        ? page()
+        : page({
+          id: '21074849',
+          title: 'Neue Seite',
+          ancestors: [{ id: '21074848', title: 'Ceroma Home' }],
+          body: { storage: { value: '<p />' } },
+        });
+    },
+  });
+
+  const result = await service.applyCreate({
+    spaceKey: 'CER',
+    title: 'Neue Seite',
+    parentId: '21074848',
+    bodyStorage: '<p></p>\n',
+  }, 'true');
+
+  assert.equal(result.verified, true);
+  assert.equal(result.pageId, '21074849');
+});
+
+test('Create blockiert weiterhin inhaltlich abweichenden Serverstand', async () => {
+  let reads = 0;
+  const service = createConfluencePageService({
+    configuration: {},
+    request: async (configuration, method, path) => {
+      if (path.startsWith('/space/')) return { key: 'CER' };
+      if (path === '/content' && method === 'GET') return { results: [] };
+      if (method === 'POST') return { id: '21074849' };
+      reads += 1;
+      return reads === 1
+        ? page()
+        : page({
+          id: '21074849',
+          title: 'Neue Seite',
+          body: { storage: { value: '<p>Anderer Inhalt</p>' } },
+        });
+    },
+  });
+
+  await assert.rejects(
+    service.applyCreate({
+      spaceKey: 'CER',
+      title: 'Neue Seite',
+      bodyStorage: '<p>Erwarteter Inhalt</p>\n',
+    }, 'true'),
+    /Remote-Verifikation/,
   );
 });
 
@@ -156,7 +227,7 @@ test('Update führt einen PUT aus und verifiziert den Serverstand', async () => 
 
   const result = await service.applyUpdate(
     '21074848',
-    { title: 'Ceroma Start', bodyStorage: '<p>Neu</p>' },
+    { title: 'Ceroma Start', bodyStorage: '<p>Neu</p>\n' },
     '29',
   );
 

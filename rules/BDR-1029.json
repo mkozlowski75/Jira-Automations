@@ -3,15 +3,15 @@
   "clientKey": "com.codebarrel.tenant.global",
   "name": "GitLab: Security Alert – HIGH/CRITICAL-Schwachstellen im Trivy-Scan",
   "state": "ENABLED",
-  "description": "CER-8164: Die Regel verarbeitet eine Ceroma-Pipeline, ermittelt den Job trivy:scan:sbom im Stage sbom-vun, lädt dessen Job-Trace und prüft, ob der Trivy-Scan mindestens eine Schwachstelle mit dem Schweregrad HIGH oder CRITICAL gefunden hat. In diesem Fall wird eine HTML-E-Mail mit Links auf Pipeline, Job und Automation-Regel versendet.",
+  "description": "CER-8164: Die Regel verarbeitet die neueste Ausführung der GitLab-Schedule Nightly auf develop innerhalb der vergangenen 24 Stunden. Sie ermittelt den fehlgeschlagenen Job trivy:scan:sbom im Stage sbom-vun, lädt dessen Job-Trace und prüft, ob der Trivy-Scan mindestens eine Schwachstelle mit dem Schweregrad HIGH oder CRITICAL gefunden hat. In diesem Fall wird eine HTML-E-Mail mit Links auf Pipeline, Job und Automation-Regel versendet.",
   "canOtherRuleTrigger": false,
   "notifyOnError": "FIRSTERROR",
   "authorAccountId": "JIRAUSER15085",
   "actorAccountId": "JIRAUSER15085",
   "created": 1783437537682,
-  "updated": 1783675778279,
+  "updated": 1785401904587,
   "trigger": {
-    "id": "129909",
+    "id": "135814",
     "component": "TRIGGER",
     "schemaVersion": 1,
     "type": "jira.jql.scheduled",
@@ -32,7 +32,7 @@
   },
   "components": [
     {
-      "id": "129910",
+      "id": "135815",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "codebarrel.action.log",
@@ -41,12 +41,12 @@
       "conditions": []
     },
     {
-      "id": "129911",
+      "id": "135816",
       "component": "ACTION",
       "schemaVersion": 2,
       "type": "jira.issue.outgoing.webhook",
       "value": {
-        "url": "https://gitlab.partner.bdr.de/api/v4/projects/5629/pipelines/3303026",
+        "url": "https://gitlab.partner.bdr.de/api/v4/projects/5629/pipeline_schedules/754/pipelines?created_after={{now.minusHours(24).format(\"yyyy-MM-dd'T'HH:mm:ssXXX\")}}&per_page=100",
         "headers": [
           {
             "id": "_header_1783437179415",
@@ -77,16 +77,16 @@
       "conditions": []
     },
     {
-      "id": "129912",
+      "id": "135817",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "codebarrel.action.log",
-      "value": "📊 Verarbeite Pipeline: {{webhookResponse.body}}",
+      "value": "Nightly-Pipelines der letzten 24 Stunden: {{webhookResponse.body.size}}",
       "children": [],
       "conditions": []
     },
     {
-      "id": "129913",
+      "id": "135818",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -99,7 +99,7 @@
         "type": "SMART",
         "query": {
           "type": "SMART",
-          "value": "{{webhookResponse.body.id}}"
+          "value": "{{webhookResponse.body.last.id}}"
         },
         "lazy": false
       },
@@ -107,7 +107,7 @@
       "conditions": []
     },
     {
-      "id": "129914",
+      "id": "135819",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -120,7 +120,7 @@
         "type": "SMART",
         "query": {
           "type": "SMART",
-          "value": "{{webhookResponse.body.web_url}}"
+          "value": "{{webhookResponse.body.last.web_url}}"
         },
         "lazy": false
       },
@@ -128,7 +128,20 @@
       "conditions": []
     },
     {
-      "id": "129915",
+      "id": "135820",
+      "component": "CONDITION",
+      "schemaVersion": 1,
+      "type": "jira.comparator.condition",
+      "value": {
+        "first": "{{pipelineId}}",
+        "second": "",
+        "operator": "NOT_EQUALS"
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "135821",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "codebarrel.action.log",
@@ -137,7 +150,7 @@
       "conditions": []
     },
     {
-      "id": "129916",
+      "id": "135822",
       "component": "ACTION",
       "schemaVersion": 2,
       "type": "jira.issue.outgoing.webhook",
@@ -173,7 +186,7 @@
       "conditions": []
     },
     {
-      "id": "129917",
+      "id": "135823",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "codebarrel.action.log",
@@ -182,7 +195,7 @@
       "conditions": []
     },
     {
-      "id": "129918",
+      "id": "135824",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -203,7 +216,7 @@
       "conditions": []
     },
     {
-      "id": "129919",
+      "id": "135825",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -224,7 +237,7 @@
       "conditions": []
     },
     {
-      "id": "129920",
+      "id": "135826",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -245,7 +258,7 @@
       "conditions": []
     },
     {
-      "id": "129921",
+      "id": "135827",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -266,7 +279,7 @@
       "conditions": []
     },
     {
-      "id": "129922",
+      "id": "135828",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.comparator.condition",
@@ -279,7 +292,7 @@
       "conditions": []
     },
     {
-      "id": "129923",
+      "id": "135829",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.comparator.condition",
@@ -292,7 +305,7 @@
       "conditions": []
     },
     {
-      "id": "129924",
+      "id": "135830",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.comparator.condition",
@@ -305,7 +318,7 @@
       "conditions": []
     },
     {
-      "id": "129925",
+      "id": "135831",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "codebarrel.action.log",
@@ -314,7 +327,7 @@
       "conditions": []
     },
     {
-      "id": "129926",
+      "id": "135832",
       "component": "ACTION",
       "schemaVersion": 2,
       "type": "jira.issue.outgoing.webhook",
@@ -350,15 +363,15 @@
       "conditions": []
     },
     {
-      "id": "129927",
+      "id": "135833",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.condition.container.block",
       "children": [
         {
-          "id": "129928",
+          "id": "135834",
           "component": "CONDITION_BLOCK",
-          "parentId": "129927",
+          "parentId": "135833",
           "schemaVersion": 1,
           "type": "jira.condition.if.block",
           "value": {
@@ -366,9 +379,9 @@
           },
           "children": [
             {
-              "id": "129930",
+              "id": "135836",
               "component": "ACTION",
-              "parentId": "129928",
+              "parentId": "135834",
               "schemaVersion": 3,
               "type": "jira.issue.outgoing.email",
               "value": {
@@ -392,9 +405,9 @@
               "conditions": []
             },
             {
-              "id": "129931",
+              "id": "135837",
               "component": "ACTION",
-              "parentId": "129928",
+              "parentId": "135834",
               "schemaVersion": 1,
               "type": "codebarrel.action.log",
               "value": "✅ E-Mail-Benachrichtigung gesendet an: matthias.kozlowski.extern@bdr.de",
@@ -404,9 +417,9 @@
           ],
           "conditions": [
             {
-              "id": "129929",
+              "id": "135835",
               "component": "CONDITION",
-              "conditionParentId": "129928",
+              "conditionParentId": "135834",
               "schemaVersion": 1,
               "type": "jira.comparator.condition",
               "value": {
@@ -420,9 +433,9 @@
           ]
         },
         {
-          "id": "129932",
+          "id": "135838",
           "component": "CONDITION_BLOCK",
-          "parentId": "129927",
+          "parentId": "135833",
           "schemaVersion": 1,
           "type": "jira.condition.if.block",
           "value": {
@@ -430,9 +443,9 @@
           },
           "children": [
             {
-              "id": "129933",
+              "id": "135839",
               "component": "ACTION",
-              "parentId": "129932",
+              "parentId": "135838",
               "schemaVersion": 1,
               "type": "codebarrel.action.log",
               "value": "Keine HIGH|CRITICAL issues enthalten",

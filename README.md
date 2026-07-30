@@ -77,7 +77,7 @@ Export als `rules/BDR-{id}.json` aufnehmen und erst danach bearbeiten.
 
 ## Verfügbare Befehle
 
-| Befehl | Zweck | Schreibzugriff auf Jira |
+| Befehl | Zweck | Schreibzugriff |
 |---|---|---|
 | `npm run verify` | Tests, Skill-Prüfung und Validierung aller Regeln | Nein |
 | `npm run pull-rule -- <regeldatei>` | Einzelne Serverregel redigiert anzeigen | Nein |
@@ -90,12 +90,16 @@ Export als `rules/BDR-{id}.json` aufnehmen und erst danach bearbeiten.
 | `npm run jira-ticket -- get <KEY>` | Jira-Ticket mit ausgewählten Feldern lesen | Nein |
 | `npm run jira-ticket -- search --jql "<JQL>"` | Jira-Tickets per JQL suchen | Nein |
 | `npm run jira-ticket -- comment/edit/transition ...` | Ticketänderung vorbereiten; erst `--apply` schreibt | Standardmäßig nein |
+| `npm run confluence-page -- get <ID>` | Confluence-Seitenmetadaten lesen | Nein |
+| `npm run confluence-page -- search --cql "<CQL>"` | Confluence-Seiten per CQL suchen | Nein |
+| `npm run confluence-page -- create/update ...` | Seitenänderung vorbereiten; erst `--apply` schreibt | Standardmäßig nein |
 
 ## Projektstruktur
 
 ```text
 .github/skills/jira-automation-rules/  Verbindlicher KI-Workflow und Referenzen
 .github/skills/jira-tickets/           Sicherer Lese- und Änderungsworkflow für Tickets
+.github/skills/confluence-pages/       Sicherer Lese- und Änderungsworkflow für Seiten
 .vscode/settings.json                  Schema-Zuordnung für Visual Studio Code
 config/.env.example                    Bereinigte Verbindungskonfiguration
 rules/BDR-*.json                       Produktive Jira-Exporte

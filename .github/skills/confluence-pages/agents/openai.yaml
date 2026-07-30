@@ -1,0 +1,4 @@
+interface:
+  display_name: "Confluence Pages"
+  short_description: "Confluence-Seiten sicher lesen und ändern"
+  default_prompt: "Use $confluence-pages to read or safely prepare a Confluence page change."

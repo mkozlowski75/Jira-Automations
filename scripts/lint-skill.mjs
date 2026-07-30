@@ -143,6 +143,62 @@ for (const match of ticketSkill.matchAll(/\]\(([^)]+)\)/g)) {
   if (!existsSync(path)) errors.push(`Fehlender Link in ${ticketSkillPath}: ${target}`);
 }
 
+const confluenceSkillRoot = join(__dir, '..', '.github', 'skills', 'confluence-pages');
+const confluenceSkillPath = join(confluenceSkillRoot, 'SKILL.md');
+const confluenceReferencePath = join(confluenceSkillRoot, 'references', 'rest-api.md');
+const confluenceScriptPath = join(confluenceSkillRoot, 'scripts', 'confluence-page.mjs');
+const confluenceAgentPath = join(confluenceSkillRoot, 'agents', 'openai.yaml');
+const confluenceSkill = readFileSync(confluenceSkillPath, 'utf8');
+const confluenceReference = readFileSync(confluenceReferencePath, 'utf8');
+const confluenceAgent = readFileSync(confluenceAgentPath, 'utf8');
+const confluenceFrontmatter = /^---\r?\n([\s\S]*?)\r?\n---\r?\n/.exec(confluenceSkill);
+
+if (!confluenceFrontmatter) {
+  errors.push('confluence-pages/SKILL.md besitzt kein gültiges YAML-Frontmatter.');
+} else {
+  const fields = [...confluenceFrontmatter[1].matchAll(/^([a-zA-Z][\w-]*):\s*(.+)$/gm)]
+    .map(match => ({ name: match[1], value: match[2].trim() }));
+  if (fields.map(field => field.name).join(',') !== 'name,description') {
+    errors.push('confluence-pages-Frontmatter muss genau name und description enthalten.');
+  }
+  if (fields.find(field => field.name === 'name')?.value !== 'confluence-pages') {
+    errors.push('confluence-pages-Frontmatter-name muss confluence-pages sein.');
+  }
+}
+
+for (const [label, content] of [
+  ['confluence-pages/SKILL.md', confluenceSkill],
+  ['confluence-pages/references/rest-api.md', confluenceReference],
+  ['confluence-pages/agents/openai.yaml', confluenceAgent],
+]) {
+  if (content.includes('TODO')) errors.push(`${label} enthält noch TODO-Platzhalter.`);
+}
+
+for (const requiredText of [
+  '--apply',
+  '--expected-version',
+  '--expected-absent',
+  '/rest/api',
+]) {
+  if (!confluenceSkill.includes(requiredText)) {
+    errors.push(`confluence-pages/SKILL.md dokumentiert "${requiredText}" nicht.`);
+  }
+}
+
+if (!existsSync(confluenceScriptPath)) {
+  errors.push('confluence-pages/scripts/confluence-page.mjs fehlt.');
+}
+if (!confluenceAgent.includes('$confluence-pages')) {
+  errors.push('confluence-pages/agents/openai.yaml muss $confluence-pages im default_prompt nennen.');
+}
+
+for (const match of confluenceSkill.matchAll(/\]\(([^)]+)\)/g)) {
+  const target = match[1];
+  if (/^(https?:|#)/.test(target)) continue;
+  const path = resolve(dirname(confluenceSkillPath), target);
+  if (!existsSync(path)) errors.push(`Fehlender Link in ${confluenceSkillPath}: ${target}`);
+}
+
 const gitlabSkill = readFileSync(gitlabSkillPath, 'utf8');
 const gitlabReference = readFileSync(gitlabReferencePath, 'utf8');
 const gitlabAgent = readFileSync(gitlabAgentPath, 'utf8');
@@ -201,8 +257,14 @@ const forbiddenPatterns = [
   { pattern: /\b(?:gitlab\.)?partner\.bdr\.de\b/i, label: 'produktive interne Host-Adresse' },
   { pattern: /\bzz-sys-[a-z0-9-]+\b/i, label: 'produktiven Secret-Namen' },
 ];
+const checkedDocumentation = [
+  documentation,
+  confluenceSkill,
+  confluenceReference,
+  confluenceAgent,
+].join('\n');
 for (const { pattern, label } of forbiddenPatterns) {
-  if (pattern.test(documentation)) errors.push(`Dokumentation enthält ${label}.`);
+  if (pattern.test(checkedDocumentation)) errors.push(`Dokumentation enthält ${label}.`);
 }
 
 if (errors.length > 0) {
@@ -215,4 +277,5 @@ if (errors.length > 0) {
   );
   console.log('✅ Jira-Ticket-Skill geprüft: Frontmatter, Links, CLI, Referenz und Schutzworkflow gültig.');
   console.log('✅ GitLab-Skill geprüft: Frontmatter, Links, CLI, Referenz und read-only Schutz gültig.');
+  console.log('✅ Confluence-Skill geprüft: Frontmatter, Links, CLI, Referenz und Schutzworkflow gültig.');
 }

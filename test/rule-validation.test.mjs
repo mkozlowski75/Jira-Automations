@@ -111,6 +111,7 @@ test('stellt eine eindeutige und vollständige Befehlsoberfläche bereit', () =>
     'rollback-rule',
     'jira-ticket',
     'gitlab-api',
+    'confluence-page',
     'lint',
   ]);
   assert.equal(packageJson.scripts['push-rule'], 'node scripts/push-rule.mjs');

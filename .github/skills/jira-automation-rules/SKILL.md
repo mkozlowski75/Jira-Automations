@@ -39,7 +39,10 @@ Lernartefakte. Übernimm keine Beispiel-ID in eine produktive Regel.
 1. Identifiziere genau eine Zielregel und prüfe, dass sie als
    `rules/BDR-{id}.json` vorliegt.
 2. Führe `npm run pull-rule -- <regeldatei>` aus. Das ist read-only und
-   gibt nur redigierte Metadaten aus.
+   gibt nur redigierte Metadaten aus. Um einen vom Benutzer ausdrücklich
+   gewünschten Jira-Stand lokal zu übernehmen, verwende
+   `npm run pull-rule -- <regeldatei> --apply`; der Serverexport wird vor dem
+   Schreiben gegen den lokalen Regelbestand validiert.
 3. Prüfe die Umgebung vor strukturellen Erweiterungen mit
    `npm run inspect-environment -- <regeldatei>`. Ist die
    Automation-Version unbekannt, verwende eine aktuelle Server-Referenzregel

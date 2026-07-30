@@ -11,6 +11,16 @@ Der erste Befehl führt Tests, Skill-Prüfung und Regelvalidierung aus. Der zwei
 Befehl ist ohne `--apply` ein read-only Preflight. Ein Push ist nur bei
 bestandenen Tests sowie 0 Fehlern und 0 Warnungen zulässig.
 
+Um einen aktuellen Jira-Serverexport lokal zu übernehmen, ist ausschließlich
+nach ausdrücklichem Benutzerauftrag folgender Aufruf zulässig:
+
+```powershell
+npm run pull-rule -- rules/BDR-913.json --apply
+```
+
+Der Befehl validiert den vollständigen Serverexport vor dem lokalen Schreiben
+gegen den übrigen Regelbestand und bricht bei Fehlern oder Warnungen ab.
+
 Der Validator prüft unter anderem:
 
 - gültiges Code-Barrel-JSON und genau einen Top-Level-Trigger,

@@ -18,7 +18,8 @@ oder einem aktuellen Export derselben Umgebung stammen.
 
 ## Component-IDs
 
-Bestehende IDs unverändert erhalten. Für genau eine neue Component:
+Bestehende IDs während der lokalen Bearbeitung unverändert erhalten. Für genau
+eine neue Component:
 
 ```powershell
 npm run next-component-id -- rules/BDR-913.json
@@ -29,6 +30,13 @@ Regelliste des Zielprojekts. Ohne erfolgreichen Serverabruf wird keine ID
 ausgegeben. Nach dem Einfügen erneut ausführen, bevor die nächste Component
 angelegt wird. Der abschließende Validator prüft zusätzlich die lokale
 Eindeutigkeit über alle `BDR-*.json`.
+
+Die lokal eindeutigen IDs halten den PUT-Entwurf und seine Elternreferenzen
+konsistent. Jira Data Center kann beim Speichern Trigger- und Component-IDs neu
+vergeben. Die Remote-Verifikation ordnet Components deshalb über ihre Position
+im Regelbaum zu, prüft ihren fachlichen Inhalt und validiert jede serverseitige
+`parentId` beziehungsweise `conditionParentId`. Erst danach übernimmt das
+Push-Werkzeug die Server-IDs und `updated` in den lokalen Export.
 
 Untergeordnete Elemente benötigen zusätzlich:
 

@@ -40,7 +40,13 @@ dem ausdrücklichen Benutzerauftrag ein passendes
 
 Mit `--apply` wird vor dem PUT der unveränderte Serverstand unter
 `backups/BDR-{id}/{timestamp}.server.json` gespeichert. `backups/` ist
-Git-ignoriert. Der Rollback folgt derselben Freigabeschranke:
+Git-ignoriert. Nach dem PUT vergleicht das Werkzeug die fachliche Regelstruktur,
+prüft die Elternreferenzen mit den von Jira vergebenen IDs und synchronisiert
+erst bei erfolgreicher Remote-Verifikation die Server-IDs und `updated` in die
+lokale Regeldatei. Andere Serverabweichungen bleiben blockierend. Der Rollback
+folgt derselben Freigabeschranke. Vor dem nächsten Deployment muss der
+synchronisierte Export nach erfolgreichem `npm run verify` als neuer
+Git-HEAD-Basisstand übernommen werden.
 
 ```powershell
 npm run rollback-rule -- backups/BDR-913/2026-01-01T12-00-00Z.server.json

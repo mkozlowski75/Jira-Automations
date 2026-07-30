@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { relative, resolve, sep } from 'node:path';
 import { createRuleSetValidator } from './rule-validation.mjs';
@@ -7,6 +7,10 @@ export function parseJsonFile(path) {
   const raw = readFileSync(path, 'utf8');
   // Strip BOM if present
   return JSON.parse(raw.charCodeAt(0) === 0xFEFF ? raw.slice(1) : raw);
+}
+
+export function writeJsonFile(path, value) {
+  writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
 }
 
 export function loadRuleEntries(rulesDir) {

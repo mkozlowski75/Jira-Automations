@@ -25,6 +25,7 @@ import {
   performDeployment,
   prepareDeployment,
   redactSensitive,
+  synchronizeVerifiedRule,
   writeServerBackup,
 } from '../scripts/lib/rule-workflow.mjs';
 
@@ -53,6 +54,31 @@ function component(id, componentType, schemaVersion, type, value) {
     conditions: [],
   };
   if (value !== undefined) result.value = value;
+  return result;
+}
+
+function withNestedConditionBlock(rule) {
+  const result = structuredClone(rule);
+  const block = component(
+    1001,
+    'CONDITION_BLOCK',
+    1,
+    'jira.condition.if.block',
+    { conditionMatchType: 'ALL' },
+  );
+  block.children = [
+    {
+      ...component(1002, 'ACTION', 1, 'codebarrel.action.log', 'Test'),
+      parentId: '1001',
+    },
+  ];
+  block.conditions = [
+    {
+      ...component(1003, 'CONDITION', 1, 'jira.issue.condition', { field: 'status' }),
+      conditionParentId: '1001',
+    },
+  ];
+  result.components = [block];
   return result;
 }
 
@@ -491,6 +517,71 @@ test('Deployment nutzt lokalen Mock-Endpunkt, sichert und verifiziert', async ()
   }
 });
 
+test('Deployment akzeptiert neue Server-IDs und synchronisiert den lokalen Export', async () => {
+  const initial = cloneFixture();
+  initial.projects = [{ projectId: '99999', projectTypeKey: 'software' }];
+  const desired = withNestedConditionBlock(initial);
+  desired.name = 'Regel mit serververwalteten IDs';
+
+  const verified = structuredClone(desired);
+  verified.updated = 42;
+  verified.trigger.id = '2000';
+  verified.components[0].id = '2001';
+  verified.components[0].children[0].id = '2002';
+  verified.components[0].children[0].parentId = '2001';
+  verified.components[0].conditions[0].id = '2003';
+  verified.components[0].conditions[0].conditionParentId = '2001';
+
+  let fetchCount = 0;
+  let putCount = 0;
+  let persistedRule = null;
+  const result = await performDeployment({
+    localRule: desired,
+    baselineRule: initial,
+    validation: { errors: [], warnings: [] },
+    apply: true,
+    fetchRemote: async () => {
+      fetchCount += 1;
+      return structuredClone(fetchCount === 1 ? initial : verified);
+    },
+    putRemote: async () => { putCount += 1; },
+    createBackup: async () => 'backups/BDR-100/test.server.json',
+    persistSynchronizedRule: rule => { persistedRule = structuredClone(rule); },
+  });
+
+  assert.equal(result.applied, true);
+  assert.equal(fetchCount, 2);
+  assert.equal(putCount, 1);
+  assert.deepEqual(result.serverManagedChanges, {
+    componentIds: 4,
+    updated: true,
+  });
+  assert.equal(persistedRule.updated, 42);
+  assert.equal(persistedRule.trigger.id, '2000');
+  assert.equal(persistedRule.components[0].id, '2001');
+  assert.equal(persistedRule.components[0].children[0].id, '2002');
+  assert.equal(persistedRule.components[0].children[0].parentId, '2001');
+  assert.equal(persistedRule.components[0].conditions[0].id, '2003');
+  assert.equal(persistedRule.components[0].conditions[0].conditionParentId, '2001');
+  assert.equal(desired.trigger.id, '1000');
+});
+
+test('Remote-Verifikation blockiert falsche serverseitige Elternreferenzen', () => {
+  const local = withNestedConditionBlock(cloneFixture());
+  const remote = structuredClone(local);
+  remote.updated = 1;
+  remote.components[0].id = '2001';
+  remote.components[0].children[0].id = '2002';
+  remote.components[0].children[0].parentId = '9999';
+  remote.components[0].conditions[0].id = '2003';
+  remote.components[0].conditions[0].conditionParentId = '2001';
+
+  assert.throws(
+    () => synchronizeVerifiedRule(local, remote),
+    /parentId zeigt nicht auf die direkte Eltern-Component/,
+  );
+});
+
 test('Deployment führt ohne --apply weder Backup noch PUT aus', async () => {
   const remote = cloneFixture();
   remote.projects = [{ projectId: '99999', projectTypeKey: 'software' }];
@@ -572,6 +663,7 @@ test('Deployment meldet eine fehlgeschlagene Remote-Verifikation', async () => {
   local.name = 'Gewünschter Name';
   let fetchCount = 0;
   let putCount = 0;
+  let persistCount = 0;
 
   await assert.rejects(
     performDeployment({
@@ -586,12 +678,14 @@ test('Deployment meldet eine fehlgeschlagene Remote-Verifikation', async () => {
       },
       putRemote: async () => { putCount += 1; },
       createBackup: async () => 'backups/BDR-100/test.server.json',
+      persistSynchronizedRule: async () => { persistCount += 1; },
     }),
     /Remote-Verifikation nach dem Push ist fehlgeschlagen/,
   );
 
   assert.equal(putCount, 1);
   assert.equal(fetchCount, 2);
+  assert.equal(persistCount, 0);
 });
 
 test('Rollback-Backup muss zur Regel-ID seines BDR-Ordners passen', () => {

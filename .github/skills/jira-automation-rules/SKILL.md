@@ -48,10 +48,11 @@ Lernartefakte. Übernimm keine Beispiel-ID in eine produktive Regel.
    Erhalte unbekannte Felder unverändert.
 5. Beziehe Projekt-, Status-, Feld-, Benutzer-, Board-, Transition- und
    Secret-IDs ausschließlich aus Jira oder aktuellen Exporten. Rate niemals.
-6. Erhalte bestehende Component-IDs. Erzeuge neue IDs ausschließlich mit
+6. Erhalte bestehende Component-IDs im lokalen Entwurf. Erzeuge neue IDs ausschließlich mit
    `npm run next-component-id -- <regeldatei>`. Das Werkzeug berücksichtigt
    lokale und aktuelle Remote-Regeln. Führe es für jede weitere neue Component
-   erneut aus.
+   erneut aus. Behandle diese IDs als konsistente Referenzen für den PUT; Jira
+   Data Center darf beim Speichern alle Component-IDs neu vergeben.
 7. Ändere nur die beauftragte Logik. Setze `updated` nicht künstlich.
 8. Führe `npm run verify` aus. Für einen Push sind 0 Fehler und 0 Warnungen
    erforderlich; alle Tests müssen bestehen.
@@ -61,7 +62,12 @@ Lernartefakte. Übernimm keine Beispiel-ID in eine produktive Regel.
 10. Führe einen Push nur aus, wenn der Benutzer ihn in der aktuellen Unterhaltung
     ausdrücklich freigibt. Verwende danach denselben Befehl mit `--apply`.
     Das Werkzeug prüft Drift, legt ein Git-ignoriertes Server-Backup an und
-    verifiziert die Remote-Regel erneut.
+    verifiziert die Remote-Regel strukturell. Es prüft dabei Parent-Beziehungen
+    mit den neuen Server-IDs und synchronisiert erst nach erfolgreicher Prüfung
+    ausschließlich Component-IDs und `updated` in den lokalen Export.
+11. Führe nach der Synchronisierung `npm run verify` aus und übernimm den
+    verifizierten lokalen Export in Git, bevor du den nächsten Push vorbereitest.
+    Die folgende Drift-Prüfung verwendet diesen Git-HEAD-Stand als Basis.
 
 ## Neue Regeln
 
@@ -85,6 +91,9 @@ unveränderte Export muss als Git-Basisstand vorliegen, bevor er bearbeitet und
   Warnung meldet.
 - Bei Serverdrift, fehlendem Git-Basisstand, fehlgeschlagenem Backup,
   Validierungsfehlern oder Warnungen: nicht pushen.
+- Akzeptiere neu vergebene Server-IDs nur bei identischer Component-Reihenfolge,
+  identischem fachlichem Inhalt und gültigen `parentId`-/`conditionParentId`-
+  Beziehungen. Ignoriere IDs niemals pauschal.
 - Melde nach jedem Schreibversuch, ob Backup, PUT und Remote-Verifikation
   erfolgreich waren. Zeige dabei keine ungefilterten Regel- oder Response-Daten.
 - Verwende ausschließlich `pull-rule`, `push-rule` und `rollback-rule` für den

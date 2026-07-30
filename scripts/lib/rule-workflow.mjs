@@ -42,6 +42,145 @@ function rulesEqual(left, right, { ignoreUpdated = false } = {}) {
     === JSON.stringify(canonicalize(right, ignoredKeys));
 }
 
+function remoteVerificationError(path, reason) {
+  return new Error(`Remote-Verifikation nach dem Push ist fehlgeschlagen (${path}: ${reason}).`);
+}
+
+function componentPayload(node) {
+  const managedKeys = new Set([
+    'id',
+    'parentId',
+    'conditionParentId',
+    'children',
+    'conditions',
+  ]);
+  const payload = {};
+  for (const [key, value] of Object.entries(node)) {
+    if (!managedKeys.has(key)) payload[key] = value;
+  }
+  return payload;
+}
+
+function synchronizeComponentNode(localNode, remoteNode, path, relation, remoteParentId, changes) {
+  if (!isPlainObject(localNode) || !isPlainObject(remoteNode)) {
+    throw remoteVerificationError(path, 'Component-Struktur abweichend');
+  }
+  if (typeof remoteNode.id !== 'string' || !/^\d+$/.test(remoteNode.id)) {
+    throw remoteVerificationError(path, 'ungültige serverseitige Component-ID');
+  }
+
+  const hasParentId = Object.hasOwn(remoteNode, 'parentId');
+  const hasConditionParentId = Object.hasOwn(remoteNode, 'conditionParentId');
+  if (relation === 'children') {
+    if (!hasParentId || remoteNode.parentId !== remoteParentId || hasConditionParentId) {
+      throw remoteVerificationError(path, 'parentId zeigt nicht auf die direkte Eltern-Component');
+    }
+  } else if (relation === 'conditions') {
+    if (!hasConditionParentId || remoteNode.conditionParentId !== remoteParentId || hasParentId) {
+      throw remoteVerificationError(path, 'conditionParentId zeigt nicht auf die direkte Eltern-Component');
+    }
+  } else if (hasParentId || hasConditionParentId) {
+    throw remoteVerificationError(path, 'Top-Level-Component besitzt eine Elternreferenz');
+  }
+
+  if (!rulesEqual(componentPayload(localNode), componentPayload(remoteNode))) {
+    throw remoteVerificationError(path, 'fachlicher Component-Inhalt abweichend');
+  }
+
+  for (const key of ['children', 'conditions']) {
+    if (!Array.isArray(localNode[key]) || !Array.isArray(remoteNode[key])) {
+      throw remoteVerificationError(`${path}/${key}`, 'Component-Liste fehlt');
+    }
+    if (localNode[key].length !== remoteNode[key].length) {
+      throw remoteVerificationError(`${path}/${key}`, 'Anzahl der Components abweichend');
+    }
+  }
+
+  const synchronized = structuredClone(localNode);
+  if (synchronized.id !== remoteNode.id) changes.componentIds += 1;
+  synchronized.id = remoteNode.id;
+
+  for (const key of ['parentId', 'conditionParentId']) {
+    if (Object.hasOwn(remoteNode, key)) synchronized[key] = remoteNode[key];
+    else delete synchronized[key];
+  }
+
+  synchronized.children = localNode.children.map((child, index) => synchronizeComponentNode(
+    child,
+    remoteNode.children[index],
+    `${path}/children/${index}`,
+    'children',
+    remoteNode.id,
+    changes,
+  ));
+  synchronized.conditions = localNode.conditions.map((condition, index) => synchronizeComponentNode(
+    condition,
+    remoteNode.conditions[index],
+    `${path}/conditions/${index}`,
+    'conditions',
+    remoteNode.id,
+    changes,
+  ));
+  return synchronized;
+}
+
+export function synchronizeVerifiedRule(localRule, remoteRule) {
+  if (!isPlainObject(localRule) || !isPlainObject(remoteRule)) {
+    throw remoteVerificationError('/', 'Regelstruktur abweichend');
+  }
+
+  const localTopLevel = { ...localRule };
+  const remoteTopLevel = { ...remoteRule };
+  for (const rule of [localTopLevel, remoteTopLevel]) {
+    delete rule.updated;
+    delete rule.trigger;
+    delete rule.components;
+  }
+  if (!rulesEqual(localTopLevel, remoteTopLevel)) {
+    throw remoteVerificationError('/', 'fachlicher Top-Level-Inhalt abweichend');
+  }
+  if (typeof remoteRule.updated !== 'number') {
+    throw remoteVerificationError('/updated', 'ungültiger serverseitiger Zeitstempel');
+  }
+  if (!isPlainObject(localRule.trigger) || !isPlainObject(remoteRule.trigger)) {
+    throw remoteVerificationError('/trigger', 'Trigger-Struktur abweichend');
+  }
+  if (!Array.isArray(localRule.components) || !Array.isArray(remoteRule.components)) {
+    throw remoteVerificationError('/components', 'Top-Level-Component-Liste fehlt');
+  }
+  if (localRule.components.length !== remoteRule.components.length) {
+    throw remoteVerificationError('/components', 'Anzahl der Top-Level-Components abweichend');
+  }
+
+  const changes = {
+    componentIds: 0,
+    updated: localRule.updated !== remoteRule.updated,
+  };
+  const synchronizedRule = structuredClone(localRule);
+  synchronizedRule.updated = remoteRule.updated;
+  synchronizedRule.trigger = synchronizeComponentNode(
+    localRule.trigger,
+    remoteRule.trigger,
+    '/trigger',
+    null,
+    null,
+    changes,
+  );
+  synchronizedRule.components = localRule.components.map((component, index) => synchronizeComponentNode(
+    component,
+    remoteRule.components[index],
+    `/components/${index}`,
+    null,
+    null,
+    changes,
+  ));
+
+  return {
+    rule: synchronizedRule,
+    serverManagedChanges: changes,
+  };
+}
+
 function keyIsSensitive(key, parent) {
   if (key === 'secret' && typeof parent?.[key] === 'boolean') return false;
   if (key === 'usedSecretsKeys') return true;
@@ -287,6 +426,7 @@ export async function performDeployment({
   fetchRemote,
   putRemote,
   createBackup,
+  persistSynchronizedRule,
 }) {
   const remoteRule = await fetchRemote(localRule);
   const preflight = prepareDeployment({
@@ -310,8 +450,15 @@ export async function performDeployment({
 
   await putRemote(localRule);
   const verifiedRule = await fetchRemote(localRule);
-  if (!rulesEqual(localRule, verifiedRule, { ignoreUpdated: true })) {
-    throw new Error('Remote-Verifikation nach dem Push ist fehlgeschlagen.');
+  const synchronization = synchronizeVerifiedRule(localRule, verifiedRule);
+  if (persistSynchronizedRule) {
+    try {
+      await persistSynchronizedRule(synchronization.rule);
+    } catch {
+      throw new Error(
+        'Remote-Regel wurde verifiziert, aber der lokale Export konnte nicht synchronisiert werden.',
+      );
+    }
   }
 
   return {
@@ -320,5 +467,7 @@ export async function performDeployment({
     preflight,
     remoteRule,
     verifiedRule,
+    synchronizedRule: synchronization.rule,
+    serverManagedChanges: synchronization.serverManagedChanges,
   };
 }

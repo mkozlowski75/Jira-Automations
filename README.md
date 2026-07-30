@@ -49,7 +49,14 @@ npm run push-rule -- rules/BDR-913.json --apply
 ```
 
 Vor jedem PUT wird der vollständige Serverstand unter `backups/BDR-{id}/`
-gesichert. Anschließend wird die Remote-Regel erneut abgerufen und verifiziert.
+gesichert. Anschließend wird die Remote-Regel erneut abgerufen und strukturell
+verifiziert. Wenn Jira dabei Trigger- oder Component-IDs neu vergibt, prüft das
+Werkzeug die zugehörigen Elternreferenzen und synchronisiert die bestätigten
+Server-IDs sowie `updated` in den lokalen Export.
+
+Nach erfolgreicher Synchronisierung erneut `npm run verify` ausführen und den
+lokalen Export committen. Die nächste Driftprüfung verwendet Git HEAD als
+bekannten Server-Basisstand.
 
 ## Rollback
 

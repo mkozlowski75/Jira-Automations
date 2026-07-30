@@ -15,6 +15,7 @@ import {
   parseJsonFile,
   resolveTrackedRuleFile,
   validateCandidateRule,
+  writeJsonFile,
 } from './lib/rule-repository.mjs';
 import {
   performDeployment,
@@ -112,6 +113,10 @@ async function main() {
     fetchRemote: fetchAutomationRule,
     putRemote: putAutomationRule,
     createBackup: remoteRule => writeServerBackup(backupsRoot, remoteRule),
+    persistSynchronizedRule: synchronizedRule => writeJsonFile(
+      resolved.absolutePath,
+      synchronizedRule,
+    ),
   });
 
   printPreflight(result.preflight);
@@ -129,6 +134,10 @@ async function main() {
 
   console.log(`\n✅ Regel aktualisiert und remote verifiziert.`);
   console.log(`   Server-Backup: ${result.backupPath}`);
+  console.log(
+    `   Serverseitig neu vergebene Component-IDs: ${result.serverManagedChanges.componentIds}`,
+  );
+  console.log('   Lokaler Export: IDs und updated mit dem verifizierten Serverstand synchronisiert.');
 }
 
 main().catch(error => {

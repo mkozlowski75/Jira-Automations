@@ -9,9 +9,9 @@
   "authorAccountId": "JIRAUSER15085",
   "actorAccountId": "JIRAUSER15085",
   "created": 1783437537682,
-  "updated": 1785401904587,
+  "updated": 1785408016552,
   "trigger": {
-    "id": "135814",
+    "id": "135870",
     "component": "TRIGGER",
     "schemaVersion": 1,
     "type": "jira.jql.scheduled",
@@ -32,7 +32,7 @@
   },
   "components": [
     {
-      "id": "135815",
+      "id": "135871",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "codebarrel.action.log",
@@ -41,7 +41,7 @@
       "conditions": []
     },
     {
-      "id": "135816",
+      "id": "135872",
       "component": "ACTION",
       "schemaVersion": 2,
       "type": "jira.issue.outgoing.webhook",
@@ -77,7 +77,7 @@
       "conditions": []
     },
     {
-      "id": "135817",
+      "id": "135873",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "codebarrel.action.log",
@@ -86,7 +86,7 @@
       "conditions": []
     },
     {
-      "id": "135818",
+      "id": "135874",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -107,7 +107,7 @@
       "conditions": []
     },
     {
-      "id": "135819",
+      "id": "135875",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -128,7 +128,7 @@
       "conditions": []
     },
     {
-      "id": "135820",
+      "id": "135876",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.comparator.condition",
@@ -141,7 +141,7 @@
       "conditions": []
     },
     {
-      "id": "135821",
+      "id": "135877",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "codebarrel.action.log",
@@ -150,7 +150,7 @@
       "conditions": []
     },
     {
-      "id": "135822",
+      "id": "135878",
       "component": "ACTION",
       "schemaVersion": 2,
       "type": "jira.issue.outgoing.webhook",
@@ -186,7 +186,7 @@
       "conditions": []
     },
     {
-      "id": "135823",
+      "id": "135879",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "codebarrel.action.log",
@@ -195,7 +195,7 @@
       "conditions": []
     },
     {
-      "id": "135824",
+      "id": "135880",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -216,7 +216,7 @@
       "conditions": []
     },
     {
-      "id": "135825",
+      "id": "135881",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -237,7 +237,7 @@
       "conditions": []
     },
     {
-      "id": "135826",
+      "id": "135882",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -258,7 +258,7 @@
       "conditions": []
     },
     {
-      "id": "135827",
+      "id": "135883",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -279,7 +279,7 @@
       "conditions": []
     },
     {
-      "id": "135828",
+      "id": "135884",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.comparator.condition",
@@ -292,7 +292,7 @@
       "conditions": []
     },
     {
-      "id": "135829",
+      "id": "135885",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.comparator.condition",
@@ -305,7 +305,54 @@
       "conditions": []
     },
     {
-      "id": "135830",
+      "id": "135886",
+      "component": "CONDITION",
+      "schemaVersion": 1,
+      "type": "jira.condition.container.block",
+      "children": [
+        {
+          "id": "135887",
+          "component": "CONDITION_BLOCK",
+          "parentId": "135886",
+          "schemaVersion": 1,
+          "type": "jira.condition.if.block",
+          "value": {
+            "conditionMatchType": "ALL"
+          },
+          "conditions": [
+            {
+              "id": "135888",
+              "component": "CONDITION",
+              "conditionParentId": "135887",
+              "schemaVersion": 1,
+              "type": "jira.comparator.condition",
+              "value": {
+                "first": "{{trivyJobStatus}}",
+                "second": "success",
+                "operator": "EQUALS"
+              },
+              "children": [],
+              "conditions": []
+            }
+          ],
+          "children": [
+            {
+              "id": "135889",
+              "component": "ACTION",
+              "parentId": "135887",
+              "schemaVersion": 1,
+              "type": "codebarrel.action.log",
+              "value": "Keine HIGH/CRITICAL-Schwachstellen gefunden (Trivy-Job #{{trivyJobId}}, Status: {{trivyJobStatus}})",
+              "children": [],
+              "conditions": []
+            }
+          ]
+        }
+      ],
+      "conditions": []
+    },
+    {
+      "id": "135890",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.comparator.condition",
@@ -318,7 +365,7 @@
       "conditions": []
     },
     {
-      "id": "135831",
+      "id": "135891",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "codebarrel.action.log",
@@ -327,7 +374,7 @@
       "conditions": []
     },
     {
-      "id": "135832",
+      "id": "135892",
       "component": "ACTION",
       "schemaVersion": 2,
       "type": "jira.issue.outgoing.webhook",
@@ -363,15 +410,15 @@
       "conditions": []
     },
     {
-      "id": "135833",
+      "id": "135893",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.condition.container.block",
       "children": [
         {
-          "id": "135834",
+          "id": "135894",
           "component": "CONDITION_BLOCK",
-          "parentId": "135833",
+          "parentId": "135893",
           "schemaVersion": 1,
           "type": "jira.condition.if.block",
           "value": {
@@ -379,9 +426,9 @@
           },
           "children": [
             {
-              "id": "135836",
+              "id": "135896",
               "component": "ACTION",
-              "parentId": "135834",
+              "parentId": "135894",
               "schemaVersion": 3,
               "type": "jira.issue.outgoing.email",
               "value": {
@@ -405,9 +452,9 @@
               "conditions": []
             },
             {
-              "id": "135837",
+              "id": "135897",
               "component": "ACTION",
-              "parentId": "135834",
+              "parentId": "135894",
               "schemaVersion": 1,
               "type": "codebarrel.action.log",
               "value": "✅ E-Mail-Benachrichtigung gesendet an: matthias.kozlowski.extern@bdr.de",
@@ -417,9 +464,9 @@
           ],
           "conditions": [
             {
-              "id": "135835",
+              "id": "135895",
               "component": "CONDITION",
-              "conditionParentId": "135834",
+              "conditionParentId": "135894",
               "schemaVersion": 1,
               "type": "jira.comparator.condition",
               "value": {
@@ -433,9 +480,9 @@
           ]
         },
         {
-          "id": "135838",
+          "id": "135898",
           "component": "CONDITION_BLOCK",
-          "parentId": "135833",
+          "parentId": "135893",
           "schemaVersion": 1,
           "type": "jira.condition.if.block",
           "value": {
@@ -443,9 +490,9 @@
           },
           "children": [
             {
-              "id": "135839",
+              "id": "135899",
               "component": "ACTION",
-              "parentId": "135838",
+              "parentId": "135898",
               "schemaVersion": 1,
               "type": "codebarrel.action.log",
               "value": "Keine HIGH|CRITICAL issues enthalten",

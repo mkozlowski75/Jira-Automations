@@ -9,9 +9,9 @@
   "authorAccountId": "JIRAUSER15085",
   "actorAccountId": "JIRAUSER15085",
   "created": 1785408812929,
-  "updated": 1785428431079,
+  "updated": 1785428806137,
   "trigger": {
-    "id": "136808",
+    "id": "136841",
     "component": "TRIGGER",
     "schemaVersion": 1,
     "type": "jira.jql.scheduled",
@@ -32,7 +32,7 @@
   },
   "components": [
     {
-      "id": "136809",
+      "id": "136842",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "codebarrel.action.log",
@@ -41,7 +41,7 @@
       "conditions": []
     },
     {
-      "id": "136810",
+      "id": "136843",
       "component": "ACTION",
       "schemaVersion": 2,
       "type": "jira.issue.outgoing.webhook",
@@ -77,7 +77,7 @@
       "conditions": []
     },
     {
-      "id": "136811",
+      "id": "136844",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "codebarrel.action.log",
@@ -86,7 +86,7 @@
       "conditions": []
     },
     {
-      "id": "136812",
+      "id": "136845",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -107,7 +107,7 @@
       "conditions": []
     },
     {
-      "id": "136813",
+      "id": "136846",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -128,7 +128,7 @@
       "conditions": []
     },
     {
-      "id": "136814",
+      "id": "136847",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.comparator.condition",
@@ -141,7 +141,7 @@
       "conditions": []
     },
     {
-      "id": "136815",
+      "id": "136848",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "codebarrel.action.log",
@@ -150,7 +150,7 @@
       "conditions": []
     },
     {
-      "id": "136816",
+      "id": "136849",
       "component": "ACTION",
       "schemaVersion": 2,
       "type": "jira.issue.outgoing.webhook",
@@ -186,7 +186,7 @@
       "conditions": []
     },
     {
-      "id": "136817",
+      "id": "136850",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "codebarrel.action.log",
@@ -195,7 +195,7 @@
       "conditions": []
     },
     {
-      "id": "136818",
+      "id": "136851",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -216,7 +216,7 @@
       "conditions": []
     },
     {
-      "id": "136819",
+      "id": "136852",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -237,7 +237,7 @@
       "conditions": []
     },
     {
-      "id": "136820",
+      "id": "136853",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -258,7 +258,7 @@
       "conditions": []
     },
     {
-      "id": "136821",
+      "id": "136854",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -279,7 +279,7 @@
       "conditions": []
     },
     {
-      "id": "136822",
+      "id": "136855",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.comparator.condition",
@@ -292,7 +292,7 @@
       "conditions": []
     },
     {
-      "id": "136823",
+      "id": "136856",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.comparator.condition",
@@ -305,15 +305,15 @@
       "conditions": []
     },
     {
-      "id": "136824",
+      "id": "136857",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.condition.container.block",
       "children": [
         {
-          "id": "136825",
+          "id": "136858",
           "component": "CONDITION_BLOCK",
-          "parentId": "136824",
+          "parentId": "136857",
           "schemaVersion": 1,
           "type": "jira.condition.if.block",
           "value": {
@@ -321,9 +321,9 @@
           },
           "children": [
             {
-              "id": "136827",
+              "id": "136860",
               "component": "ACTION",
-              "parentId": "136825",
+              "parentId": "136858",
               "schemaVersion": 1,
               "type": "codebarrel.action.log",
               "value": "Trivy-Job #{{trivyJobId}} ist erfolgreich; sämtliche Vulnerability-Einträge des JSON-Reports werden testweise ausgewertet.",
@@ -333,9 +333,9 @@
           ],
           "conditions": [
             {
-              "id": "136826",
+              "id": "136859",
               "component": "CONDITION",
-              "conditionParentId": "136825",
+              "conditionParentId": "136858",
               "schemaVersion": 1,
               "type": "jira.comparator.condition",
               "value": {
@@ -352,7 +352,7 @@
       "conditions": []
     },
     {
-      "id": "136828",
+      "id": "136861",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.comparator.condition",
@@ -365,7 +365,7 @@
       "conditions": []
     },
     {
-      "id": "136829",
+      "id": "136862",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -386,7 +386,7 @@
       "conditions": []
     },
     {
-      "id": "136830",
+      "id": "136863",
       "component": "ACTION",
       "schemaVersion": 2,
       "type": "jira.issue.outgoing.webhook",
@@ -422,7 +422,49 @@
       "conditions": []
     },
     {
-      "id": "136831",
+      "id": "136864",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "jira.create.variable",
+      "value": {
+        "id": "_customsmartvalue_id_vulnerability_table_rows_1062",
+        "name": {
+          "type": "FREE",
+          "value": "vulnerabilityTableRows"
+        },
+        "type": "SMART",
+        "query": {
+          "type": "SMART",
+          "value": "{{#webhookResponse.body.Results}}{{#Vulnerabilities}}<tr><td style=\"border:1px solid #ccc;padding:6px;\">{{PkgName|\"UNKNOWN\"}}</td><td style=\"border:1px solid #ccc;padding:6px;\">{{VulnerabilityID}}</td><td style=\"border:1px solid #ccc;padding:6px;\">{{Severity.toUpperCase|\"UNKNOWN\"}}</td><td style=\"border:1px solid #ccc;padding:6px;\">{{InstalledVersion|\"UNKNOWN\"}}</td></tr>§§{{/}}{{/}}"
+        },
+        "lazy": false
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "136865",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "jira.create.variable",
+      "value": {
+        "id": "_customsmartvalue_id_vulnerability_log_rows_1062",
+        "name": {
+          "type": "FREE",
+          "value": "vulnerabilityLogRows"
+        },
+        "type": "SMART",
+        "query": {
+          "type": "SMART",
+          "value": "{{#webhookResponse.body.Results}}{{#Vulnerabilities}}• Vulnerability={{VulnerabilityID}} | Library={{PkgName|\"UNKNOWN\"}} | Severity={{Severity.toUpperCase|\"UNKNOWN\"}} | Installed Version={{InstalledVersion|\"UNKNOWN\"}}\n§§{{/}}{{/}}"
+        },
+        "lazy": false
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "136866",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -435,7 +477,7 @@
         "type": "SMART",
         "query": {
           "type": "SMART",
-          "value": "<table style=\"border-collapse:collapse;width:100%;font-family:Arial,sans-serif;font-size:13px;\"><thead><tr style=\"background-color:#f2f2f2;\"><th style=\"border:1px solid #ccc;padding:6px;text-align:left;\">Library</th><th style=\"border:1px solid #ccc;padding:6px;text-align:left;\">Vulnerability</th><th style=\"border:1px solid #ccc;padding:6px;text-align:left;\">Severity</th><th style=\"border:1px solid #ccc;padding:6px;text-align:left;\">Installed Version</th></tr></thead><tbody>{{#webhookResponse.body.Results}}{{#Vulnerabilities}}<tr><td style=\"border:1px solid #ccc;padding:6px;\">{{PkgName|\"UNKNOWN\"}}</td><td style=\"border:1px solid #ccc;padding:6px;\">{{VulnerabilityID}}</td><td style=\"border:1px solid #ccc;padding:6px;\">{{Severity.toUpperCase|\"UNKNOWN\"}}</td><td style=\"border:1px solid #ccc;padding:6px;\">{{InstalledVersion|\"UNKNOWN\"}}</td></tr>{{/}}{{/}}</tbody></table>"
+          "value": "<table style=\"border-collapse:collapse;width:100%;font-family:Arial,sans-serif;font-size:13px;\"><thead><tr style=\"background-color:#f2f2f2;\"><th style=\"border:1px solid #ccc;padding:6px;text-align:left;\">Library</th><th style=\"border:1px solid #ccc;padding:6px;text-align:left;\">Vulnerability</th><th style=\"border:1px solid #ccc;padding:6px;text-align:left;\">Severity</th><th style=\"border:1px solid #ccc;padding:6px;text-align:left;\">Installed Version</th></tr></thead><tbody>{{#vulnerabilityTableRows.split(\"§§\").distinct}}{{.}}{{/}}</tbody></table>"
         },
         "lazy": false
       },
@@ -443,24 +485,24 @@
       "conditions": []
     },
     {
-      "id": "136832",
+      "id": "136867",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "codebarrel.action.log",
-      "value": "🔎 Nativer Trivy-JSON-Report: {{trivyReportPath}}\n{{#webhookResponse.body.Results}}{{#Vulnerabilities}}• Vulnerability={{VulnerabilityID}} | Library={{PkgName|\"UNKNOWN\"}} | Severity={{Severity.toUpperCase|\"UNKNOWN\"}} | Installed Version={{InstalledVersion|\"UNKNOWN\"}}\n{{/}}{{/}}",
+      "value": "🔎 Nativer Trivy-JSON-Report: {{trivyReportPath}}\n{{#vulnerabilityLogRows.split(\"§§\").distinct}}{{.}}{{/}}",
       "children": [],
       "conditions": []
     },
     {
-      "id": "136833",
+      "id": "136868",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.condition.container.block",
       "children": [
         {
-          "id": "136834",
+          "id": "136869",
           "component": "CONDITION_BLOCK",
-          "parentId": "136833",
+          "parentId": "136868",
           "schemaVersion": 1,
           "type": "jira.condition.if.block",
           "value": {
@@ -468,9 +510,9 @@
           },
           "children": [
             {
-              "id": "136836",
+              "id": "136871",
               "component": "ACTION",
-              "parentId": "136834",
+              "parentId": "136869",
               "schemaVersion": 1,
               "type": "codebarrel.action.log",
               "value": "⚠️ Nativer Trivy-JSON-Report ausgewertet (Pipeline #{{pipelineId}}, Trivy-Job #{{trivyJobId}})",
@@ -478,9 +520,9 @@
               "conditions": []
             },
             {
-              "id": "136837",
+              "id": "136872",
               "component": "ACTION",
-              "parentId": "136834",
+              "parentId": "136869",
               "schemaVersion": 3,
               "type": "jira.issue.outgoing.email",
               "value": {
@@ -504,9 +546,9 @@
               "conditions": []
             },
             {
-              "id": "136838",
+              "id": "136873",
               "component": "ACTION",
-              "parentId": "136834",
+              "parentId": "136869",
               "schemaVersion": 1,
               "type": "codebarrel.action.log",
               "value": "✅ E-Mail-Benachrichtigung gesendet an: matthias.kozlowski.extern@bdr.de",
@@ -516,9 +558,9 @@
           ],
           "conditions": [
             {
-              "id": "136835",
+              "id": "136870",
               "component": "CONDITION",
-              "conditionParentId": "136834",
+              "conditionParentId": "136869",
               "schemaVersion": 1,
               "type": "jira.comparator.condition",
               "value": {
@@ -532,9 +574,9 @@
           ]
         },
         {
-          "id": "136839",
+          "id": "136874",
           "component": "CONDITION_BLOCK",
-          "parentId": "136833",
+          "parentId": "136868",
           "schemaVersion": 1,
           "type": "jira.condition.if.block",
           "value": {
@@ -542,9 +584,9 @@
           },
           "children": [
             {
-              "id": "136840",
+              "id": "136875",
               "component": "ACTION",
-              "parentId": "136839",
+              "parentId": "136874",
               "schemaVersion": 1,
               "type": "codebarrel.action.log",
               "value": "Nativer Trivy-JSON-Report {{trivyReportPath}} enthält keine CVE-Vulnerability-Einträge.",

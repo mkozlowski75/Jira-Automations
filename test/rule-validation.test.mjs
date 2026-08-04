@@ -949,3 +949,40 @@ test('Rollback nutzt lokalen Mock-Endpunkt, sichert den aktuellen Stand und veri
     rmSync(tempRoot, { recursive: true, force: true });
   }
 });
+
+test('CER-7287 erstellt nur bei Commits einen Release-Merge-Request', () => {
+  const rule = JSON.parse(readFileSync(join(rulesDir, 'BDR-1059.json'), 'utf8'));
+  const outerBlock = rule.components.find(component => component.children?.some(child =>
+    child.children?.some(nested => nested.value === 'Ein offener Merge Request für den Branch {{SourceBranch}} existiert bereits in GitLab.'),
+  ));
+  const createBlock = outerBlock.children.find(component => component.conditions?.some(condition =>
+    condition.value?.first === '{{webhookResponse.body.size}}'
+      && condition.value?.second === '0'
+      && condition.value?.operator === 'EQUALS',
+  ));
+  const compareAction = createBlock.children.find(component =>
+    component.value?.url?.includes('/repository/compare?'),
+  );
+  const decisionBlock = createBlock.children.find(component =>
+    component.type === 'jira.condition.container.block',
+  );
+  const commitsPresent = decisionBlock.children.find(component => component.conditions?.some(condition =>
+    condition.value?.first === '{{webhookResponse.body.commits.size}}' && condition.value?.operator === 'GREATER_THAN',
+  ));
+  const noChanges = decisionBlock.children.find(component => component.conditions?.some(condition =>
+    condition.value?.first === '{{webhookResponse.body.commits.size}}' && condition.value?.operator === 'EQUALS',
+  ));
+
+  assert.equal(createBlock.conditions[0].value.first, '{{webhookResponse.body.size}}');
+  assert.equal(createBlock.conditions[0].value.second, '0');
+  assert.equal(compareAction.value.method, 'GET');
+  assert.equal(
+    compareAction.value.url,
+    'https://gitlab.partner.bdr.de/api/v4/projects/{{GitlabProjectId}}/repository/compare?from=develop&to={{SourceBranch.urlEncode}}&straight=true',
+  );
+  assert.equal(commitsPresent.conditions[0].value.first, '{{webhookResponse.body.commits.size}}');
+  assert.equal(commitsPresent.conditions[0].value.operator, 'GREATER_THAN');
+  assert.ok(commitsPresent.children.some(component => component.value?.method === 'POST'));
+  assert.equal(noChanges.conditions[0].value.operator, 'EQUALS');
+  assert.match(noChanges.children[0].value, /Kein Merge Request erstellt/);
+});

@@ -9,9 +9,9 @@
   "authorAccountId": "JIRAUSER15085",
   "actorAccountId": "JIRAUSER15085",
   "created": 1785331063439,
-  "updated": 1785331300206,
+  "updated": 1785852595581,
   "trigger": {
-    "id": "135760",
+    "id": "141475",
     "component": "TRIGGER",
     "schemaVersion": 1,
     "type": "jira.incoming.webhook",
@@ -26,7 +26,7 @@
   },
   "components": [
     {
-      "id": "135761",
+      "id": "141476",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.comparator.condition",
@@ -39,7 +39,7 @@
       "conditions": []
     },
     {
-      "id": "135762",
+      "id": "141477",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.comparator.condition",
@@ -52,7 +52,7 @@
       "conditions": []
     },
     {
-      "id": "135763",
+      "id": "141478",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.comparator.condition",
@@ -65,7 +65,7 @@
       "conditions": []
     },
     {
-      "id": "135764",
+      "id": "141479",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "codebarrel.action.log",
@@ -74,7 +74,7 @@
       "conditions": []
     },
     {
-      "id": "135765",
+      "id": "141480",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "codebarrel.action.log",
@@ -83,7 +83,7 @@
       "conditions": []
     },
     {
-      "id": "135766",
+      "id": "141481",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "codebarrel.action.log",
@@ -92,7 +92,7 @@
       "conditions": []
     },
     {
-      "id": "135767",
+      "id": "141482",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -113,7 +113,7 @@
       "conditions": []
     },
     {
-      "id": "135768",
+      "id": "141483",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -134,7 +134,7 @@
       "conditions": []
     },
     {
-      "id": "135769",
+      "id": "141484",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -155,7 +155,7 @@
       "conditions": []
     },
     {
-      "id": "135770",
+      "id": "141485",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "codebarrel.action.log",
@@ -164,15 +164,15 @@
       "conditions": []
     },
     {
-      "id": "135771",
+      "id": "141486",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.condition.container.block",
       "children": [
         {
-          "id": "135772",
+          "id": "141487",
           "component": "CONDITION_BLOCK",
-          "parentId": "135771",
+          "parentId": "141486",
           "schemaVersion": 1,
           "type": "jira.condition.if.block",
           "value": {
@@ -180,9 +180,9 @@
           },
           "children": [
             {
-              "id": "135774",
+              "id": "141489",
               "component": "ACTION",
-              "parentId": "135772",
+              "parentId": "141487",
               "schemaVersion": 1,
               "type": "codebarrel.action.log",
               "value": "Es handelt sich nicht im einen Release-Tag (Version <> .0) - keine weitere Verarbeitung",
@@ -192,9 +192,9 @@
           ],
           "conditions": [
             {
-              "id": "135773",
+              "id": "141488",
               "component": "CONDITION",
-              "conditionParentId": "135772",
+              "conditionParentId": "141487",
               "schemaVersion": 1,
               "type": "jira.comparator.condition",
               "value": {
@@ -211,7 +211,7 @@
       "conditions": []
     },
     {
-      "id": "135775",
+      "id": "141490",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.comparator.condition",
@@ -224,7 +224,7 @@
       "conditions": []
     },
     {
-      "id": "135776",
+      "id": "141491",
       "component": "ACTION",
       "schemaVersion": 2,
       "type": "jira.issue.outgoing.webhook",
@@ -260,15 +260,15 @@
       "conditions": []
     },
     {
-      "id": "135777",
+      "id": "141492",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.condition.container.block",
       "children": [
         {
-          "id": "135778",
+          "id": "141493",
           "component": "CONDITION_BLOCK",
-          "parentId": "135777",
+          "parentId": "141492",
           "schemaVersion": 1,
           "type": "jira.condition.if.block",
           "value": {
@@ -276,9 +276,9 @@
           },
           "children": [
             {
-              "id": "135780",
+              "id": "141495",
               "component": "ACTION",
-              "parentId": "135778",
+              "parentId": "141493",
               "schemaVersion": 1,
               "type": "codebarrel.action.log",
               "value": "Ein offener Merge Request für den Branch {{SourceBranch}} existiert bereits in GitLab.",
@@ -288,9 +288,9 @@
           ],
           "conditions": [
             {
-              "id": "135779",
+              "id": "141494",
               "component": "CONDITION",
-              "conditionParentId": "135778",
+              "conditionParentId": "141493",
               "schemaVersion": 1,
               "type": "jira.comparator.condition",
               "value": {
@@ -304,9 +304,9 @@
           ]
         },
         {
-          "id": "135781",
+          "id": "141496",
           "component": "CONDITION_BLOCK",
-          "parentId": "135777",
+          "parentId": "141492",
           "schemaVersion": 1,
           "type": "jira.condition.if.block",
           "value": {
@@ -314,53 +314,26 @@
           },
           "children": [
             {
-              "id": "135782",
+              "id": "141498",
               "component": "ACTION",
-              "parentId": "135781",
-              "schemaVersion": 1,
-              "type": "codebarrel.action.log",
-              "value": "Create Merge Request: POST https://gitlab.partner.bdr.de/api/v4/projects/{{GitlabProjectId}}/merge_requests",
-              "children": [],
-              "conditions": []
-            },
-            {
-              "id": "135783",
-              "component": "ACTION",
-              "parentId": "135781",
+              "parentId": "141496",
               "schemaVersion": 2,
               "type": "jira.issue.outgoing.webhook",
               "value": {
-                "url": "https://gitlab.partner.bdr.de/api/v4/projects/{{GitlabProjectId}}/merge_requests",
+                "url": "https://gitlab.partner.bdr.de/api/v4/projects/{{GitlabProjectId}}/repository/compare?from=develop&to={{SourceBranch.urlEncode}}&straight=true",
                 "headers": [
                   {
-                    "id": "_header_1717081007022",
-                    "name": "Content-Type",
-                    "value": {
-                      "keyOrValue": "application/json",
-                      "secret": false
-                    }
-                  },
-                  {
-                    "id": "_header_1718050060534",
+                    "id": "_header_1770818894542",
                     "name": "Private-Token",
                     "value": {
                       "keyOrValue": "Gitlab-Token zz-sys-cer",
                       "secret": true
                     }
-                  },
-                  {
-                    "id": "_header_1781537522709",
-                    "name": "Idempotency-Key",
-                    "value": {
-                      "keyOrValue": "{{SourceBranch}}",
-                      "secret": false
-                    }
                   }
                 ],
                 "sendIssue": false,
-                "contentType": "custom",
-                "customBody": "{\n  \"source_branch\": \"{{SourceBranch}}\",\n  \"target_branch\": \"develop\",\n  \"title\": \"Merge {{SourceBranch}} into develop\",\n  \"description\": \"Merge {{SourceBranch}} into develop initiated by tag creation and successfull pipeline run\",\n  \"remove_source_branch\": false,\n  \"labels\": \"CeromaAutoMerge\"\n}",
-                "method": "POST",
+                "contentType": "empty",
+                "method": "GET",
                 "responseEnabled": true,
                 "usedSecretsKeys": [
                   "Gitlab-Token zz-sys-cer"
@@ -370,27 +343,174 @@
               "conditions": []
             },
             {
-              "id": "135784",
-              "component": "ACTION",
-              "parentId": "135781",
+              "id": "141499",
+              "component": "CONDITION",
+              "parentId": "141496",
               "schemaVersion": 1,
-              "type": "codebarrel.action.log",
-              "value": "Merge Requests erstellt:{{#webhookResponse.body}} ID:{{iid}} {{/webhookResponse.body}}",
-              "children": [],
-              "conditions": []
-            },
-            {
-              "id": "135785",
-              "component": "ACTION",
-              "parentId": "135781",
-              "schemaVersion": 1,
-              "type": "codebarrel.action.log",
-              "value": "Der Merge des Merge Requests findet in einer Folgeregel statt. Der Grund ist, dass der erstellt Merge Request nicht sofort gemerged werden kann, weil noch interne Prüfung von GitLab ablaufen.",
-              "children": [],
+              "type": "jira.condition.container.block",
+              "children": [
+                {
+                  "id": "141500",
+                  "component": "CONDITION_BLOCK",
+                  "parentId": "141499",
+                  "schemaVersion": 1,
+                  "type": "jira.condition.if.block",
+                  "value": {
+                    "conditionMatchType": "ALL"
+                  },
+                  "children": [
+                    {
+                      "id": "141502",
+                      "component": "ACTION",
+                      "parentId": "141500",
+                      "schemaVersion": 1,
+                      "type": "codebarrel.action.log",
+                      "value": "Create Merge Request: POST https://gitlab.partner.bdr.de/api/v4/projects/{{GitlabProjectId}}/merge_requests",
+                      "children": [],
+                      "conditions": []
+                    },
+                    {
+                      "id": "141503",
+                      "component": "ACTION",
+                      "parentId": "141500",
+                      "schemaVersion": 2,
+                      "type": "jira.issue.outgoing.webhook",
+                      "value": {
+                        "url": "https://gitlab.partner.bdr.de/api/v4/projects/{{GitlabProjectId}}/merge_requests",
+                        "headers": [
+                          {
+                            "id": "_header_1717081007022",
+                            "name": "Content-Type",
+                            "value": {
+                              "keyOrValue": "application/json",
+                              "secret": false
+                            }
+                          },
+                          {
+                            "id": "_header_1718050060534",
+                            "name": "Private-Token",
+                            "value": {
+                              "keyOrValue": "Gitlab-Token zz-sys-cer",
+                              "secret": true
+                            }
+                          },
+                          {
+                            "id": "_header_1781537522709",
+                            "name": "Idempotency-Key",
+                            "value": {
+                              "keyOrValue": "{{SourceBranch}}",
+                              "secret": false
+                            }
+                          }
+                        ],
+                        "sendIssue": false,
+                        "contentType": "custom",
+                        "customBody": "{\n  \"source_branch\": \"{{SourceBranch}}\",\n  \"target_branch\": \"develop\",\n  \"title\": \"Merge {{SourceBranch}} into develop\",\n  \"description\": \"Merge {{SourceBranch}} into develop initiated by tag creation and successfull pipeline run\",\n  \"remove_source_branch\": false,\n  \"labels\": \"CeromaAutoMerge\"\n}",
+                        "method": "POST",
+                        "responseEnabled": true,
+                        "usedSecretsKeys": [
+                          "Gitlab-Token zz-sys-cer"
+                        ]
+                      },
+                      "children": [],
+                      "conditions": []
+                    },
+                    {
+                      "id": "141504",
+                      "component": "ACTION",
+                      "parentId": "141500",
+                      "schemaVersion": 1,
+                      "type": "codebarrel.action.log",
+                      "value": "Merge Requests erstellt:{{#webhookResponse.body}} ID:{{iid}} {{/webhookResponse.body}}",
+                      "children": [],
+                      "conditions": []
+                    },
+                    {
+                      "id": "141505",
+                      "component": "ACTION",
+                      "parentId": "141500",
+                      "schemaVersion": 1,
+                      "type": "codebarrel.action.log",
+                      "value": "Der Merge des Merge Requests findet in einer Folgeregel statt. Der Grund ist, dass der erstellt Merge Request nicht sofort gemerged werden kann, weil noch interne Prüfung von GitLab ablaufen.",
+                      "children": [],
+                      "conditions": []
+                    }
+                  ],
+                  "conditions": [
+                    {
+                      "id": "141501",
+                      "component": "CONDITION",
+                      "conditionParentId": "141500",
+                      "schemaVersion": 1,
+                      "type": "jira.comparator.condition",
+                      "value": {
+                        "first": "{{webhookResponse.body.commits.size}}",
+                        "second": "0",
+                        "operator": "GREATER_THAN"
+                      },
+                      "children": [],
+                      "conditions": []
+                    }
+                  ]
+                },
+                {
+                  "id": "141506",
+                  "component": "CONDITION_BLOCK",
+                  "parentId": "141499",
+                  "schemaVersion": 1,
+                  "type": "jira.condition.if.block",
+                  "value": {
+                    "conditionMatchType": "ALL"
+                  },
+                  "children": [
+                    {
+                      "id": "141508",
+                      "component": "ACTION",
+                      "parentId": "141506",
+                      "schemaVersion": 1,
+                      "type": "codebarrel.action.log",
+                      "value": "Kein Merge Request erstellt: Der Branch {{SourceBranch}} enthält keine Commits, die in develop fehlen.",
+                      "children": [],
+                      "conditions": []
+                    }
+                  ],
+                  "conditions": [
+                    {
+                      "id": "141507",
+                      "component": "CONDITION",
+                      "conditionParentId": "141506",
+                      "schemaVersion": 1,
+                      "type": "jira.comparator.condition",
+                      "value": {
+                        "first": "{{webhookResponse.body.commits.size}}",
+                        "second": "0",
+                        "operator": "EQUALS"
+                      },
+                      "children": [],
+                      "conditions": []
+                    }
+                  ]
+                }
+              ],
               "conditions": []
             }
           ],
-          "conditions": []
+          "conditions": [
+            {
+              "id": "141497",
+              "component": "CONDITION",
+              "conditionParentId": "141496",
+              "schemaVersion": 1,
+              "type": "jira.comparator.condition",
+              "value": {
+                "first": "{{webhookResponse.body.size}}",
+                "second": "0",
+                "operator": "EQUALS"
+              },
+              "children": [],
+              "conditions": []
+            }
+          ]
         }
       ],
       "conditions": []

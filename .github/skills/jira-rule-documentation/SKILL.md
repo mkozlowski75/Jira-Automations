@@ -20,20 +20,25 @@ Validierung und Schreibschutz; dieser Skill ersetzt sie nicht.
 3. Lies die Dokumentationsübersicht und vorhandene Zielseite über
    `npm run confluence-page -- get` beziehungsweise `children`. Bestätige
    dabei die aktuelle Elternseite der Übersicht; rate ihre Position nicht.
-4. Leite die Dokumentation ausschließlich aus dem aktuellen Regel-Export ab:
+4. Löse im Export verwendete Status- und Issue-Typ-IDs vor dem Schreiben
+   lesend über die Jira-REST-API in aktuelle Bezeichnungen auf. Verwende dafür
+   gezielte `npm run jira-ticket -- search`-Abfragen mit dem jeweiligen Status
+   oder Issue-Typ und gib in der Dokumentation nur die verifizierten
+   Bezeichnungen aus, nicht die IDs.
+5. Leite die Dokumentation ausschließlich aus dem aktuellen Regel-Export ab:
    Trigger, Bedingungen, Variablen, Web Requests, Ergebnisse und Folgeregeln.
    Erfinde keine Projekte, Zeitpläne, IDs, Berechtigungen oder Abläufe.
-5. Verwende die Gliederung aus [Dokumentationsvorlage](references/documentation-template.md).
+6. Verwende die Gliederung aus [Dokumentationsvorlage](references/documentation-template.md).
    Seitentitel und Regelname im Überblick müssen exakt dem aktuellen Jira-Namen
    entsprechen; übersetze sie nicht.
-6. Lege den Storage-HTML-Entwurf in einem ignorierten temporären Arbeitsordner
+7. Lege den Storage-HTML-Entwurf in einem ignorierten temporären Arbeitsordner
    ab. Bei Updates erhalte alle bestehenden Makros, Links und Inhalte außerhalb
    der beauftragten Änderung unverändert.
-7. Führe für jede Erstellung oder Aktualisierung zuerst den Confluence-Preflight
+8. Führe für jede Erstellung oder Aktualisierung zuerst den Confluence-Preflight
    ohne `--apply` aus. Zeige Operation, Titel, Elternseite, Versionen oder
    `expectedAbsent` sowie nur die Inhaltslängen. Nutze beim Update den vom
    Preflight gelieferten Schutzwert `--expected-version`.
-8. Verwende `--apply` erst nach ausdrücklicher Freigabe des konkret angezeigten
+9. Verwende `--apply` erst nach ausdrücklicher Freigabe des konkret angezeigten
    Preflights in der aktuellen Unterhaltung. Prüfe danach die Seite erneut
    lesend auf Titel, Elternseite, Version und Inhalt.
 
@@ -45,6 +50,9 @@ Validierung und Schreibschutz; dieser Skill ersetzt sie nicht.
 - Beschreibe tatsächliches Verhalten, nicht nur den Regel- oder Ticketnamen.
   Benenne bei einer Mehrtreffer-Abfrage präzise, ob die Regel alle oder nur
   einen zurückgegebenen Eintrag weiterverarbeitet.
+- Verwende Status- und Issue-Typ-Bezeichnungen statt technischer IDs. Ist eine
+  Bezeichnung nicht lesend verifizierbar, halte die Dokumentation an und
+  berichte den fehlenden Abgleich statt eine ID zu veröffentlichen.
 - Nutze für Prüfketten die Tabelle `Eingangsbedingungen` mit den Spalten
   `Eingangsbedingung`, `Prüfung durch die Regel` und `Bei Nichterfüllung`.
 - Dokumentiere Secrets, Webhook-Tokens, Headerwerte, Zertifikate und rohe

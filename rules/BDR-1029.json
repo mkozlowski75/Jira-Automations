@@ -3,15 +3,15 @@
   "clientKey": "com.codebarrel.tenant.global",
   "name": "GitLab: Security Alert – HIGH/CRITICAL-Schwachstellen im Trivy-Scan",
   "state": "ENABLED",
-  "description": "CER-8164: Die Regel verarbeitet die neueste Ausführung der GitLab-Schedule Nightly auf develop innerhalb der vergangenen 24 Stunden. Sie ermittelt den Job trivy:scan:sbom im Stage sbom-vun, lädt dessen nativen Trivy-JSON-Report und versendet eine HTML-E-Mail mit der Anzahl sowie einer deduplizierten Tabelle der gefundenen Schwachstellen. Vorübergehend werden zu Testzwecken auch die Schweregrade LOW und MEDIUM berücksichtigt.",
+  "description": "CER-8164: Die Regel verarbeitet die neueste Ausführung der GitLab-Schedule Nightly auf develop innerhalb der vergangenen 24 Stunden. Sie ermittelt den Job trivy:scan:sbom im Stage sbom-vun, lädt dessen nativen Trivy-JSON-Report und filtert die Vulnerability-Einträge vorübergehend zu Testzwecken auf die Schweregrade LOW und MEDIUM. Nur wenn mindestens ein passender Eintrag vorhanden ist, wird eine HTML-E-Mail mit der Anzahl sowie einer deduplizierten Tabelle der gefundenen Schwachstellen versendet.",
   "canOtherRuleTrigger": false,
   "notifyOnError": "FIRSTERROR",
   "authorAccountId": "JIRAUSER15085",
   "actorAccountId": "JIRAUSER15085",
   "created": 1783437537682,
-  "updated": 1786008606079,
+  "updated": 1786011134855,
   "trigger": {
-    "id": "142444",
+    "id": "142570",
     "component": "TRIGGER",
     "schemaVersion": 1,
     "type": "jira.jql.scheduled",
@@ -32,16 +32,16 @@
   },
   "components": [
     {
-      "id": "142445",
+      "id": "142571",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "codebarrel.action.log",
-      "value": "Starte Security-Check: Werte nativen Trivy-JSON-Report aus (Test einschließlich LOW und MEDIUM)",
+      "value": "Starte Security-Check: Werte nativen Trivy-JSON-Report testweise mit Severity-Filter LOW/MEDIUM aus",
       "children": [],
       "conditions": []
     },
     {
-      "id": "142446",
+      "id": "142572",
       "component": "ACTION",
       "schemaVersion": 2,
       "type": "jira.issue.outgoing.webhook",
@@ -77,7 +77,7 @@
       "conditions": []
     },
     {
-      "id": "142447",
+      "id": "142573",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "codebarrel.action.log",
@@ -86,7 +86,7 @@
       "conditions": []
     },
     {
-      "id": "142448",
+      "id": "142574",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -107,7 +107,7 @@
       "conditions": []
     },
     {
-      "id": "142449",
+      "id": "142575",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -128,7 +128,7 @@
       "conditions": []
     },
     {
-      "id": "142450",
+      "id": "142576",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -149,7 +149,7 @@
       "conditions": []
     },
     {
-      "id": "142451",
+      "id": "142577",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -170,7 +170,7 @@
       "conditions": []
     },
     {
-      "id": "142452",
+      "id": "142578",
       "component": "ACTION",
       "schemaVersion": 2,
       "type": "jira.issue.outgoing.webhook",
@@ -206,7 +206,7 @@
       "conditions": []
     },
     {
-      "id": "142453",
+      "id": "142579",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "codebarrel.action.log",
@@ -215,7 +215,7 @@
       "conditions": []
     },
     {
-      "id": "142454",
+      "id": "142580",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -236,7 +236,7 @@
       "conditions": []
     },
     {
-      "id": "142455",
+      "id": "142581",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -257,7 +257,7 @@
       "conditions": []
     },
     {
-      "id": "142456",
+      "id": "142582",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -278,7 +278,7 @@
       "conditions": []
     },
     {
-      "id": "142457",
+      "id": "142583",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -299,7 +299,7 @@
       "conditions": []
     },
     {
-      "id": "142458",
+      "id": "142584",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.comparator.condition",
@@ -312,7 +312,7 @@
       "conditions": []
     },
     {
-      "id": "142459",
+      "id": "142585",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.comparator.condition",
@@ -325,7 +325,7 @@
       "conditions": []
     },
     {
-      "id": "142460",
+      "id": "142586",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -346,7 +346,7 @@
       "conditions": []
     },
     {
-      "id": "142461",
+      "id": "142587",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.comparator.condition",
@@ -359,7 +359,7 @@
       "conditions": []
     },
     {
-      "id": "142462",
+      "id": "142588",
       "component": "ACTION",
       "schemaVersion": 2,
       "type": "jira.issue.outgoing.webhook",
@@ -395,7 +395,7 @@
       "conditions": []
     },
     {
-      "id": "142463",
+      "id": "142589",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -408,7 +408,7 @@
         "type": "SMART",
         "query": {
           "type": "SMART",
-          "value": "{{#webhookResponse.body.Results}}{{#Vulnerabilities}}<tr><td style=\"border:1px solid #ccc;padding:6px;\">{{PkgName|\"UNKNOWN\"}}</td><td style=\"border:1px solid #ccc;padding:6px;\"><a href=\"{{#if(VulnerabilityID.startsWith(\"CVE-\"))}}https://www.cve.org/CVERecord?id={{VulnerabilityID}}{{/}}{{#if(VulnerabilityID.startsWith(\"GHSA-\"))}}https://github.com/advisories/{{VulnerabilityID}}{{/}}\">{{VulnerabilityID}}</a></td><td style=\"border:1px solid #ccc;padding:6px;\">{{Severity.toUpperCase|\"UNKNOWN\"}}</td><td style=\"border:1px solid #ccc;padding:6px;\">{{InstalledVersion|\"UNKNOWN\"}}</td></tr>§§{{/}}{{/}}"
+          "value": "{{#webhookResponse.body.Results}}{{#Vulnerabilities}}{{#if(equals(Severity.toUpperCase,\"LOW\"))}}<tr><td style=\"border:1px solid #ccc;padding:6px;\">{{PkgName|\"UNKNOWN\"}}</td><td style=\"border:1px solid #ccc;padding:6px;\"><a href=\"{{#if(VulnerabilityID.startsWith(\"CVE-\"))}}https://www.cve.org/CVERecord?id={{VulnerabilityID}}{{/}}{{#if(VulnerabilityID.startsWith(\"GHSA-\"))}}https://github.com/advisories/{{VulnerabilityID}}{{/}}\">{{VulnerabilityID}}</a></td><td style=\"border:1px solid #ccc;padding:6px;\">{{Severity.toUpperCase|\"UNKNOWN\"}}</td><td style=\"border:1px solid #ccc;padding:6px;\">{{InstalledVersion|\"UNKNOWN\"}}</td></tr>§§{{/}}{{#if(equals(Severity.toUpperCase,\"MEDIUM\"))}}<tr><td style=\"border:1px solid #ccc;padding:6px;\">{{PkgName|\"UNKNOWN\"}}</td><td style=\"border:1px solid #ccc;padding:6px;\"><a href=\"{{#if(VulnerabilityID.startsWith(\"CVE-\"))}}https://www.cve.org/CVERecord?id={{VulnerabilityID}}{{/}}{{#if(VulnerabilityID.startsWith(\"GHSA-\"))}}https://github.com/advisories/{{VulnerabilityID}}{{/}}\">{{VulnerabilityID}}</a></td><td style=\"border:1px solid #ccc;padding:6px;\">{{Severity.toUpperCase|\"UNKNOWN\"}}</td><td style=\"border:1px solid #ccc;padding:6px;\">{{InstalledVersion|\"UNKNOWN\"}}</td></tr>§§{{/}}{{/}}{{/}}"
         },
         "lazy": false
       },
@@ -416,7 +416,7 @@
       "conditions": []
     },
     {
-      "id": "142464",
+      "id": "142590",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -429,7 +429,7 @@
         "type": "SMART",
         "query": {
           "type": "SMART",
-          "value": "{{#webhookResponse.body.Results}}{{#Vulnerabilities}}• Vulnerability={{VulnerabilityID}} | Library={{PkgName|\"UNKNOWN\"}} | Severity={{Severity.toUpperCase|\"UNKNOWN\"}} | Installed Version={{InstalledVersion|\"UNKNOWN\"}}\n§§{{/}}{{/}}"
+          "value": "{{#webhookResponse.body.Results}}{{#Vulnerabilities}}{{#if(equals(Severity.toUpperCase,\"LOW\"))}}• Vulnerability={{VulnerabilityID}} | Library={{PkgName|\"UNKNOWN\"}} | Severity={{Severity.toUpperCase|\"UNKNOWN\"}} | Installed Version={{InstalledVersion|\"UNKNOWN\"}}\n§§{{/}}{{#if(equals(Severity.toUpperCase,\"MEDIUM\"))}}• Vulnerability={{VulnerabilityID}} | Library={{PkgName|\"UNKNOWN\"}} | Severity={{Severity.toUpperCase|\"UNKNOWN\"}} | Installed Version={{InstalledVersion|\"UNKNOWN\"}}\n§§{{/}}{{/}}{{/}}"
         },
         "lazy": false
       },
@@ -437,7 +437,7 @@
       "conditions": []
     },
     {
-      "id": "142465",
+      "id": "142591",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -458,24 +458,24 @@
       "conditions": []
     },
     {
-      "id": "142466",
+      "id": "142592",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "codebarrel.action.log",
-      "value": "🔎 Nativer Trivy-JSON-Report: {{trivyReportPath}}\n{{#vulnerabilityLogRows.split(\"§§\").distinct}}{{.}}{{/}}",
+      "value": "🔎 Nativer Trivy-JSON-Report: {{trivyReportPath}} | Severity-Filter=LOW/MEDIUM\n{{#vulnerabilityLogRows.split(\"§§\").distinct}}{{.}}{{/}}",
       "children": [],
       "conditions": []
     },
     {
-      "id": "142467",
+      "id": "142593",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.condition.container.block",
       "children": [
         {
-          "id": "142468",
+          "id": "142594",
           "component": "CONDITION_BLOCK",
-          "parentId": "142467",
+          "parentId": "142593",
           "schemaVersion": 1,
           "type": "jira.condition.if.block",
           "value": {
@@ -483,19 +483,19 @@
           },
           "children": [
             {
-              "id": "142470",
+              "id": "142596",
               "component": "ACTION",
-              "parentId": "142468",
+              "parentId": "142594",
               "schemaVersion": 1,
               "type": "codebarrel.action.log",
-              "value": "⚠️ Nativer Trivy-JSON-Report ausgewertet (Pipeline #{{pipelineId}}, Trivy-Job #{{trivyJobId}}, eindeutige Vulnerability-Einträge: {{vulnerabilityTableRows.split(\"§§\").distinct.size}})",
+              "value": "⚠️ Nativer Trivy-JSON-Report ausgewertet (Pipeline #{{pipelineId}}, Trivy-Job #{{trivyJobId}}, Severity-Filter: LOW/MEDIUM, eindeutige gefilterte Vulnerability-Einträge: {{vulnerabilityTableRows.split(\"§§\").distinct.size}})",
               "children": [],
               "conditions": []
             },
             {
-              "id": "142471",
+              "id": "142597",
               "component": "ACTION",
-              "parentId": "142468",
+              "parentId": "142594",
               "schemaVersion": 3,
               "type": "jira.issue.outgoing.email",
               "value": {
@@ -510,8 +510,8 @@
                 ],
                 "cc": [],
                 "bcc": [],
-                "subject": "🚨 Ceroma Security Alert: HIGH/CRITICAL-Schwachstellen gefunden (Pipeline #{{pipelineId}})",
-                "body": "<p>Hallo,</p>\n\n<p>\nIm Trivy-Sicherheits-Scan der Ceroma-Pipeline wurden Schwachstellen\nmit dem Schweregrad <strong>HIGH</strong> oder\n<strong>CRITICAL</strong> gefunden.\n</p>\n\n<h3>Details</h3>\n\n<ul>\n<li>\n  <strong>Projekt:</strong>\n  <a href=\"https://gitlab.partner.bdr.de/cer/ceroma/app\">Ceroma</a>\n</li>\n<li>\n  <strong>Pipeline:</strong>\n  <a href=\"{{pipelineUrl}}\">#{{pipelineId}}</a>\n</li>\n\n<li>\n  <strong>Job:</strong>\n  <a href=\"{{trivyJobUrl}}\">\n    trivy:scan:sbom (#{{trivyJobId}})\n  </a>\n</li>\n</ul>\n\n<h3>Ergebnis</h3>\n\n<p>\nDer Trivy-Scan hat <strong>{{vulnerabilityTableRows.split(\"§§\").distinct.size}}</strong>\neindeutige Schwachstellen erkannt.\nDie vollständige Ausgabe des Trivy-Scans befindet sich im <a href=\"{{trivyJobUrl}}\">Trivy-Job-Log</a>.\n</p>\n\n{{vulnerabilityTable}}\n\n<h3>Nächste Schritte</h3>\n\n<ol>\n  <li>Den Trivy-Job öffnen und die gemeldeten Schwachstellen prüfen.</li>\n  <li>Bewerten, ob die betroffenen Abhängigkeiten aktualisiert werden können.</li>\n  <li>Falls erforderlich, Tickets gemäß der\n      <a href=\"https://partner.bdr.de/confluence/x/fak5Hg\">\n      Vorlage für CVE-Tickets\n      </a>\n      erstellen.\n  </li>\n</ol>\n\n<hr>\n\n<p style=\"font-size:12px;color:#666;\">\nDiese Benachrichtigung wurde automatisch durch die\n<a href=\"https://partner.bdr.de/jira/secure/AutomationProjectAdminAction!default.jspa?projectKey=CER#/rule/1029\">\nJira-Automation-Regel <strong>GitLab: Security Alert – HIGH/CRITICAL-Schwachstellen im Trivy-Scan</strong>\n</a>\nerstellt.\n</p>",
+                "subject": "🚨 Ceroma Security Alert TEST: LOW/MEDIUM-Schwachstellen gefunden (Pipeline #{{pipelineId}})",
+                "body": "<p><strong>TESTBENACHRICHTIGUNG</strong></p>\n\n<p>Hallo,</p>\n\n<p>\nIm Trivy-Sicherheits-Scan der Ceroma-Pipeline wurden Schwachstellen\nmit dem Schweregrad <strong>LOW</strong> oder\n<strong>MEDIUM</strong> gefunden.\n</p>\n\n<h3>Details</h3>\n\n<ul>\n<li>\n  <strong>Projekt:</strong>\n  <a href=\"https://gitlab.partner.bdr.de/cer/ceroma/app\">Ceroma</a>\n</li>\n<li>\n  <strong>Pipeline:</strong>\n  <a href=\"{{pipelineUrl}}\">#{{pipelineId}}</a>\n</li>\n\n<li>\n  <strong>Job:</strong>\n  <a href=\"{{trivyJobUrl}}\">\n    trivy:scan:sbom (#{{trivyJobId}})\n  </a>\n</li>\n</ul>\n\n<h3>Ergebnis</h3>\n\n<p>\nDer Trivy-Scan hat <strong>{{vulnerabilityTableRows.split(\"§§\").distinct.size}}</strong>\neindeutige Schwachstellen mit dem Schweregrad <strong>LOW</strong> oder <strong>MEDIUM</strong> erkannt.\nDie vollständige Ausgabe des Trivy-Scans befindet sich im <a href=\"{{trivyJobUrl}}\">Trivy-Job-Log</a>.\n</p>\n\n{{vulnerabilityTable}}\n\n<h3>Nächste Schritte</h3>\n\n<ol>\n  <li>Den Trivy-Job öffnen und die gemeldeten Schwachstellen prüfen.</li>\n  <li>Bewerten, ob die betroffenen Abhängigkeiten aktualisiert werden können.</li>\n  <li>Falls erforderlich, Tickets gemäß der\n      <a href=\"https://partner.bdr.de/confluence/x/fak5Hg\">\n      Vorlage für CVE-Tickets\n      </a>\n      erstellen.\n  </li>\n</ol>\n\n<hr>\n\n<p style=\"font-size:12px;color:#666;\">\nDiese Testbenachrichtigung wurde automatisch durch die\n<a href=\"https://partner.bdr.de/jira/secure/AutomationProjectAdminAction!default.jspa?projectKey=CER#/rule/1029\">\nJira-Automation-Regel <strong>GitLab: Security Alert – LOW/MEDIUM-Testfilter im Trivy-Scan</strong>\n</a>\nerstellt.\n</p>",
                 "mimeType": "text/html",
                 "convertLineBreaks": false
               },
@@ -519,21 +519,21 @@
               "conditions": []
             },
             {
-              "id": "142472",
+              "id": "142598",
               "component": "ACTION",
-              "parentId": "142468",
+              "parentId": "142594",
               "schemaVersion": 1,
               "type": "codebarrel.action.log",
-              "value": "✅ E-Mail-Benachrichtigung gesendet an: matthias.kozlowski.extern@bdr.de",
+              "value": "✅ Test-E-Mail für LOW/MEDIUM gesendet an: matthias.kozlowski.extern@bdr.de",
               "children": [],
               "conditions": []
             }
           ],
           "conditions": [
             {
-              "id": "142469",
+              "id": "142595",
               "component": "CONDITION",
-              "conditionParentId": "142468",
+              "conditionParentId": "142594",
               "schemaVersion": 1,
               "type": "jira.comparator.condition",
               "value": {
@@ -547,9 +547,9 @@
           ]
         },
         {
-          "id": "142473",
+          "id": "142599",
           "component": "CONDITION_BLOCK",
-          "parentId": "142467",
+          "parentId": "142593",
           "schemaVersion": 1,
           "type": "jira.condition.if.block",
           "value": {
@@ -557,12 +557,12 @@
           },
           "children": [
             {
-              "id": "142474",
+              "id": "142600",
               "component": "ACTION",
-              "parentId": "142473",
+              "parentId": "142599",
               "schemaVersion": 1,
               "type": "codebarrel.action.log",
-              "value": "Nativer Trivy-JSON-Report {{trivyReportPath}} enthält keine Vulnerability-Einträge.",
+              "value": "Nativer Trivy-JSON-Report {{trivyReportPath}} enthält keine Vulnerability-Einträge für den Severity-Filter LOW/MEDIUM.",
               "children": [],
               "conditions": []
             }

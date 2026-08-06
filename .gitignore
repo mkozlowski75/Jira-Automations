@@ -1,6 +1,7 @@
 ﻿# Secrets
 config/.env
 backups/
+.tmp/
 
 # Node
 node_modules/

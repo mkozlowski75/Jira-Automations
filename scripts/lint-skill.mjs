@@ -199,6 +199,58 @@ for (const match of confluenceSkill.matchAll(/\]\(([^)]+)\)/g)) {
   if (!existsSync(path)) errors.push(`Fehlender Link in ${confluenceSkillPath}: ${target}`);
 }
 
+const ruleDocumentationSkillRoot = join(__dir, '..', '.github', 'skills', 'jira-rule-documentation');
+const ruleDocumentationSkillPath = join(ruleDocumentationSkillRoot, 'SKILL.md');
+const ruleDocumentationReferencePath = join(ruleDocumentationSkillRoot, 'references', 'documentation-template.md');
+const ruleDocumentationAgentPath = join(ruleDocumentationSkillRoot, 'agents', 'openai.yaml');
+const ruleDocumentationSkill = readFileSync(ruleDocumentationSkillPath, 'utf8');
+const ruleDocumentationReference = readFileSync(ruleDocumentationReferencePath, 'utf8');
+const ruleDocumentationAgent = readFileSync(ruleDocumentationAgentPath, 'utf8');
+const ruleDocumentationFrontmatter = /^---\r?\n([\s\S]*?)\r?\n---\r?\n/.exec(ruleDocumentationSkill);
+
+if (!ruleDocumentationFrontmatter) {
+  errors.push('jira-rule-documentation/SKILL.md besitzt kein gültiges YAML-Frontmatter.');
+} else {
+  const fields = [...ruleDocumentationFrontmatter[1].matchAll(/^([a-zA-Z][\w-]*):\s*(.+)$/gm)]
+    .map(match => ({ name: match[1], value: match[2].trim() }));
+  if (fields.map(field => field.name).join(',') !== 'name,description') {
+    errors.push('jira-rule-documentation-Frontmatter muss genau name und description enthalten.');
+  }
+  if (fields.find(field => field.name === 'name')?.value !== 'jira-rule-documentation') {
+    errors.push('jira-rule-documentation-Frontmatter-name muss jira-rule-documentation sein.');
+  }
+}
+
+for (const [label, content] of [
+  ['jira-rule-documentation/SKILL.md', ruleDocumentationSkill],
+  ['jira-rule-documentation/references/documentation-template.md', ruleDocumentationReference],
+  ['jira-rule-documentation/agents/openai.yaml', ruleDocumentationAgent],
+]) {
+  if (content.includes('TODO')) errors.push(`${label} enthält noch TODO-Platzhalter.`);
+}
+
+for (const requiredText of [
+  'npm run pull-rule',
+  'npm run confluence-page',
+  '--apply',
+  '--expected-version',
+]) {
+  if (!ruleDocumentationSkill.includes(requiredText)) {
+    errors.push(`jira-rule-documentation/SKILL.md dokumentiert "${requiredText}" nicht.`);
+  }
+}
+
+if (!ruleDocumentationAgent.includes('$jira-rule-documentation')) {
+  errors.push('jira-rule-documentation/agents/openai.yaml muss $jira-rule-documentation im default_prompt nennen.');
+}
+
+for (const match of ruleDocumentationSkill.matchAll(/\]\(([^)]+)\)/g)) {
+  const target = match[1];
+  if (/^(https?:|#)/.test(target)) continue;
+  const path = resolve(dirname(ruleDocumentationSkillPath), target);
+  if (!existsSync(path)) errors.push(`Fehlender Link in ${ruleDocumentationSkillPath}: ${target}`);
+}
+
 const gitlabSkill = readFileSync(gitlabSkillPath, 'utf8');
 const gitlabReference = readFileSync(gitlabReferencePath, 'utf8');
 const gitlabAgent = readFileSync(gitlabAgentPath, 'utf8');
@@ -262,6 +314,9 @@ const checkedDocumentation = [
   confluenceSkill,
   confluenceReference,
   confluenceAgent,
+  ruleDocumentationSkill,
+  ruleDocumentationReference,
+  ruleDocumentationAgent,
 ].join('\n');
 for (const { pattern, label } of forbiddenPatterns) {
   if (pattern.test(checkedDocumentation)) errors.push(`Dokumentation enthält ${label}.`);
@@ -278,4 +333,5 @@ if (errors.length > 0) {
   console.log('✅ Jira-Ticket-Skill geprüft: Frontmatter, Links, CLI, Referenz und Schutzworkflow gültig.');
   console.log('✅ GitLab-Skill geprüft: Frontmatter, Links, CLI, Referenz und read-only Schutz gültig.');
   console.log('✅ Confluence-Skill geprüft: Frontmatter, Links, CLI, Referenz und Schutzworkflow gültig.');
+  console.log('✅ Jira-Regeldokumentations-Skill geprüft: Frontmatter, Vorlage, Links und Schutzworkflow gültig.');
 }

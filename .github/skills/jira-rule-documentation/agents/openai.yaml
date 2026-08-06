@@ -1,0 +1,4 @@
+interface:
+  display_name: "Jira-Regeldokumentation"
+  short_description: "Jira-Regeln sicher in Confluence dokumentieren"
+  default_prompt: "Use $jira-rule-documentation to document a BDR Jira automation rule in Confluence."

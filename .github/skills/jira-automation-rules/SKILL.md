@@ -71,6 +71,10 @@ Lernartefakte. Übernimm keine Beispiel-ID in eine produktive Regel.
 11. Führe nach der Synchronisierung `npm run verify` aus und übernimm den
     verifizierten lokalen Export in Git, bevor du den nächsten Push vorbereitest.
     Die folgende Drift-Prüfung verwendet diesen Git-HEAD-Stand als Basis.
+12. Formuliere Commitnachrichten fachlich aussagekräftig: Nenne konkret,
+    welche Regellogik, Felder, Empfänger, Vorlagen oder Verhaltensweisen geändert
+    wurden. Verwende „Regel aktualisiert“ oder „aus Jira synchronisiert“ nie als
+    alleinige Beschreibung; nutze bei mehreren Änderungen Betreff plus Body.
 
 ## Break-glass bei bewusst akzeptierter Serverdrift
 

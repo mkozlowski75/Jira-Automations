@@ -80,6 +80,7 @@ Pflichtfelder sind `cve`, `library`, `installedVersion`, `severity` und `source`
 `shortDescription` sowie die projektspezifischen Bewertungsfelder sind optional;
 fehlende Bewertungen bleiben in der Beschreibung leer. Fehlt die Kurzbeschreibung,
 verwendet die Summary die Bibliothek als technischen Suffix.
+Jedes von der Factory angelegte Ticket erhält genau das Label `CVE`.
 
 Der Standardaufruf ist immer ein read-only Preflight:
 

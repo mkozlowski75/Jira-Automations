@@ -209,6 +209,11 @@ function resolveCreateMetadata(response, projectKey, issueTypeName, suppliedFiel
       throw new Error(`Pflichtfeld "${fieldId}" ist laut Jira-Erstellmetadaten nicht verfügbar.`);
     }
   }
+  for (const fieldId of suppliedFields) {
+    if (!Object.prototype.hasOwnProperty.call(metadata, fieldId)) {
+      throw new Error(`Feld "${fieldId}" ist laut Jira-Erstellmetadaten nicht verfügbar.`);
+    }
+  }
   const unsupportedRequired = Object.entries(metadata)
     .filter(([fieldId, descriptor]) => (
       !['project', 'issuetype', 'summary', 'description', ...suppliedFields].includes(fieldId)
@@ -282,7 +287,7 @@ export function createJiraTicketService(client) {
     return { name: user.name };
   }
 
-  async function prepareCreateIssue({ projectKey, issueTypeName, summary, description, reporter }) {
+  async function prepareCreateIssue({ projectKey, issueTypeName, summary, description, reporter, labels }) {
     if (!/^[A-Z][A-Z0-9_]*$/.test(String(projectKey || ''))) {
       throw new Error('Ungültiger Jira-Projekt-Key.');
     }
@@ -297,6 +302,11 @@ export function createJiraTicketService(client) {
     }
     if (reporter !== undefined && (typeof reporter !== 'object' || !reporter || !reporter.name)) {
       throw new Error('Reporter muss einen Jira-Benutzernamen enthalten.');
+    }
+    if (labels !== undefined && (!Array.isArray(labels)
+      || labels.length === 0
+      || labels.some(label => typeof label !== 'string' || !label.trim()))) {
+      throw new Error('Labels müssen ein nicht leeres Array aus Textwerten sein.');
     }
     let createMetadata;
     try {
@@ -315,7 +325,10 @@ export function createJiraTicketService(client) {
       createMetadata,
       projectKey,
       issueTypeName,
-      reporter ? ['reporter'] : [],
+      [
+        ...(reporter ? ['reporter'] : []),
+        ...(labels ? ['labels'] : []),
+      ],
     );
     if (metadata.issueType.fields?.reporter?.required === true && !reporter) {
       throw new Error('Jira verlangt das Pflichtfeld "reporter".');
@@ -328,6 +341,7 @@ export function createJiraTicketService(client) {
       summary,
       description,
       reporter: reporter ? { name: reporter.name } : undefined,
+      labels: labels ? [...labels] : undefined,
     };
   }
 
@@ -346,17 +360,19 @@ export function createJiraTicketService(client) {
       description: input.description,
     };
     if (preflight.reporter) fields.reporter = preflight.reporter;
+    if (preflight.labels) fields.labels = preflight.labels;
     if (beforeCreate) await beforeCreate();
     const created = await client.post('/issue', { fields });
     if (!created?.key) throw new Error('Jira bestätigte die Ticketanlage ohne Ticket-Key.');
     const remote = await client.get(issuePath(
       created.key,
-      ['summary', 'description', 'issuetype', 'project', 'reporter'],
+      ['summary', 'description', 'issuetype', 'project', 'reporter', 'labels'],
     ));
     const verified = remote?.key === created.key
       && remote?.fields?.summary === input.summary
       && remote?.fields?.description === input.description
       && (!preflight.reporter || remote?.fields?.reporter?.name === preflight.reporter.name)
+      && (!preflight.labels || valueMatches(remote?.fields?.labels, preflight.labels))
       && String(remote?.fields?.issuetype?.id) === String(preflight.issueType.id)
       && remote?.fields?.issuetype?.name === input.issueTypeName
       && remote?.fields?.project?.key === input.projectKey;

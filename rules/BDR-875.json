@@ -3,15 +3,15 @@
   "clientKey": "com.codebarrel.tenant.global",
   "name": "Jira: Create Release Ticket Worker",
   "state": "ENABLED",
-  "description": "Erstellt Release-Tickets anhand fester Produktvorlagen. Aufrufer übergeben Produkt, Version, Sprint und Duplikat-JQL per Webhook.",
+  "description": "Erstellt Release-Tickets anhand fester Produktvorlagen. Aufrufer übergeben Produkt, Version, Sprint und optional ein Quell-Ticket per Webhook. Die Duplikatprüfung wird im Worker anhand von Vorgangstyp, Komponente, Fix-Version und erwarteter Release-Summary bestimmt.",
   "canOtherRuleTrigger": false,
   "notifyOnError": "FIRSTERROR",
   "authorAccountId": "JIRAUSER15085",
   "actorAccountId": "JIRAUSER23851",
   "created": 1768392696492,
-  "updated": 1786630488667,
+  "updated": 1786631263896,
   "trigger": {
-    "id": "143683",
+    "id": "143745",
     "component": "TRIGGER",
     "schemaVersion": 1,
     "type": "jira.incoming.webhook",
@@ -25,28 +25,7 @@
   },
   "components": [
     {
-      "id": "143684",
-      "component": "ACTION",
-      "schemaVersion": 1,
-      "type": "jira.lookup.issues",
-      "value": {
-        "id": "_customsmartvalue_id_1786627503214",
-        "name": {
-          "type": "FREE",
-          "value": "lookupIssues"
-        },
-        "type": "JQL",
-        "query": {
-          "type": "SMART",
-          "value": "{{webhookData.duplicateJql}}"
-        },
-        "lazy": false
-      },
-      "children": [],
-      "conditions": []
-    },
-    {
-      "id": "143685",
+      "id": "143746",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -67,7 +46,7 @@
       "conditions": []
     },
     {
-      "id": "143686",
+      "id": "143747",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -88,7 +67,7 @@
       "conditions": []
     },
     {
-      "id": "143687",
+      "id": "143748",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -109,7 +88,7 @@
       "conditions": []
     },
     {
-      "id": "143688",
+      "id": "143749",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -130,24 +109,108 @@
       "conditions": []
     },
     {
-      "id": "143689",
+      "id": "143750",
       "component": "ACTION",
       "schemaVersion": 1,
-      "type": "codebarrel.action.log",
-      "value": "Release-Worker verarbeitet Anfrage: Produkt={{product}} | Release-Version={{releaseVersion}} | Fix-Version={{workerFixVersion}} | Sprint-ID={{workerSprintId}} | Ursprung={{webhookData.origin}} | Quell-Ticket={{webhookData.sourceIssueKey}} | Duplikat-JQL={{webhookData.duplicateJql}} | Lookup-Treffer={{lookupIssues.size}}",
+      "type": "jira.create.variable",
+      "value": {
+        "id": "_customsmartvalue_id_release_worker_component",
+        "name": {
+          "type": "FREE",
+          "value": "releaseComponent"
+        },
+        "type": "SMART",
+        "query": {
+          "type": "SMART",
+          "value": "{{product.replaceAll(\"CeromaManual\", \"Benutzerhandbuch\")}}"
+        },
+        "lazy": false
+      },
       "children": [],
       "conditions": []
     },
     {
-      "id": "143690",
+      "id": "143751",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "jira.create.variable",
+      "value": {
+        "id": "_customsmartvalue_id_release_worker_summary_prefix",
+        "name": {
+          "type": "FREE",
+          "value": "releaseTicketSummaryPrefix"
+        },
+        "type": "SMART",
+        "query": {
+          "type": "SMART",
+          "value": "{{product.replaceAll(\"CeromaCore\", \"CEROMA Release\").replaceAll(\"CeromaManual\", \"CEROMA Benutzerhandbuch\").replaceAll(\"Mediator\", \"Mediator Release\").replaceAll(\"PostIdentService\", \"PostIdentService Release\")}}"
+        },
+        "lazy": false
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "143752",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "jira.create.variable",
+      "value": {
+        "id": "_customsmartvalue_id_release_worker_duplicate_jql",
+        "name": {
+          "type": "FREE",
+          "value": "releaseDuplicateJql"
+        },
+        "type": "SMART",
+        "query": {
+          "type": "SMART",
+          "value": "project = CER AND issuetype = Release AND component = \"{{releaseComponent}}\" AND fixVersion = \"{{workerFixVersion}}\" AND summary = \"{{releaseTicketSummaryPrefix}} {{releaseVersion}}\""
+        },
+        "lazy": false
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "143753",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "jira.lookup.issues",
+      "value": {
+        "id": "_customsmartvalue_id_1786627503214",
+        "name": {
+          "type": "FREE",
+          "value": "lookupIssues"
+        },
+        "type": "JQL",
+        "query": {
+          "type": "SMART",
+          "value": "{{releaseDuplicateJql}}"
+        },
+        "lazy": false
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "143754",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "codebarrel.action.log",
+      "value": "Release-Worker verarbeitet Anfrage: Produkt={{product}} | Release-Version={{releaseVersion}} | Fix-Version={{workerFixVersion}} | Sprint-ID={{workerSprintId}} | Ursprung={{webhookData.origin}} | Quell-Ticket={{webhookData.sourceIssueKey}} | Duplikat-JQL={{releaseDuplicateJql}} | Lookup-Treffer={{lookupIssues.size}}",
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "143755",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.condition.container.block",
       "children": [
         {
-          "id": "143691",
+          "id": "143756",
           "component": "CONDITION_BLOCK",
-          "parentId": "143690",
+          "parentId": "143755",
           "schemaVersion": 1,
           "type": "jira.condition.if.block",
           "value": {
@@ -155,9 +218,9 @@
           },
           "children": [
             {
-              "id": "143694",
+              "id": "143759",
               "component": "ACTION",
-              "parentId": "143691",
+              "parentId": "143756",
               "schemaVersion": 1,
               "type": "codebarrel.action.log",
               "value": "Release-Erstellung gestartet: Produkt=CeromaCore | Release-Version={{releaseVersion}} | Fix-Version={{workerFixVersion}} | Sprint-ID={{workerSprintId}} | Ursprung={{webhookData.origin}} | Quell-Ticket={{webhookData.sourceIssueKey}}",
@@ -165,9 +228,9 @@
               "conditions": []
             },
             {
-              "id": "143695",
+              "id": "143760",
               "component": "ACTION",
-              "parentId": "143691",
+              "parentId": "143756",
               "schemaVersion": 1,
               "type": "jira.version.create",
               "value": {
@@ -183,9 +246,9 @@
               "conditions": []
             },
             {
-              "id": "143696",
+              "id": "143761",
               "component": "ACTION",
-              "parentId": "143691",
+              "parentId": "143756",
               "schemaVersion": 6,
               "type": "jira.issue.create",
               "value": {
@@ -279,9 +342,9 @@
               "conditions": []
             },
             {
-              "id": "143697",
+              "id": "143762",
               "component": "ACTION",
-              "parentId": "143691",
+              "parentId": "143756",
               "schemaVersion": 1,
               "type": "jira.create.variable",
               "value": {
@@ -301,9 +364,9 @@
               "conditions": []
             },
             {
-              "id": "143698",
+              "id": "143763",
               "component": "ACTION",
-              "parentId": "143691",
+              "parentId": "143756",
               "schemaVersion": 1,
               "type": "codebarrel.action.log",
               "value": "Release-Ticket erstellt: Produkt=CeromaCore | Release-Version={{releaseVersion}} | Fix-Version={{workerFixVersion}} | Ticket={{createdReleaseKey}}",
@@ -311,9 +374,9 @@
               "conditions": []
             },
             {
-              "id": "143699",
+              "id": "143764",
               "component": "BRANCH",
-              "parentId": "143691",
+              "parentId": "143756",
               "schemaVersion": 1,
               "type": "jira.issue.related",
               "value": {
@@ -325,9 +388,9 @@
               },
               "children": [
                 {
-                  "id": "143700",
+                  "id": "143765",
                   "component": "ACTION",
-                  "parentId": "143699",
+                  "parentId": "143764",
                   "schemaVersion": 1,
                   "type": "jira.issue.comment",
                   "value": {
@@ -346,9 +409,9 @@
           ],
           "conditions": [
             {
-              "id": "143692",
+              "id": "143757",
               "component": "CONDITION",
-              "conditionParentId": "143691",
+              "conditionParentId": "143756",
               "schemaVersion": 1,
               "type": "jira.comparator.condition",
               "value": {
@@ -360,9 +423,9 @@
               "conditions": []
             },
             {
-              "id": "143693",
+              "id": "143758",
               "component": "CONDITION",
-              "conditionParentId": "143691",
+              "conditionParentId": "143756",
               "schemaVersion": 1,
               "type": "jira.comparator.condition",
               "value": {
@@ -376,9 +439,9 @@
           ]
         },
         {
-          "id": "143701",
+          "id": "143766",
           "component": "CONDITION_BLOCK",
-          "parentId": "143690",
+          "parentId": "143755",
           "schemaVersion": 1,
           "type": "jira.condition.if.block",
           "value": {
@@ -386,9 +449,9 @@
           },
           "children": [
             {
-              "id": "143704",
+              "id": "143769",
               "component": "ACTION",
-              "parentId": "143701",
+              "parentId": "143766",
               "schemaVersion": 6,
               "type": "jira.issue.create",
               "value": {
@@ -462,9 +525,9 @@
               "conditions": []
             },
             {
-              "id": "143705",
+              "id": "143770",
               "component": "ACTION",
-              "parentId": "143701",
+              "parentId": "143766",
               "schemaVersion": 1,
               "type": "jira.create.variable",
               "value": {
@@ -484,9 +547,9 @@
               "conditions": []
             },
             {
-              "id": "143706",
+              "id": "143771",
               "component": "ACTION",
-              "parentId": "143701",
+              "parentId": "143766",
               "schemaVersion": 1,
               "type": "codebarrel.action.log",
               "value": "Release-Ticket erstellt: Produkt=CeromaManual | Release-Version={{releaseVersion}} | Fix-Version={{workerFixVersion}} | Ticket={{createdReleaseKey}}",
@@ -494,9 +557,9 @@
               "conditions": []
             },
             {
-              "id": "143707",
+              "id": "143772",
               "component": "ACTION",
-              "parentId": "143701",
+              "parentId": "143766",
               "schemaVersion": 1,
               "type": "codebarrel.action.log",
               "value": "Release-Erstellung gestartet: Produkt=CeromaManual | Release-Version={{releaseVersion}} | Fix-Version={{workerFixVersion}} | Sprint-ID={{workerSprintId}} | Ursprung={{webhookData.origin}} | Quell-Ticket={{webhookData.sourceIssueKey}}",
@@ -504,9 +567,9 @@
               "conditions": []
             },
             {
-              "id": "143708",
+              "id": "143773",
               "component": "BRANCH",
-              "parentId": "143701",
+              "parentId": "143766",
               "schemaVersion": 1,
               "type": "jira.issue.related",
               "value": {
@@ -518,9 +581,9 @@
               },
               "children": [
                 {
-                  "id": "143709",
+                  "id": "143774",
                   "component": "ACTION",
-                  "parentId": "143708",
+                  "parentId": "143773",
                   "schemaVersion": 1,
                   "type": "jira.issue.comment",
                   "value": {
@@ -539,9 +602,9 @@
           ],
           "conditions": [
             {
-              "id": "143702",
+              "id": "143767",
               "component": "CONDITION",
-              "conditionParentId": "143701",
+              "conditionParentId": "143766",
               "schemaVersion": 1,
               "type": "jira.comparator.condition",
               "value": {
@@ -553,9 +616,9 @@
               "conditions": []
             },
             {
-              "id": "143703",
+              "id": "143768",
               "component": "CONDITION",
-              "conditionParentId": "143701",
+              "conditionParentId": "143766",
               "schemaVersion": 1,
               "type": "jira.comparator.condition",
               "value": {
@@ -569,9 +632,9 @@
           ]
         },
         {
-          "id": "143710",
+          "id": "143775",
           "component": "CONDITION_BLOCK",
-          "parentId": "143690",
+          "parentId": "143755",
           "schemaVersion": 1,
           "type": "jira.condition.if.block",
           "value": {
@@ -579,9 +642,9 @@
           },
           "children": [
             {
-              "id": "143713",
+              "id": "143778",
               "component": "ACTION",
-              "parentId": "143710",
+              "parentId": "143775",
               "schemaVersion": 1,
               "type": "jira.create.variable",
               "value": {
@@ -601,9 +664,9 @@
               "conditions": []
             },
             {
-              "id": "143714",
+              "id": "143779",
               "component": "ACTION",
-              "parentId": "143710",
+              "parentId": "143775",
               "schemaVersion": 1,
               "type": "jira.create.variable",
               "value": {
@@ -623,9 +686,9 @@
               "conditions": []
             },
             {
-              "id": "143715",
+              "id": "143780",
               "component": "ACTION",
-              "parentId": "143710",
+              "parentId": "143775",
               "schemaVersion": 1,
               "type": "codebarrel.action.log",
               "value": "mediatorVersion: {{mediatorVersion}}",
@@ -633,9 +696,9 @@
               "conditions": []
             },
             {
-              "id": "143716",
+              "id": "143781",
               "component": "ACTION",
-              "parentId": "143710",
+              "parentId": "143775",
               "schemaVersion": 1,
               "type": "codebarrel.action.log",
               "value": "Release-Erstellung gestartet: Produkt=Mediator | Release-Version={{releaseVersion}} | Fix-Version={{workerFixVersion}} | Sprint-ID={{workerSprintId}} | Ursprung={{webhookData.origin}} | Quell-Ticket={{webhookData.sourceIssueKey}}",
@@ -643,9 +706,9 @@
               "conditions": []
             },
             {
-              "id": "143717",
+              "id": "143782",
               "component": "ACTION",
-              "parentId": "143710",
+              "parentId": "143775",
               "schemaVersion": 1,
               "type": "jira.version.create",
               "value": {
@@ -661,9 +724,9 @@
               "conditions": []
             },
             {
-              "id": "143718",
+              "id": "143783",
               "component": "ACTION",
-              "parentId": "143710",
+              "parentId": "143775",
               "schemaVersion": 6,
               "type": "jira.issue.create",
               "value": {
@@ -738,9 +801,9 @@
               "conditions": []
             },
             {
-              "id": "143719",
+              "id": "143784",
               "component": "ACTION",
-              "parentId": "143710",
+              "parentId": "143775",
               "schemaVersion": 1,
               "type": "jira.create.variable",
               "value": {
@@ -760,9 +823,9 @@
               "conditions": []
             },
             {
-              "id": "143720",
+              "id": "143785",
               "component": "ACTION",
-              "parentId": "143710",
+              "parentId": "143775",
               "schemaVersion": 1,
               "type": "codebarrel.action.log",
               "value": "Release-Ticket erstellt: Produkt=Mediator | Release-Version={{releaseVersion}} | Fix-Version={{workerFixVersion}} | Ticket={{createdReleaseKey}}",
@@ -770,9 +833,9 @@
               "conditions": []
             },
             {
-              "id": "143721",
+              "id": "143786",
               "component": "BRANCH",
-              "parentId": "143710",
+              "parentId": "143775",
               "schemaVersion": 1,
               "type": "jira.issue.related",
               "value": {
@@ -784,9 +847,9 @@
               },
               "children": [
                 {
-                  "id": "143722",
+                  "id": "143787",
                   "component": "ACTION",
-                  "parentId": "143721",
+                  "parentId": "143786",
                   "schemaVersion": 1,
                   "type": "jira.issue.comment",
                   "value": {
@@ -805,9 +868,9 @@
           ],
           "conditions": [
             {
-              "id": "143711",
+              "id": "143776",
               "component": "CONDITION",
-              "conditionParentId": "143710",
+              "conditionParentId": "143775",
               "schemaVersion": 1,
               "type": "jira.comparator.condition",
               "value": {
@@ -819,9 +882,9 @@
               "conditions": []
             },
             {
-              "id": "143712",
+              "id": "143777",
               "component": "CONDITION",
-              "conditionParentId": "143710",
+              "conditionParentId": "143775",
               "schemaVersion": 1,
               "type": "jira.comparator.condition",
               "value": {
@@ -835,9 +898,9 @@
           ]
         },
         {
-          "id": "143723",
+          "id": "143788",
           "component": "CONDITION_BLOCK",
-          "parentId": "143690",
+          "parentId": "143755",
           "schemaVersion": 1,
           "type": "jira.condition.if.block",
           "value": {
@@ -845,9 +908,9 @@
           },
           "children": [
             {
-              "id": "143726",
+              "id": "143791",
               "component": "ACTION",
-              "parentId": "143723",
+              "parentId": "143788",
               "schemaVersion": 1,
               "type": "jira.create.variable",
               "value": {
@@ -867,9 +930,9 @@
               "conditions": []
             },
             {
-              "id": "143727",
+              "id": "143792",
               "component": "ACTION",
-              "parentId": "143723",
+              "parentId": "143788",
               "schemaVersion": 1,
               "type": "jira.create.variable",
               "value": {
@@ -889,9 +952,9 @@
               "conditions": []
             },
             {
-              "id": "143728",
+              "id": "143793",
               "component": "ACTION",
-              "parentId": "143723",
+              "parentId": "143788",
               "schemaVersion": 1,
               "type": "codebarrel.action.log",
               "value": "postIdentServiceVersion: {{postIdentServiceVersion}}",
@@ -899,9 +962,9 @@
               "conditions": []
             },
             {
-              "id": "143729",
+              "id": "143794",
               "component": "ACTION",
-              "parentId": "143723",
+              "parentId": "143788",
               "schemaVersion": 1,
               "type": "codebarrel.action.log",
               "value": "Release-Erstellung gestartet: Produkt=PostIdentService | Release-Version={{releaseVersion}} | Fix-Version={{workerFixVersion}} | Sprint-ID={{workerSprintId}} | Ursprung={{webhookData.origin}} | Quell-Ticket={{webhookData.sourceIssueKey}}",
@@ -909,9 +972,9 @@
               "conditions": []
             },
             {
-              "id": "143730",
+              "id": "143795",
               "component": "ACTION",
-              "parentId": "143723",
+              "parentId": "143788",
               "schemaVersion": 1,
               "type": "jira.version.create",
               "value": {
@@ -927,9 +990,9 @@
               "conditions": []
             },
             {
-              "id": "143731",
+              "id": "143796",
               "component": "ACTION",
-              "parentId": "143723",
+              "parentId": "143788",
               "schemaVersion": 6,
               "type": "jira.issue.create",
               "value": {
@@ -1007,9 +1070,9 @@
               "conditions": []
             },
             {
-              "id": "143732",
+              "id": "143797",
               "component": "ACTION",
-              "parentId": "143723",
+              "parentId": "143788",
               "schemaVersion": 1,
               "type": "jira.create.variable",
               "value": {
@@ -1029,9 +1092,9 @@
               "conditions": []
             },
             {
-              "id": "143733",
+              "id": "143798",
               "component": "ACTION",
-              "parentId": "143723",
+              "parentId": "143788",
               "schemaVersion": 1,
               "type": "codebarrel.action.log",
               "value": "Release-Ticket erstellt: Produkt=PostIdentService | Release-Version={{releaseVersion}} | Fix-Version={{workerFixVersion}} | Ticket={{createdReleaseKey}}",
@@ -1039,9 +1102,9 @@
               "conditions": []
             },
             {
-              "id": "143734",
+              "id": "143799",
               "component": "BRANCH",
-              "parentId": "143723",
+              "parentId": "143788",
               "schemaVersion": 1,
               "type": "jira.issue.related",
               "value": {
@@ -1053,9 +1116,9 @@
               },
               "children": [
                 {
-                  "id": "143735",
+                  "id": "143800",
                   "component": "ACTION",
-                  "parentId": "143734",
+                  "parentId": "143799",
                   "schemaVersion": 1,
                   "type": "jira.issue.comment",
                   "value": {
@@ -1074,9 +1137,9 @@
           ],
           "conditions": [
             {
-              "id": "143724",
+              "id": "143789",
               "component": "CONDITION",
-              "conditionParentId": "143723",
+              "conditionParentId": "143788",
               "schemaVersion": 1,
               "type": "jira.comparator.condition",
               "value": {
@@ -1088,9 +1151,9 @@
               "conditions": []
             },
             {
-              "id": "143725",
+              "id": "143790",
               "component": "CONDITION",
-              "conditionParentId": "143723",
+              "conditionParentId": "143788",
               "schemaVersion": 1,
               "type": "jira.comparator.condition",
               "value": {
@@ -1107,15 +1170,15 @@
       "conditions": []
     },
     {
-      "id": "143736",
+      "id": "143801",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.condition.container.block",
       "children": [
         {
-          "id": "143737",
+          "id": "143802",
           "component": "CONDITION_BLOCK",
-          "parentId": "143736",
+          "parentId": "143801",
           "schemaVersion": 1,
           "type": "jira.condition.if.block",
           "value": {
@@ -1123,9 +1186,9 @@
           },
           "children": [
             {
-              "id": "143739",
+              "id": "143804",
               "component": "ACTION",
-              "parentId": "143737",
+              "parentId": "143802",
               "schemaVersion": 1,
               "type": "codebarrel.action.log",
               "value": "Release-Erstellung übersprungen: Duplikat gefunden | Produkt={{product}} | Release-Version={{releaseVersion}} | Fix-Version={{workerFixVersion}} | Vorhandenes Ticket={{lookupIssues.first.key}} | Summary={{lookupIssues.first.summary}}",
@@ -1133,9 +1196,9 @@
               "conditions": []
             },
             {
-              "id": "143740",
+              "id": "143805",
               "component": "ACTION",
-              "parentId": "143737",
+              "parentId": "143802",
               "schemaVersion": 3,
               "type": "jira.issue.outgoing.email",
               "value": {
@@ -1165,9 +1228,9 @@
           ],
           "conditions": [
             {
-              "id": "143738",
+              "id": "143803",
               "component": "CONDITION",
-              "conditionParentId": "143737",
+              "conditionParentId": "143802",
               "schemaVersion": 1,
               "type": "jira.comparator.condition",
               "value": {
@@ -1184,15 +1247,15 @@
       "conditions": []
     },
     {
-      "id": "143741",
+      "id": "143806",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.condition.container.block",
       "children": [
         {
-          "id": "143742",
+          "id": "143807",
           "component": "CONDITION_BLOCK",
-          "parentId": "143741",
+          "parentId": "143806",
           "schemaVersion": 1,
           "type": "jira.condition.if.block",
           "value": {
@@ -1200,9 +1263,9 @@
           },
           "children": [
             {
-              "id": "143744",
+              "id": "143809",
               "component": "ACTION",
-              "parentId": "143742",
+              "parentId": "143807",
               "schemaVersion": 3,
               "type": "jira.issue.outgoing.email",
               "value": {
@@ -1236,9 +1299,9 @@
           ],
           "conditions": [
             {
-              "id": "143743",
+              "id": "143808",
               "component": "CONDITION",
-              "conditionParentId": "143742",
+              "conditionParentId": "143807",
               "schemaVersion": 1,
               "type": "jira.comparator.condition",
               "value": {

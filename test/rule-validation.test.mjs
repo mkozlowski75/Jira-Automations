@@ -110,6 +110,7 @@ test('stellt eine eindeutige und vollständige Befehlsoberfläche bereit', () =>
     'push-rule',
     'rollback-rule',
     'jira-ticket',
+    'create-cve-ticket',
     'gitlab-api',
     'confluence-page',
     'lint',
@@ -119,6 +120,7 @@ test('stellt eine eindeutige und vollständige Befehlsoberfläche bereit', () =>
     packageJson.scripts['jira-ticket'],
     'node .github/skills/jira-tickets/scripts/jira-ticket.mjs',
   );
+  assert.equal(packageJson.scripts['create-cve-ticket'], 'node scripts/create-cve-ticket.mjs');
   assert.equal(
     packageJson.scripts['gitlab-api'],
     'node .github/skills/gitlab-access/scripts/gitlab-api.mjs',

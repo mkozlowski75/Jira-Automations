@@ -1,6 +1,6 @@
 /**
  * Sichere Service-Schicht für Jira-Tickets.
- * Schreiboperationen werden nur nach erneutem Read und geprüftem updated-Wert ausgeführt.
+ * Schreiboperationen werden nur nach erneutem Read und passender Preflight-Prüfung ausgeführt.
  */
 const DEFAULT_GET_FIELDS = [
   'summary',
@@ -162,6 +162,41 @@ function validateTransitionFields(fields, transition) {
   }
 }
 
+function createMetadataPath(projectKey, issueTypeName) {
+  const query = new URLSearchParams({
+    projectKeys: projectKey,
+    issuetypeNames: issueTypeName,
+    expand: 'projects.issuetypes.fields',
+  });
+  return `/issue/createmeta?${query}`;
+}
+
+function resolveCreateMetadata(response, projectKey, issueTypeName) {
+  const project = response?.projects?.find(candidate => candidate?.key === projectKey);
+  if (!project) throw new Error(`Jira-Projekt "${projectKey}" ist nicht für die Ticketanlage verfügbar.`);
+  const issueType = project.issuetypes?.find(candidate => candidate?.name === issueTypeName);
+  if (!issueType?.id) {
+    throw new Error(`Jira-Vorgangstyp "${issueTypeName}" ist im Projekt "${projectKey}" nicht verfügbar.`);
+  }
+  const metadata = issueType.fields || {};
+  for (const fieldId of ['summary', 'description']) {
+    if (!Object.prototype.hasOwnProperty.call(metadata, fieldId)) {
+      throw new Error(`Pflichtfeld "${fieldId}" ist laut Jira-Erstellmetadaten nicht verfügbar.`);
+    }
+  }
+  const unsupportedRequired = Object.entries(metadata)
+    .filter(([fieldId, descriptor]) => (
+      !['project', 'issuetype', 'summary', 'description'].includes(fieldId)
+      && descriptor?.required === true
+      && descriptor?.hasDefaultValue !== true
+    ))
+    .map(([fieldId]) => fieldId);
+  if (unsupportedRequired.length > 0) {
+    throw new Error(`Jira verlangt weitere Pflichtfelder: ${unsupportedRequired.join(', ')}.`);
+  }
+  return { project, issueType };
+}
+
 export function createJiraTicketService(client) {
   if (!client?.get || !client?.post || !client?.put) {
     throw new Error('Jira-Client muss get, post und put bereitstellen.');
@@ -212,6 +247,70 @@ export function createJiraTicketService(client) {
       throw new Error('Jira lieferte keine unterstützte Transition-Liste.');
     }
     return response.transitions.map(simplifyTransition);
+  }
+
+  async function prepareCreateIssue({ projectKey, issueTypeName, summary, description }) {
+    if (!/^[A-Z][A-Z0-9_]*$/.test(String(projectKey || ''))) {
+      throw new Error('Ungültiger Jira-Projekt-Key.');
+    }
+    if (typeof issueTypeName !== 'string' || !issueTypeName.trim()) {
+      throw new Error('Jira-Vorgangstyp darf nicht leer sein.');
+    }
+    if (typeof summary !== 'string' || !summary.trim()) {
+      throw new Error('Summary darf nicht leer sein.');
+    }
+    if (typeof description !== 'string' || !description.trim()) {
+      throw new Error('Description darf nicht leer sein.');
+    }
+    const metadata = resolveCreateMetadata(
+      await client.get(createMetadataPath(projectKey, issueTypeName)),
+      projectKey,
+      issueTypeName,
+    );
+    return {
+      operation: 'create',
+      applied: false,
+      project: { key: projectKey },
+      issueType: { id: String(metadata.issueType.id), name: metadata.issueType.name },
+      summary,
+      description,
+    };
+  }
+
+  async function applyCreateIssue(input, expectedIssueTypeId, beforeCreate) {
+    if (!expectedIssueTypeId) {
+      throw new Error('--apply benötigt die Vorgangstyp-ID aus dem unmittelbar vorherigen Preflight.');
+    }
+    const preflight = await prepareCreateIssue(input);
+    if (String(preflight.issueType.id) !== String(expectedIssueTypeId)) {
+      throw new Error('Jira-Erstellmetadaten haben sich seit dem Preflight geändert.');
+    }
+    const fields = {
+      project: { key: input.projectKey },
+      issuetype: { id: preflight.issueType.id },
+      summary: input.summary,
+      description: input.description,
+    };
+    if (beforeCreate) await beforeCreate();
+    const created = await client.post('/issue', { fields });
+    if (!created?.key) throw new Error('Jira bestätigte die Ticketanlage ohne Ticket-Key.');
+    const remote = await client.get(issuePath(
+      created.key,
+      ['summary', 'description', 'issuetype', 'project'],
+    ));
+    const verified = remote?.key === created.key
+      && remote?.fields?.summary === input.summary
+      && remote?.fields?.description === input.description
+      && String(remote?.fields?.issuetype?.id) === String(preflight.issueType.id)
+      && remote?.fields?.issuetype?.name === input.issueTypeName
+      && remote?.fields?.project?.key === input.projectKey;
+    if (!verified) throw new Error('Remote-Verifikation des erstellten Tickets ist fehlgeschlagen.');
+    return {
+      ...preflight,
+      applied: true,
+      key: created.key,
+      verified: true,
+    };
   }
 
   async function prepareComment(issueKey, body) {
@@ -337,6 +436,8 @@ export function createJiraTicketService(client) {
     getIssue,
     searchIssues,
     getTransitions,
+    prepareCreateIssue,
+    applyCreateIssue,
     prepareComment,
     applyComment,
     prepareEdit,

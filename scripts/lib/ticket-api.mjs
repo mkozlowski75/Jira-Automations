@@ -171,7 +171,32 @@ function createMetadataPath(projectKey, issueTypeName) {
   return `/issue/createmeta?${query}`;
 }
 
-function resolveCreateMetadata(response, projectKey, issueTypeName) {
+function isNotFoundError(error) {
+  return /\b404\b/.test(String(error?.message || ''));
+}
+
+function modernCreateMetadataPath(projectId, issueTypeId) {
+  const query = new URLSearchParams({ maxResults: '100' });
+  return `/issue/createmeta/${encodeURIComponent(projectId)}/issuetypes/${encodeURIComponent(issueTypeId)}?${query}`;
+}
+
+function modernCreateMetadata(response, project, issueType) {
+  const fields = Object.fromEntries((response?.values || []).map(field => [field?.fieldId, field]));
+  if (!Array.isArray(response?.values) || Object.keys(fields).length !== response.values.length) {
+    throw new Error('Jira lieferte keine unterstÃ¼tzten Erstellmetadaten-Felder.');
+  }
+  if (Number(response.total) > response.values.length) {
+    throw new Error('Jira-Erstellmetadaten sind unvollstÃ¤ndig.');
+  }
+  return {
+    projects: [{
+      key: project.key,
+      issuetypes: [{ id: String(issueType.id), name: issueType.name, fields }],
+    }],
+  };
+}
+
+function resolveCreateMetadata(response, projectKey, issueTypeName, suppliedFields = []) {
   const project = response?.projects?.find(candidate => candidate?.key === projectKey);
   if (!project) throw new Error(`Jira-Projekt "${projectKey}" ist nicht für die Ticketanlage verfügbar.`);
   const issueType = project.issuetypes?.find(candidate => candidate?.name === issueTypeName);
@@ -186,7 +211,7 @@ function resolveCreateMetadata(response, projectKey, issueTypeName) {
   }
   const unsupportedRequired = Object.entries(metadata)
     .filter(([fieldId, descriptor]) => (
-      !['project', 'issuetype', 'summary', 'description'].includes(fieldId)
+      !['project', 'issuetype', 'summary', 'description', ...suppliedFields].includes(fieldId)
       && descriptor?.required === true
       && descriptor?.hasDefaultValue !== true
     ))
@@ -249,7 +274,15 @@ export function createJiraTicketService(client) {
     return response.transitions.map(simplifyTransition);
   }
 
-  async function prepareCreateIssue({ projectKey, issueTypeName, summary, description }) {
+  async function getCurrentUser() {
+    const user = await client.get('/myself');
+    if (typeof user?.name !== 'string' || !user.name.trim()) {
+      throw new Error('Jira lieferte keinen gültigen aktuellen Benutzer.');
+    }
+    return { name: user.name };
+  }
+
+  async function prepareCreateIssue({ projectKey, issueTypeName, summary, description, reporter }) {
     if (!/^[A-Z][A-Z0-9_]*$/.test(String(projectKey || ''))) {
       throw new Error('Ungültiger Jira-Projekt-Key.');
     }
@@ -262,11 +295,31 @@ export function createJiraTicketService(client) {
     if (typeof description !== 'string' || !description.trim()) {
       throw new Error('Description darf nicht leer sein.');
     }
+    if (reporter !== undefined && (typeof reporter !== 'object' || !reporter || !reporter.name)) {
+      throw new Error('Reporter muss einen Jira-Benutzernamen enthalten.');
+    }
+    let createMetadata;
+    try {
+      createMetadata = await client.get(createMetadataPath(projectKey, issueTypeName));
+    } catch (error) {
+      if (!isNotFoundError(error)) throw error;
+      const project = await client.get(`/project/${encodeURIComponent(projectKey)}`);
+      const issueType = project?.issueTypes?.find(candidate => candidate?.name === issueTypeName);
+      if (!project?.id || !project?.key || !issueType?.id) {
+        throw new Error(`Jira-Erstellmetadaten fÃ¼r ${projectKey}/${issueTypeName} sind nicht verfÃ¼gbar.`);
+      }
+      const response = await client.get(modernCreateMetadataPath(project.id, issueType.id));
+      createMetadata = modernCreateMetadata(response, project, issueType);
+    }
     const metadata = resolveCreateMetadata(
-      await client.get(createMetadataPath(projectKey, issueTypeName)),
+      createMetadata,
       projectKey,
       issueTypeName,
+      reporter ? ['reporter'] : [],
     );
+    if (metadata.issueType.fields?.reporter?.required === true && !reporter) {
+      throw new Error('Jira verlangt das Pflichtfeld "reporter".');
+    }
     return {
       operation: 'create',
       applied: false,
@@ -274,6 +327,7 @@ export function createJiraTicketService(client) {
       issueType: { id: String(metadata.issueType.id), name: metadata.issueType.name },
       summary,
       description,
+      reporter: reporter ? { name: reporter.name } : undefined,
     };
   }
 
@@ -291,16 +345,18 @@ export function createJiraTicketService(client) {
       summary: input.summary,
       description: input.description,
     };
+    if (preflight.reporter) fields.reporter = preflight.reporter;
     if (beforeCreate) await beforeCreate();
     const created = await client.post('/issue', { fields });
     if (!created?.key) throw new Error('Jira bestätigte die Ticketanlage ohne Ticket-Key.');
     const remote = await client.get(issuePath(
       created.key,
-      ['summary', 'description', 'issuetype', 'project'],
+      ['summary', 'description', 'issuetype', 'project', 'reporter'],
     ));
     const verified = remote?.key === created.key
       && remote?.fields?.summary === input.summary
       && remote?.fields?.description === input.description
+      && (!preflight.reporter || remote?.fields?.reporter?.name === preflight.reporter.name)
       && String(remote?.fields?.issuetype?.id) === String(preflight.issueType.id)
       && remote?.fields?.issuetype?.name === input.issueTypeName
       && remote?.fields?.project?.key === input.projectKey;
@@ -436,6 +492,7 @@ export function createJiraTicketService(client) {
     getIssue,
     searchIssues,
     getTransitions,
+    getCurrentUser,
     prepareCreateIssue,
     applyCreateIssue,
     prepareComment,

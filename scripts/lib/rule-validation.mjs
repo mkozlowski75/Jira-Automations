@@ -15,6 +15,7 @@ export const KNOWN_COMPONENTS = Object.freeze({
   'jira.issue.edit': { component: 'ACTION', schemaVersion: 6 },
   'jira.issue.event.trigger:transitioned': { component: 'TRIGGER', schemaVersion: 1 },
   'jira.issue.link': { component: 'ACTION', schemaVersion: 2 },
+  'jira.lookup.issues': { component: 'ACTION', schemaVersion: 1 },
   'jira.issue.outgoing.email': { component: 'ACTION', schemaVersion: 3 },
   'jira.issue.outgoing.webhook': { component: 'ACTION', schemaVersion: 2 },
   'jira.issue.related': { component: 'BRANCH', schemaVersion: 1 },

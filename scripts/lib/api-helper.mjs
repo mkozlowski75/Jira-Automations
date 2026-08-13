@@ -195,6 +195,12 @@ export async function jiraRawPut(url, body) {
   return httpPutJson(url, body, jiraAuthHeaders);
 }
 
+export async function jiraRawPost(url, body) {
+  // Für Endpunkte, die nicht unter JIRA_PATH liegen (z.B. Automation-Webhooks)
+  assertJiraConfigured();
+  return httpPostJson(url, body, jiraAuthHeaders);
+}
+
 export function jiraConfig() {
   return { base: JIRA_BASE };
 }

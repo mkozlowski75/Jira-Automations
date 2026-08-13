@@ -12,6 +12,7 @@ Kombinationen verwenden `component: "ACTION"`.
 | `jira.issue.create` | 6 | Issue erzeugen |
 | `jira.issue.edit` | 6 | Felder bearbeiten |
 | `jira.issue.link` | 2 | Issues verknüpfen |
+| `jira.lookup.issues` | 1 | Sucht bis zu 100 Vorgänge per JQL und stellt sie als `{{lookupIssues}}` bereit |
 | `jira.issue.outgoing.email` | 3 | E-Mail versenden |
 | `jira.issue.outgoing.webhook` | 2 | HTTP-Anfrage senden |
 | `jira.issue.transition` | 6 | Status wechseln |

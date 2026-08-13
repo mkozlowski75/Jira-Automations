@@ -76,6 +76,11 @@ nach der Confluence-Seite `507095421` ("Vorlage für CVE-Tickets") und sucht vor
 jeder Anlage nach offenen CER-Tickets mit derselben CVE-ID. Eine anonymisierte
 Eingabe liegt unter `examples/cve-finding.example.json`.
 
+Pflichtfelder sind `cve`, `library`, `installedVersion`, `severity` und `source`.
+`shortDescription` sowie die projektspezifischen Bewertungsfelder sind optional;
+fehlende Bewertungen bleiben in der Beschreibung leer. Fehlt die Kurzbeschreibung,
+verwendet die Summary die Bibliothek als technischen Suffix.
+
 Der Standardaufruf ist immer ein read-only Preflight:
 
 ```powershell

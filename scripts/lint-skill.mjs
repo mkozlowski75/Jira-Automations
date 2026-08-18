@@ -381,9 +381,11 @@ for (const [label, content] of [
 for (const requiredText of [
   '97796350',
   '97796337',
+  '523437222',
   '93492170',
   '21074848',
   'npm run cer-ticket',
+  'Story|Bug|Task',
   '--preflight-id',
   'attach-images',
 ]) {

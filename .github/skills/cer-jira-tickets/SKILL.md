@@ -1,6 +1,6 @@
 ---
 name: cer-jira-tickets
-description: 'Erstellt und Ã¼berarbeitet Storys und Bugs im Jira-Projekt CER anhand der bei jedem Auftrag live gelesenen Confluence-Vorlagen, Nutzerrollen, Ceroma-Dokumentation und relevanten bestehenden Tickets. Use when: CER-Story oder CER-Bug formulieren, prÃ¼fen, auf die aktuelle Vorlage bringen, ZusammenhÃ¤nge oder Duplikate recherchieren, nach konkreter Freigabe in Jira anlegen beziehungsweise Ã¤ndern oder zugehÃ¶rige Bilder hochladen.'
+description: 'Erstellt und Ã¼berarbeitet Storys, Bugs und Tasks im Jira-Projekt CER anhand der bei jedem Auftrag live gelesenen Confluence-Vorlagen, bei Bedarf der Nutzerrollen, Ceroma-Dokumentation und relevanten bestehenden Tickets. Use when: CER-Story, CER-Bug oder CER-Task formulieren, prÃ¼fen, auf die aktuelle Vorlage bringen, ZusammenhÃ¤nge oder Duplikate recherchieren, nach konkreter Freigabe in Jira anlegen beziehungsweise Ã¤ndern oder zugehÃ¶rige Bilder hochladen.'
 ---
 
 # CER Jira-Tickets
@@ -13,7 +13,7 @@ Befolge auÃŸerdem [`jira-tickets`](../jira-tickets/SKILL.md) und
 vorhandene PAT-, mTLS- und CA-Verbindung. Ã–ffne niemals `config/.env`, Tokens,
 Passphrasen oder Zertifikate.
 
-Schreibe ausschlieÃŸlich Storys und Bugs im Projekt `CER`. Lies andere
+Schreibe ausschlieÃŸlich Storys, Bugs und Tasks im Projekt `CER`. Lies andere
 CER-Tickets nur als Kontext. Erstelle keine Issue-Links, Kommentare oder
 Statuswechsel. Ã„ndere keine vorhandenen AnhÃ¤nge. Lade mit diesem Skill nur
 bereitgestellte PNG-, JPEG- oder WebP-Bilder hoch.
@@ -23,19 +23,22 @@ Request- oder Manifestdatei erstellst.
 
 ## Aktuelle Regeln live laden
 
-Lies bei jedem Auftrag die passende Vorlage und die Nutzerrollen vollstÃ¤ndig
-neu; verwende keine Erinnerung, lokale Kopie oder frÃ¼here Ausgabe:
+Lies bei jedem Auftrag die passende Vorlage vollstÃ¤ndig neu; verwende keine
+Erinnerung, lokale Kopie oder frÃ¼here Ausgabe:
 
 ```powershell
 npm run confluence-page -- get 97796350 --include-body
 npm run confluence-page -- get 97796337 --include-body
+npm run confluence-page -- get 523437222 --include-body
 npm run confluence-page -- get 93492170 --include-body
 ```
 
-Lade nur die Story- oder Bug-Vorlage, die zum Zielvorgang gehÃ¶rt, aber immer die
-Nutzerrollen. PrÃ¼fe jeweils ID, erwarteten Titel, Status `current`, Space `CER`
-und die Ahnenlinie unter `21074848`. Erfasse ID und aktuelle Version jeder
-verwendeten Seite fÃ¼r `request.sources`.
+Lade nur die Story-, Bug- oder Task-Vorlage, die zum Zielvorgang gehÃ¶rt. Lade
+fÃ¼r Storys und Bugs immer die Nutzerrollen. Lade sie fÃ¼r Tasks nur, wenn der
+konkrete Task tatsÃ¤chlich eine Nutzerrolle betrifft. PrÃ¼fe jeweils ID,
+erwarteten Titel, Status `current`, Space `CER` und die Ahnenlinie unter
+`21074848`. Erfasse ID und aktuelle Version jeder verwendeten Seite fÃ¼r
+`request.sources`.
 
 Werte die live gelesenen Inhalte als allein verbindliche Redaktionsregeln aus.
 Kopiere sie nicht in Skilldateien. Wenn eine Seite fehlt, umbenannt, nicht
@@ -80,6 +83,7 @@ Rufe vor dem Schreiben die aktuellen Jira-Metadaten ab:
 ```powershell
 npm run cer-ticket -- metadata --issue-type Story
 npm run cer-ticket -- metadata --issue-type Bug
+npm run cer-ticket -- metadata --issue-type Task
 npm run cer-ticket -- metadata --issue-key CER-123
 ```
 
@@ -87,6 +91,13 @@ Verwende nur live angebotene Feld- und Options-IDs. Formuliere auf Deutsch im
 Jira-Data-Center-Wiki-Markup. ErfÃ¼lle die aktuelle Vorlage vollstÃ¤ndig. Bewahre
 beim Ãœberarbeiten alle nicht verlangten Felder sowie Kommentare, Links, Status
 und vorhandene AnhÃ¤nge unverÃ¤ndert.
+
+Formuliere Stories aus der Perspektive eines Endbenutzers. Verwende Tasks fÃ¼r
+notwendige, fÃ¼r Benutzer nicht unmittelbar sichtbare System- oder
+Entwicklungsarbeit. Empfehle das kanonische Label `DEV_ONLY` nur fÃ¼r
+ausschlieÃŸlich interne Entwicklungszwecke wie Infrastruktur, CI/CD-Pipelines,
+Jira-Automatisierungsregeln oder Entwicklerwerkzeuge. Setze es nicht allein
+deshalb, weil ein Ceroma-Prozess im Hintergrund ablÃ¤uft.
 
 Zeige vor dem technischen Preflight:
 
@@ -105,7 +116,7 @@ Lege Requestdateien in einem geeigneten temporÃ¤ren Arbeitsbereich an. FÃ¼hr
 zuerst immer ohne `--apply` aus:
 
 ```powershell
-npm run cer-ticket -- create --issue-type Story --request-file <request.json>
+npm run cer-ticket -- create --issue-type Story|Bug|Task --request-file <request.json>
 npm run cer-ticket -- edit CER-123 --request-file <request.json>
 ```
 
@@ -118,7 +129,7 @@ Erst nach eindeutiger BestÃ¤tigung in derselben Unterhaltung dieselbe Datei mi
 der ausgegebenen ID verwenden:
 
 ```powershell
-npm run cer-ticket -- create --issue-type Story --request-file <request.json> --apply --preflight-id <id>
+npm run cer-ticket -- create --issue-type Story|Bug|Task --request-file <request.json> --apply --preflight-id <id>
 npm run cer-ticket -- edit CER-123 --request-file <request.json> --apply --preflight-id <id>
 ```
 

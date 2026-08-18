@@ -1,4 +1,4 @@
 interface:
   display_name: "CER Jira-Tickets"
-  short_description: "CER-Storys und -Bugs sicher bearbeiten"
-  default_prompt: "Use $cer-jira-tickets to create or revise a current, rule-compliant CER Story or Bug."
+  short_description: "CER-Storys, -Bugs und -Tasks bearbeiten"
+  default_prompt: "Use $cer-jira-tickets to create or revise a current, rule-compliant CER Story, Bug, or Task."

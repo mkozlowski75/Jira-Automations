@@ -20,8 +20,10 @@ Verwende UTF-8-JSON mit genau zwei Top-Level-Feldern:
 
 - Verwende Feld- und Options-IDs ausschlieÃŸlich aus dem unmittelbar zuvor
   ausgefÃ¼hrten `metadata`-Befehl.
-- Nimm in `sources` die passende Story-/Bug-Vorlage, die Nutzerrollen und jede
+- Nimm in `sources` die passende Story-, Bug- oder Task-Vorlage und jede
   fachlich verwendete Ceroma-Unterseite mit ihrer aktuellen Version auf.
+- Nimm fÃ¼r Storys und Bugs immer die Nutzerrollen auf. Nimm sie fÃ¼r Tasks nur
+  auf, wenn der konkrete Task tatsÃ¤chlich eine Nutzerrolle betrifft.
 - FÃ¼ge weder `project`, `issuetype`, `reporter`, `status`, `security`, `key` noch
   `attachment` zu `fields` hinzu. Projekt und Vorgangstyp sind durch den Befehl
   festgelegt; die CLI setzt den aktuellen Jira-Benutzer als Reporter.

@@ -33,9 +33,9 @@ const MAX_PREFLIGHT_AGE_MS = 15 * 60 * 1000;
 function usage() {
   return [
     'Usage:',
-    '  cer-ticket.mjs metadata --issue-type Story|Bug',
+    '  cer-ticket.mjs metadata --issue-type Story|Bug|Task',
     '  cer-ticket.mjs metadata --issue-key CER-123',
-    '  cer-ticket.mjs create --issue-type Story|Bug --request-file <request.json> [--apply --preflight-id <id>]',
+    '  cer-ticket.mjs create --issue-type Story|Bug|Task --request-file <request.json> [--apply --preflight-id <id>]',
     '  cer-ticket.mjs edit <CER-KEY> --request-file <request.json> [--apply --preflight-id <id>]',
     '  cer-ticket.mjs attach-images <CER-KEY> --manifest <images.json> [--apply --preflight-id <id>]',
   ].join('\n');

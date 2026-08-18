@@ -2,7 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { basename, extname } from 'node:path';
 
 const PROJECT_KEY = 'CER';
-const ISSUE_TYPES = new Set(['Story', 'Bug']);
+const ISSUE_TYPES = new Set(['Story', 'Bug', 'Task']);
 const CEROMA_HOME_PAGE_ID = '21074848';
 const USER_ROLES_PAGE = {
   id: '93492170',
@@ -11,6 +11,7 @@ const USER_ROLES_PAGE = {
 const TEMPLATE_PAGES = {
   Story: { id: '97796350', title: 'Vorlage fÃ¼r Story-Tickets' },
   Bug: { id: '97796337', title: 'Vorlage fÃ¼r Bug-Tickets' },
+  Task: { id: '523437222', title: 'Vorlage für Task-Tickets' },
 };
 const IMAGE_TYPES = {
   '.png': 'image/png',
@@ -31,7 +32,7 @@ function assertPlainObject(value, label) {
 
 function assertIssueType(issueType) {
   if (!ISSUE_TYPES.has(issueType)) {
-    throw new Error('Vorgangstyp muss Story oder Bug sein.');
+    throw new Error('Vorgangstyp muss Story, Bug oder Task sein.');
   }
   return issueType;
 }
@@ -99,7 +100,11 @@ function normalizeImageManifest(value) {
 async function validateSources(issueType, sources, getPage) {
   const type = assertIssueType(issueType);
   const normalized = normalizeSources(sources);
-  const required = [TEMPLATE_PAGES[type], USER_ROLES_PAGE];
+  const templatePage = TEMPLATE_PAGES[type];
+  const required = type === 'Task'
+    ? [templatePage]
+    : [templatePage, USER_ROLES_PAGE];
+  const knownPages = [templatePage, USER_ROLES_PAGE];
   for (const page of required) {
     if (!normalized.some(source => source.id === page.id)) {
       throw new Error(`Verbindliche Confluence-Seite ${page.id} fehlt.`);
@@ -109,7 +114,7 @@ async function validateSources(issueType, sources, getPage) {
   const pages = [];
   for (const source of normalized) {
     const page = await getPage(source.id);
-    const expected = required.find(candidate => candidate.id === source.id);
+    const expected = knownPages.find(candidate => candidate.id === source.id);
     if (page?.id !== source.id || page?.spaceKey !== 'CER' || page?.status !== 'current') {
       throw new Error(`Confluence-Seite ${source.id} ist nicht als aktuelle CER-Seite verfÃ¼gbar.`);
     }

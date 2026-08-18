@@ -78,10 +78,11 @@ Zeige den neuen Preflight und hole eine neue Freigabe ein.
 ## Harte Grenzen
 
 - Erstelle oder lösche keine Tickets.
-- Die einzige Ausnahme für Ticketanlagen ist der eigenständige
-  [`cve-ticket-factory`](../cve-ticket-factory/SKILL.md)-Workflow. Er darf nur
-  CER-Tasks mit den dort festgelegten Feldern einschließlich des Labels `CVE` nach eigenem Preflight und
-  konkreter Freigabe erstellen; `jira-ticket.mjs` selbst erstellt keine Tickets.
+- Ticketanlagen sind ausschließlich über die eigenständigen Workflows
+  [`cer-jira-tickets`](../cer-jira-tickets/SKILL.md) und
+  [`cve-ticket-factory`](../cve-ticket-factory/SKILL.md) erlaubt. Sie verwenden
+  jeweils einen eigenen Preflight und eine konkrete Freigabe; `jira-ticket.mjs`
+  selbst erstellt keine Tickets.
 - Lade keine Anhänge hoch und lösche keine Anhänge.
 - Ändere oder lösche keine bestehenden Kommentare.
 - Ändere `project`, `issuetype`, `reporter`, `security`, `key` oder `status`

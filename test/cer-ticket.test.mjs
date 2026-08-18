@@ -15,18 +15,21 @@ import {
 
 const STORY_SOURCE = { id: '97796350', version: 12 };
 const BUG_SOURCE = { id: '97796337', version: 18 };
+const TASK_SOURCE = { id: '523437222', version: 1 };
 const ROLE_SOURCE = { id: '93492170', version: 8 };
 
 function confluencePage(id, overrides = {}) {
   const titles = {
     97796350: 'Vorlage fÃ¼r Story-Tickets',
     97796337: 'Vorlage fÃ¼r Bug-Tickets',
+    523437222: 'Vorlage für Task-Tickets',
     93492170: 'Nutzerrollen',
     258746351: 'Fachseite',
   };
   const versions = {
     97796350: 12,
     97796337: 18,
+    523437222: 1,
     93492170: 8,
     258746351: 3,
   };
@@ -102,15 +105,45 @@ test('blockiert falschen Seitentitel, Space und fehlende Pflichtquelle', async (
   );
 });
 
-test('beschrÃ¤nkt Schreibziele auf CER Story und Bug', () => {
+test('validiert Task-Vorlage und optionale Nutzerrollen-Seite', async () => {
+  const withoutRoles = await validateSources(
+    'Task',
+    [TASK_SOURCE],
+    async id => confluencePage(Number(id)),
+  );
+  assert.equal(withoutRoles.length, 1);
+
+  const withRoles = await validateSources(
+    'Task',
+    [TASK_SOURCE, ROLE_SOURCE],
+    async id => confluencePage(Number(id)),
+  );
+  assert.equal(withRoles.length, 2);
+
+  await assert.rejects(
+    validateSources('Task', [ROLE_SOURCE], async id => confluencePage(Number(id))),
+    /523437222 fehlt/,
+  );
+  await assert.rejects(
+    validateSources('Task', [TASK_SOURCE, ROLE_SOURCE], async id => (
+      id === ROLE_SOURCE.id
+        ? confluencePage(Number(id), { title: 'Andere Rollen' })
+        : confluencePage(Number(id))
+    )),
+    /erwarteten Titel/,
+  );
+});
+
+test('beschrÃ¤nkt Schreibziele auf CER Story, Bug und Task', () => {
   assert.equal(assertCerIssue({ project: { key: 'CER' }, issueType: { name: 'Story' } }), 'Story');
+  assert.equal(assertCerIssue({ project: { key: 'CER' }, issueType: { name: 'Task' } }), 'Task');
   assert.throws(
     () => assertCerIssue({ project: { key: 'OTHER' }, issueType: { name: 'Story' } }),
     /nur das Projekt CER/,
   );
   assert.throws(
-    () => assertCerIssue({ project: { key: 'CER' }, issueType: { name: 'Task' } }),
-    /Story oder Bug/,
+    () => assertCerIssue({ project: { key: 'CER' }, issueType: { name: 'Epic' } }),
+    /Story, Bug oder Task/,
   );
 });
 
@@ -228,6 +261,51 @@ test('Workflow bereitet Create ohne Mutation mit Live-Quellen vor', async () => 
   assert.equal(result.sources[0].version, 12);
 });
 
+test('Workflow unterstÃ¼tzt Metadaten, Create und Edit fÃ¼r Tasks', async () => {
+  const seenTypes = [];
+  const workflow = createCerTicketWorkflow({
+    jiraService: {
+      getCreateMetadata: async (projectKey, issueTypeName) => {
+        assert.equal(projectKey, 'CER');
+        seenTypes.push(issueTypeName);
+        return { issueType: { name: issueTypeName } };
+      },
+      getEditMetadata: async key => ({
+        key,
+        summary: 'Task',
+        project: { key: 'CER' },
+        issueType: { name: 'Task' },
+      }),
+      getCurrentUser: async () => ({ name: 'user' }),
+      prepareCreateWithFields: async input => ({
+        applied: false,
+        issueType: { id: '10002', name: input.issueTypeName },
+      }),
+      prepareEdit: async (key, fields) => ({ key, fields, applied: false }),
+    },
+    getConfluencePage: async id => confluencePage(Number(id)),
+    jiraGet: async () => ({}),
+    jiraPostMultipart: async () => {},
+    readBinary: async () => Buffer.alloc(0),
+  });
+
+  const metadata = await workflow.metadataForType('Task');
+  assert.equal(metadata.issueType.name, 'Task');
+  assert.deepEqual(seenTypes, ['Task']);
+
+  const request = {
+    fields: { summary: 'Task', description: 'Text' },
+    sources: [TASK_SOURCE],
+  };
+  const created = await workflow.prepareCreate('Task', request);
+  assert.equal(created.issueType, 'Task');
+  assert.equal(created.applied, false);
+
+  const edited = await workflow.prepareEdit('CER-123', request);
+  assert.equal(edited.issueType, 'Task');
+  assert.equal(edited.applied, false);
+});
+
 test('CLI bindet Create-Preflight an Payload und verbraucht ihn beim Apply', async () => {
   const id = '11111111-1111-4111-8111-111111111111';
   const receipts = memoryReceipts();
@@ -314,7 +392,7 @@ test('CLI verlangt --apply und --preflight-id immer gemeinsam', async () => {
   );
 });
 
-test('erkennt Bildsignaturen und lÃ¤dt mehrere Bilder in genau einem POST hoch', async () => {
+test('erkennt Bildsignaturen und lÃ¤dt mehrere Bilder auch fÃ¼r Tasks in genau einem POST hoch', async () => {
   const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
   assert.equal(detectImageType(png), 'image/png');
   assert.throws(() => detectImageType(Buffer.from('<svg/>')), /Nur PNG/);
@@ -325,18 +403,18 @@ test('erkennt Bildsignaturen und lÃ¤dt mehrere Bilder in genau einem POST hoch
     getCreateMetadata: async () => ({}),
     getEditMetadata: async key => ({
       key,
-      summary: 'Bug',
+      summary: 'Task',
       project: { key: 'CER' },
-      issueType: { name: 'Bug' },
+      issueType: { name: 'Task' },
     }),
     getIssue: async (key, fields) => {
       if (fields.includes('project')) {
         return {
           key,
           fields: {
-            summary: 'Bug',
+            summary: 'Task',
             project: { key: 'CER' },
-            issuetype: { name: 'Bug' },
+            issuetype: { name: 'Task' },
             updated: 'stand-1',
             attachment: [],
           },

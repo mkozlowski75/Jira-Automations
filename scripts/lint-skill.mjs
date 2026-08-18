@@ -347,6 +347,66 @@ for (const match of cveSkill.matchAll(/\]\(([^)]+)\)/g)) {
   if (!existsSync(path)) errors.push(`Fehlender Link in ${cveSkillPath}: ${target}`);
 }
 
+const cerTicketSkillRoot = join(__dir, '..', '.github', 'skills', 'cer-jira-tickets');
+const cerTicketSkillPath = join(cerTicketSkillRoot, 'SKILL.md');
+const cerTicketReferencePath = join(cerTicketSkillRoot, 'references', 'request-contract.md');
+const cerTicketAgentPath = join(cerTicketSkillRoot, 'agents', 'openai.yaml');
+const cerTicketScriptPath = join(__dir, 'cer-ticket.mjs');
+const cerTicketWorkflowPath = join(__dir, 'lib', 'cer-ticket-workflow.mjs');
+const cerTicketSkill = readFileSync(cerTicketSkillPath, 'utf8');
+const cerTicketReference = readFileSync(cerTicketReferencePath, 'utf8');
+const cerTicketAgent = readFileSync(cerTicketAgentPath, 'utf8');
+const cerTicketFrontmatter = /^---\r?\n([\s\S]*?)\r?\n---\r?\n/.exec(cerTicketSkill);
+
+if (!cerTicketFrontmatter) {
+  errors.push('cer-jira-tickets/SKILL.md besitzt kein gÃ¼ltiges YAML-Frontmatter.');
+} else {
+  const fields = [...cerTicketFrontmatter[1].matchAll(/^([a-zA-Z][\w-]*):\s*(.+)$/gm)]
+    .map(match => ({ name: match[1], value: match[2].trim() }));
+  if (fields.map(field => field.name).join(',') !== 'name,description') {
+    errors.push('cer-jira-tickets-Frontmatter muss genau name und description enthalten.');
+  }
+  if (fields.find(field => field.name === 'name')?.value !== 'cer-jira-tickets') {
+    errors.push('cer-jira-tickets-Frontmatter-name muss cer-jira-tickets sein.');
+  }
+}
+
+for (const [label, content] of [
+  ['cer-jira-tickets/SKILL.md', cerTicketSkill],
+  ['cer-jira-tickets/references/request-contract.md', cerTicketReference],
+  ['cer-jira-tickets/agents/openai.yaml', cerTicketAgent],
+]) {
+  if (content.includes('TODO')) errors.push(`${label} enthÃ¤lt noch TODO-Platzhalter.`);
+}
+for (const requiredText of [
+  '97796350',
+  '97796337',
+  '93492170',
+  '21074848',
+  'npm run cer-ticket',
+  '--preflight-id',
+  'attach-images',
+]) {
+  if (!cerTicketSkill.includes(requiredText)) {
+    errors.push(`cer-jira-tickets/SKILL.md dokumentiert "${requiredText}" nicht.`);
+  }
+}
+for (const path of [cerTicketScriptPath, cerTicketWorkflowPath]) {
+  if (!existsSync(path)) errors.push(`CER-Ticket-Workflow-Datei fehlt: ${path}`);
+}
+if (!cerTicketAgent.includes('$cer-jira-tickets')) {
+  errors.push('cer-jira-tickets/agents/openai.yaml muss $cer-jira-tickets im default_prompt nennen.');
+}
+for (const markdownFile of [cerTicketSkillPath, cerTicketReferencePath]) {
+  const markdown = readFileSync(markdownFile, 'utf8');
+  for (const match of markdown.matchAll(/\]\(([^)]+)\)/g)) {
+    const target = match[1];
+    if (/^(https?:|#)/.test(target)) continue;
+    const path = resolve(dirname(markdownFile), target);
+    if (!existsSync(path)) errors.push(`Fehlender Link in ${markdownFile}: ${target}`);
+  }
+}
+
 for (const match of gitlabSkill.matchAll(/\]\(([^)]+)\)/g)) {
   const target = match[1];
   if (/^(https?:|#)/.test(target)) continue;
@@ -374,6 +434,9 @@ const checkedDocumentation = [
   ruleDocumentationAgent,
   cveSkill,
   cveAgent,
+  cerTicketSkill,
+  cerTicketReference,
+  cerTicketAgent,
 ].join('\n');
 for (const { pattern, label } of forbiddenPatterns) {
   if (pattern.test(checkedDocumentation)) errors.push(`Dokumentation enthält ${label}.`);
@@ -392,4 +455,5 @@ if (errors.length > 0) {
   console.log('✅ Confluence-Skill geprüft: Frontmatter, Links, CLI, Referenz und Schutzworkflow gültig.');
   console.log('✅ Jira-Regeldokumentations-Skill geprüft: Frontmatter, Vorlage, Links und Schutzworkflow gültig.');
   console.log('✅ CVE-Ticket-Factory-Skill geprüft: Frontmatter, CLI, Beispiel und Freigabeworkflow gültig.');
+  console.log('✅ CER-Jira-Ticket-Skill geprüft: Live-Quellen, CLI, Referenz und Freigabeworkflow gültig.');
 }

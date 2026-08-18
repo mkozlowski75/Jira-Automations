@@ -130,6 +130,9 @@ Export als `rules/BDR-{id}.json` aufnehmen und erst danach bearbeiten.
 | `npm run jira-ticket -- get <KEY>` | Jira-Ticket mit ausgewählten Feldern lesen | Nein |
 | `npm run jira-ticket -- search --jql "<JQL>"` | Jira-Tickets per JQL suchen | Nein |
 | `npm run jira-ticket -- comment/edit/transition ...` | Ticketänderung vorbereiten; erst `--apply` schreibt | Standardmäßig nein |
+| `npm run cer-ticket -- metadata ...` | Aktuelle CER-Story-/Bug-Feldmetadaten lesen | Nein |
+| `npm run cer-ticket -- create/edit ...` | CER-Story oder -Bug mit Live-Confluence-Quellen vorbereiten; erst `--apply` schreibt | Standardmäßig nein |
+| `npm run cer-ticket -- attach-images ...` | PNG/JPEG/WebP-Upload vorbereiten; erst `--apply` schreibt | Standardmäßig nein |
 | `npm run create-cve-ticket -- --input <fund.json>` | CVE-Ticket validieren, deduplizieren und vorbereiten | Nein |
 | `npm run create-cve-ticket -- --input <fund.json> --apply --preflight-id <id>` | Freigegebenen CVE-Task anlegen und verifizieren | Ja |
 | `npm run confluence-page -- get <ID>` | Confluence-Seitenmetadaten lesen | Nein |
@@ -141,6 +144,7 @@ Export als `rules/BDR-{id}.json` aufnehmen und erst danach bearbeiten.
 ```text
 .github/skills/jira-automation-rules/  Verbindlicher KI-Workflow und Referenzen
 .github/skills/jira-tickets/           Sicherer Lese- und Änderungsworkflow für Tickets
+.github/skills/cer-jira-tickets/       Live-vorlagenkonforme CER-Storys und -Bugs
 .github/skills/confluence-pages/       Sicherer Lese- und Änderungsworkflow für Seiten
 .github/skills/cve-ticket-factory/      Freigabegesteuerte CER-CVE-Ticketanlage
 .vscode/settings.json                  Schema-Zuordnung für Visual Studio Code

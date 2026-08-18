@@ -112,8 +112,11 @@ function request(method, url, opts = {}, redirectCount = 0) {
     req.on('error', reject);
     req.setTimeout(30000, () => { req.destroy(); reject(new Error('Timeout nach 30s')); });
 
-    if (opts.body) {
-      req.write(typeof opts.body === 'string' ? opts.body : JSON.stringify(opts.body));
+    if (opts.body !== undefined) {
+      const payload = Buffer.isBuffer(opts.body)
+        ? opts.body
+        : (typeof opts.body === 'string' ? opts.body : JSON.stringify(opts.body));
+      req.write(payload);
     }
     req.end();
   });
@@ -153,6 +156,17 @@ async function httpPostJson(url, body, headers = {}) {
   return responseBody ? JSON.parse(responseBody) : null;
 }
 
+async function httpPostBuffer(url, body, headers = {}) {
+  if (!Buffer.isBuffer(body)) throw new Error('Multipart-Body muss ein Buffer sein.');
+  const res = await request('POST', url, { headers, body });
+  if (!res.ok) {
+    throw new Error(`POST ${url} → ${res.status} ${res.statusText}`);
+  }
+  if (res.status === 204) return null;
+  const responseBody = await res.text();
+  return responseBody ? JSON.parse(responseBody) : null;
+}
+
 // ─── Jira API ───────────────────────────────────────────────
 const jiraAuthHeaders = {
   'Authorization': `Bearer ${JIRA_PAT}`,
@@ -181,6 +195,20 @@ export async function jiraPost(path, body) {
   assertJiraConfigured();
   const url = `${JIRA_BASE}${JIRA_PATH}${path}`;
   return httpPostJson(url, body, jiraAuthHeaders);
+}
+
+export async function jiraPostMultipart(path, body, boundary) {
+  assertJiraConfigured();
+  if (!/^[A-Za-z0-9-]{16,70}$/.test(String(boundary || ''))) {
+    throw new Error('UngÃ¼ltige Multipart-Grenze.');
+  }
+  const url = `${JIRA_BASE}${JIRA_PATH}${path}`;
+  return httpPostBuffer(url, body, {
+    ...jiraAuthHeaders,
+    'Content-Type': `multipart/form-data; boundary=${boundary}`,
+    'Content-Length': String(body.length),
+    'X-Atlassian-Token': 'no-check',
+  });
 }
 
 export async function jiraRawGet(url, headers = {}) {

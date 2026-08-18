@@ -325,6 +325,10 @@ test('validiert Ergebniswerte als Jira-angereicherte Teilmengen', () => {
     valueMatches([{ id: '1', name: 'A' }], [{ id: '2' }]),
     false,
   );
+  assert.equal(
+    valueMatches([{ id: '2' }, { id: '1' }], [{ id: '1' }, { id: '2' }]),
+    true,
+  );
 });
 
 test('Fehlermeldungen redigieren URLs und Bearer-Werte', () => {

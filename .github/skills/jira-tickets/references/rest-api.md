@@ -13,9 +13,13 @@ Das Skript verwendet ausschließlich Jira Data Center REST API 2:
 | Kommentar anlegen | `POST /issue/{key}/comment` |
 | Felder ändern | `PUT /issue/{key}` |
 | Transition ausführen | `POST /issue/{key}/transitions` |
+| Freigegebenen CER-CVE-Task anlegen | `POST /issue` |
 
-Ticketanlage, Löschung, Anhänge und das Ändern oder Löschen vorhandener
-Kommentare sind absichtlich nicht implementiert.
+Die allgemeine Ticketanlage ist in `jira-ticket.mjs` absichtlich nicht
+implementiert. Nur `create-cve-ticket.mjs` nutzt die Service-Erweiterung für
+einen deduplizierten, freigegebenen CER-Task und sendet ausschließlich `project`,
+`issuetype`, `summary`, `description` und das feste Label `CVE`. Löschung, Anhänge und das Ändern oder
+Löschen vorhandener Kommentare sind nicht implementiert.
 
 ## Felddateien
 

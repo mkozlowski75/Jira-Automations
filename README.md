@@ -69,6 +69,46 @@ npm run rollback-rule -- backups/BDR-913/<timestamp>.server.json --apply
 
 Auch `--apply` beim Rollback erfordert eine ausdrückliche Freigabe.
 
+## CVE-Ticket-Factory
+
+Die Factory validiert einen Dependency-/Trivy-Fund, rendert die Beschreibung
+nach der Confluence-Seite `507095421` ("Vorlage für CVE-Tickets") und sucht vor
+jeder Anlage nach offenen CER-Tickets mit derselben CVE-ID. Eine anonymisierte
+Eingabe liegt unter `examples/cve-finding.example.json`.
+
+Pflichtfelder sind `cve`, `library`, `installedVersion`, `severity` und `source`.
+`shortDescription` sowie die projektspezifischen Bewertungsfelder sind optional;
+fehlende Bewertungen bleiben in der Beschreibung leer. Fehlt die Kurzbeschreibung,
+verwendet die Summary die Bibliothek als technischen Suffix.
+Jedes von der Factory angelegte Ticket erhält genau das Label `CVE`.
+
+Der Standardaufruf ist immer ein read-only Preflight:
+
+```powershell
+npm run create-cve-ticket -- --input examples/cve-finding.example.json
+```
+
+Der Preflight zeigt Deduplizierungsbefund, Projekt, Vorgangstyp, Summary,
+Description und eine 15 Minuten gültige `preflightId`. Bei einem bestehenden
+Ticket werden Key, Summary und Status ausgegeben und keine Freigabe-ID erzeugt.
+
+Erst nachdem der Benutzer exakt diese erwarteten Ticketdaten ausdrücklich
+bestätigt hat, darf derselbe Fund mit der ausgegebenen ID angelegt werden:
+
+```powershell
+npm run create-cve-ticket -- --input examples/cve-finding.example.json `
+  --apply --preflight-id <id-aus-preflight>
+```
+
+`--apply` verbraucht den Preflight-Nachweis, wiederholt die Deduplizierung direkt
+vor genau einem POST und liest das neue Ticket zur Remote-Verifikation erneut.
+Bei Fehlern oder einem abgelaufenen/geänderten Preflight ist ein neuer Preflight
+mit neuer Benutzerfreigabe erforderlich.
+
+In Codex kann derselbe kontrollierte Ablauf natürlichsprachlich mit
+`$cve-ticket-factory` gestartet werden. Der Skill fragt fehlende Pflichtwerte ab
+und darf die projektspezifische Bewertung nicht selbst ableiten oder erfinden.
+
 ## Neue Regeln
 
 Neue Regeln zuerst deaktiviert in Jira anlegen und exportieren. Das Repository
@@ -90,6 +130,8 @@ Export als `rules/BDR-{id}.json` aufnehmen und erst danach bearbeiten.
 | `npm run jira-ticket -- get <KEY>` | Jira-Ticket mit ausgewählten Feldern lesen | Nein |
 | `npm run jira-ticket -- search --jql "<JQL>"` | Jira-Tickets per JQL suchen | Nein |
 | `npm run jira-ticket -- comment/edit/transition ...` | Ticketänderung vorbereiten; erst `--apply` schreibt | Standardmäßig nein |
+| `npm run create-cve-ticket -- --input <fund.json>` | CVE-Ticket validieren, deduplizieren und vorbereiten | Nein |
+| `npm run create-cve-ticket -- --input <fund.json> --apply --preflight-id <id>` | Freigegebenen CVE-Task anlegen und verifizieren | Ja |
 | `npm run confluence-page -- get <ID>` | Confluence-Seitenmetadaten lesen | Nein |
 | `npm run confluence-page -- search --cql "<CQL>"` | Confluence-Seiten per CQL suchen | Nein |
 | `npm run confluence-page -- create/update ...` | Seitenänderung vorbereiten; erst `--apply` schreibt | Standardmäßig nein |
@@ -100,12 +142,14 @@ Export als `rules/BDR-{id}.json` aufnehmen und erst danach bearbeiten.
 .github/skills/jira-automation-rules/  Verbindlicher KI-Workflow und Referenzen
 .github/skills/jira-tickets/           Sicherer Lese- und Änderungsworkflow für Tickets
 .github/skills/confluence-pages/       Sicherer Lese- und Änderungsworkflow für Seiten
+.github/skills/cve-ticket-factory/      Freigabegesteuerte CER-CVE-Ticketanlage
 .vscode/settings.json                  Schema-Zuordnung für Visual Studio Code
 config/.env.example                    Bereinigte Verbindungskonfiguration
 rules/BDR-*.json                       Produktive Jira-Exporte
 rules/rule-schema.json                 JSON-Schema und Editor-Unterstützung
 scripts/                               Validierung und sichere Jira-Werkzeuge
 test/                                  Bereinigte Fixtures und Sicherheitstests
+examples/                              Anonymisierte Eingabebeispiele
 ```
 
 Die technische Source of Truth sind `rules/rule-schema.json` und

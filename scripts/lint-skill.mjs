@@ -295,6 +295,58 @@ if (!gitlabAgent.includes('$gitlab-access')) {
   errors.push('gitlab-access/agents/openai.yaml muss $gitlab-access im default_prompt nennen.');
 }
 
+const cveSkillRoot = join(__dir, '..', '.github', 'skills', 'cve-ticket-factory');
+const cveSkillPath = join(cveSkillRoot, 'SKILL.md');
+const cveAgentPath = join(cveSkillRoot, 'agents', 'openai.yaml');
+const cveScriptPath = join(__dir, 'create-cve-ticket.mjs');
+const cveExamplePath = join(__dir, '..', 'examples', 'cve-finding.example.json');
+const cveSkill = readFileSync(cveSkillPath, 'utf8');
+const cveAgent = readFileSync(cveAgentPath, 'utf8');
+const cveFrontmatter = /^---\r?\n([\s\S]*?)\r?\n---\r?\n/.exec(cveSkill);
+
+if (!cveFrontmatter) {
+  errors.push('cve-ticket-factory/SKILL.md besitzt kein gültiges YAML-Frontmatter.');
+} else {
+  const fields = [...cveFrontmatter[1].matchAll(/^([a-zA-Z][\w-]*):\s*(.+)$/gm)]
+    .map(match => ({ name: match[1], value: match[2].trim() }));
+  if (fields.map(field => field.name).join(',') !== 'name,description') {
+    errors.push('cve-ticket-factory-Frontmatter muss genau name und description enthalten.');
+  }
+  if (fields.find(field => field.name === 'name')?.value !== 'cve-ticket-factory') {
+    errors.push('cve-ticket-factory-Frontmatter-name muss cve-ticket-factory sein.');
+  }
+}
+
+for (const requiredText of [
+  '507095421',
+  'npm run create-cve-ticket',
+  '--apply',
+  '--preflight-id',
+  'ausdrücklich',
+]) {
+  if (!cveSkill.includes(requiredText)) {
+    errors.push(`cve-ticket-factory/SKILL.md dokumentiert "${requiredText}" nicht.`);
+  }
+}
+
+for (const path of [cveScriptPath, cveExamplePath]) {
+  if (!existsSync(path)) errors.push(`CVE-Ticket-Factory-Datei fehlt: ${path}`);
+}
+if (!cveAgent.includes('$cve-ticket-factory')) {
+  errors.push('cve-ticket-factory/agents/openai.yaml muss $cve-ticket-factory im default_prompt nennen.');
+}
+try {
+  JSON.parse(readFileSync(cveExamplePath, 'utf8'));
+} catch (error) {
+  errors.push(`Ungültiges JSON in examples/cve-finding.example.json: ${error.message}`);
+}
+for (const match of cveSkill.matchAll(/\]\(([^)]+)\)/g)) {
+  const target = match[1];
+  if (/^(https?:|#)/.test(target)) continue;
+  const path = resolve(dirname(cveSkillPath), target);
+  if (!existsSync(path)) errors.push(`Fehlender Link in ${cveSkillPath}: ${target}`);
+}
+
 for (const match of gitlabSkill.matchAll(/\]\(([^)]+)\)/g)) {
   const target = match[1];
   if (/^(https?:|#)/.test(target)) continue;
@@ -311,12 +363,17 @@ const forbiddenPatterns = [
 ];
 const checkedDocumentation = [
   documentation,
+  ticketSkill,
+  ticketReference,
+  ticketAgent,
   confluenceSkill,
   confluenceReference,
   confluenceAgent,
   ruleDocumentationSkill,
   ruleDocumentationReference,
   ruleDocumentationAgent,
+  cveSkill,
+  cveAgent,
 ].join('\n');
 for (const { pattern, label } of forbiddenPatterns) {
   if (pattern.test(checkedDocumentation)) errors.push(`Dokumentation enthält ${label}.`);
@@ -334,4 +391,5 @@ if (errors.length > 0) {
   console.log('✅ GitLab-Skill geprüft: Frontmatter, Links, CLI, Referenz und read-only Schutz gültig.');
   console.log('✅ Confluence-Skill geprüft: Frontmatter, Links, CLI, Referenz und Schutzworkflow gültig.');
   console.log('✅ Jira-Regeldokumentations-Skill geprüft: Frontmatter, Vorlage, Links und Schutzworkflow gültig.');
+  console.log('✅ CVE-Ticket-Factory-Skill geprüft: Frontmatter, CLI, Beispiel und Freigabeworkflow gültig.');
 }

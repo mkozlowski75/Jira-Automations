@@ -3,15 +3,15 @@
   "clientKey": "com.codebarrel.tenant.global",
   "name": "E-Mail notifications after \"Finale Freigabeempfehlung Bdr\"",
   "state": "ENABLED",
-  "description": "When a release ticket is transfered to status \"Finale Freigabeempfehlung Bdr\":\n- Sends an email to Matthias about email and meeting before sprint start",
+  "description": "When a .0 release ticket is transferred to status \"Finale Freigabeempfehlung Bdr\":\n- For CeromaCore, Mediator, or PostIdentService: sends Matthias a changelog reminder that identifies the component.\n- For CeromaCore only: sends Matthias a Sprint Review reminder.\n- Writes an audit log entry before each email is sent.",
   "canOtherRuleTrigger": false,
   "notifyOnError": "FIRSTERROR",
   "authorAccountId": "JIRAUSER15085",
   "actorAccountId": "JIRAUSER23851",
   "created": 1730745278593,
-  "updated": 1787155448246,
+  "updated": 1787155573094,
   "trigger": {
-    "id": "144262",
+    "id": "144271",
     "component": "TRIGGER",
     "schemaVersion": 1,
     "type": "jira.issue.event.trigger:transitioned",
@@ -37,7 +37,7 @@
   },
   "components": [
     {
-      "id": "144263",
+      "id": "144272",
       "component": "CONDITION",
       "schemaVersion": 3,
       "type": "jira.issue.condition",
@@ -58,7 +58,7 @@
       "conditions": []
     },
     {
-      "id": "144264",
+      "id": "144273",
       "component": "CONDITION",
       "schemaVersion": 3,
       "type": "jira.issue.condition",
@@ -79,7 +79,7 @@
       "conditions": []
     },
     {
-      "id": "144265",
+      "id": "144274",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -100,7 +100,7 @@
       "conditions": []
     },
     {
-      "id": "144266",
+      "id": "144275",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "codebarrel.action.log",
@@ -109,7 +109,7 @@
       "conditions": []
     },
     {
-      "id": "144267",
+      "id": "144276",
       "component": "ACTION",
       "schemaVersion": 3,
       "type": "jira.issue.outgoing.email",
@@ -134,7 +134,7 @@
       "conditions": []
     },
     {
-      "id": "144268",
+      "id": "144277",
       "component": "CONDITION",
       "schemaVersion": 3,
       "type": "jira.issue.condition",
@@ -155,7 +155,7 @@
       "conditions": []
     },
     {
-      "id": "144269",
+      "id": "144278",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "codebarrel.action.log",
@@ -164,7 +164,7 @@
       "conditions": []
     },
     {
-      "id": "144270",
+      "id": "144279",
       "component": "ACTION",
       "schemaVersion": 3,
       "type": "jira.issue.outgoing.email",

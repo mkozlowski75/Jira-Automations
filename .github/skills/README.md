@@ -15,6 +15,7 @@ Sicherheitsregeln stehen jeweils in der verlinkten `SKILL.md`.
 | [GitLab-Zugriff](gitlab-access/SKILL.md) | GitLab-Projekte, Branches, Merge Requests, Pipelines und Jobs schreibgeschützt untersuchen. | „Untersuche die letzten **GitLab-Pipelines** des Projekts und nenne fehlgeschlagene Jobs mit ihrer Ursache.“ |
 | [CVE-Tickets](cve-ticket-factory/SKILL.md) | Trivy- oder Dependency-Scan-Funde bewerten, deduplizieren und als CER-CVE-Task vorbereiten. | „Bewerte diesen **Trivy-Scan-Fund**, prüfe auf ein mögliches Duplikat und bereite einen Entwurf für ein CER-CVE-Task-Ticket vor. Nicht anlegen.“ |
 | [Release-Changelogs](release-changelogs/SKILL.md) | Neue Changelog-Seiten für Ceroma, Mediator, PostidentService und Contracts aus einem CER-Release und dessen Fix-Version-Tickets vorbereiten und nach Freigabe veröffentlichen. | „Erstelle einen **Changelog für Ceroma Version 2.4.0** unter der CER-Changelog-Übersicht. Lies zuerst das zugehörige Release-Ticket und lege die Seite noch nicht an.“ |
+| [Sprint-Reviews](sprint-reviews/SKILL.md) | CER-Sprint-Reviews aus bestätigten Jira-Sprints vorbereiten, gezielt ergänzen und nach Freigabe veröffentlichen. | „Erstelle ein **Sprint Review für Sprint 5.64** mit Ausblick auf Sprint 5.65. Die Jira-Sprint-IDs sind 8185 und 8422. Noch nicht veröffentlichen.“ |
 
 ## Hinweise zur Auswahl
 

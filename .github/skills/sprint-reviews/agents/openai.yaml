@@ -1,0 +1,4 @@
+interface:
+  display_name: "Sprint-Reviews"
+  short_description: "CER-Sprint-Reviews aus Jira vorbereiten"
+  default_prompt: "Use $sprint-reviews to prepare a CER sprint review from confirmed Jira sprint IDs."

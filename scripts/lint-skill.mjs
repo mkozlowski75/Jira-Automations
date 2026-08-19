@@ -307,6 +307,77 @@ for (const markdownPath of [releaseChangelogSkillPath, releaseChangelogReference
   }
 }
 
+const sprintReviewSkillRoot = join(__dir, '..', '.github', 'skills', 'sprint-reviews');
+const sprintReviewSkillPath = join(sprintReviewSkillRoot, 'SKILL.md');
+const sprintReviewReferencePath = join(sprintReviewSkillRoot, 'references', 'content-format.md');
+const sprintReviewAgentPath = join(sprintReviewSkillRoot, 'agents', 'openai.yaml');
+const sprintReviewSkill = readFileSync(sprintReviewSkillPath, 'utf8');
+const sprintReviewReference = readFileSync(sprintReviewReferencePath, 'utf8');
+const sprintReviewAgent = readFileSync(sprintReviewAgentPath, 'utf8');
+const sprintReviewFrontmatter = /^---\r?\n([\s\S]*?)\r?\n---\r?\n/.exec(sprintReviewSkill);
+
+if (!sprintReviewFrontmatter) {
+  errors.push('sprint-reviews/SKILL.md besitzt kein gültiges YAML-Frontmatter.');
+} else {
+  const fields = [...sprintReviewFrontmatter[1].matchAll(/^([a-zA-Z][\w-]*):\s*(.+)$/gm)]
+    .map(match => ({ name: match[1], value: match[2].trim() }));
+  if (fields.map(field => field.name).join(',') !== 'name,description') {
+    errors.push('sprint-reviews-Frontmatter muss genau name und description enthalten.');
+  }
+  if (fields.find(field => field.name === 'name')?.value !== 'sprint-reviews') {
+    errors.push('sprint-reviews-Frontmatter-name muss sprint-reviews sein.');
+  }
+}
+
+for (const [label, content] of [
+  ['sprint-reviews/SKILL.md', sprintReviewSkill],
+  ['sprint-reviews/references/content-format.md', sprintReviewReference],
+  ['sprint-reviews/agents/openai.yaml', sprintReviewAgent],
+]) {
+  if (content.includes('TODO')) errors.push(`${label} enthält noch TODO-Platzhalter.`);
+}
+
+for (const requiredText of [
+  '100667048',
+  'Sprint_Delay',
+  'npm run confluence-page',
+  '--expected-version',
+  '--expected-absent',
+  'Weiterführende Links',
+  'Ceroma Releaseplan',
+  'CEROMA-Release-Ticket',
+]) {
+  if (!sprintReviewSkill.includes(requiredText)) {
+    errors.push(`sprint-reviews/SKILL.md dokumentiert "${requiredText}" nicht.`);
+  }
+}
+
+if (!sprintReviewReference.includes('nicht-produktionsrelevanten')) {
+  errors.push('sprint-reviews-Referenz muss die kuratierte Nicht-Produktionsregel dokumentieren.');
+}
+for (const requiredText of [
+  'ac:name="info"',
+  'Ceroma &lt;Release-Version&gt; Changelog',
+  'Ceroma Releaseplan',
+]) {
+  if (!sprintReviewReference.includes(requiredText)) {
+    errors.push(`sprint-reviews-Referenz muss "${requiredText}" für das Info-Panel dokumentieren.`);
+  }
+}
+if (!sprintReviewAgent.includes('$sprint-reviews')) {
+  errors.push('sprint-reviews/agents/openai.yaml muss $sprint-reviews im default_prompt nennen.');
+}
+
+for (const markdownPath of [sprintReviewSkillPath, sprintReviewReferencePath]) {
+  const markdown = readFileSync(markdownPath, 'utf8');
+  for (const match of markdown.matchAll(/\]\(([^)]+)\)/g)) {
+    const target = match[1];
+    if (/^(https?:|#)/.test(target)) continue;
+    const path = resolve(dirname(markdownPath), target);
+    if (!existsSync(path)) errors.push(`Fehlender Link in ${markdownPath}: ${target}`);
+  }
+}
+
 const gitlabSkill = readFileSync(gitlabSkillPath, 'utf8');
 const gitlabReference = readFileSync(gitlabReferencePath, 'utf8');
 const gitlabAgent = readFileSync(gitlabAgentPath, 'utf8');
@@ -495,6 +566,9 @@ const checkedDocumentation = [
   cerTicketSkill,
   cerTicketReference,
   cerTicketAgent,
+  sprintReviewSkill,
+  sprintReviewReference,
+  sprintReviewAgent,
 ].join('\n');
 for (const { pattern, label } of forbiddenPatterns) {
   if (pattern.test(checkedDocumentation)) errors.push(`Dokumentation enthält ${label}.`);
@@ -514,4 +588,5 @@ if (errors.length > 0) {
   console.log('✅ Jira-Regeldokumentations-Skill geprüft: Frontmatter, Vorlage, Links und Schutzworkflow gültig.');
   console.log('✅ CVE-Ticket-Factory-Skill geprüft: Frontmatter, CLI, Beispiel und Freigabeworkflow gültig.');
   console.log('✅ CER-Jira-Ticket-Skill geprüft: Live-Quellen, CLI, Referenz und Freigabeworkflow gültig.');
+  console.log('✅ Sprint-Review-Skill geprüft: Jira-Filter, Referenz und Freigabeworkflow gültig.');
 }

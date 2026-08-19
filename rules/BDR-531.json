@@ -9,9 +9,9 @@
   "authorAccountId": "JIRAUSER15085",
   "actorAccountId": "JIRAUSER23851",
   "created": 1730745278593,
-  "updated": 1773051243421,
+  "updated": 1787155194183,
   "trigger": {
-    "id": "103925",
+    "id": "144248",
     "component": "TRIGGER",
     "schemaVersion": 1,
     "type": "jira.issue.event.trigger:transitioned",
@@ -37,7 +37,7 @@
   },
   "components": [
     {
-      "id": "103926",
+      "id": "144249",
       "component": "CONDITION",
       "schemaVersion": 3,
       "type": "jira.issue.condition",
@@ -50,7 +50,7 @@
         "comparison": "CONTAINS_ANY",
         "compareValue": {
           "type": "NAME",
-          "value": "[\"CeromaCore\"]",
+          "value": "[\"CeromaCore\",\"Mediator\",\"PostIdentService\"]",
           "multiValue": true
         }
       },
@@ -58,7 +58,7 @@
       "conditions": []
     },
     {
-      "id": "103927",
+      "id": "144250",
       "component": "CONDITION",
       "schemaVersion": 3,
       "type": "jira.issue.condition",
@@ -79,7 +79,28 @@
       "conditions": []
     },
     {
-      "id": "103928",
+      "id": "144251",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "jira.create.variable",
+      "value": {
+        "id": "_customsmartvalue_id_bdr_531_component_name",
+        "name": {
+          "type": "FREE",
+          "value": "componentName"
+        },
+        "type": "SMART",
+        "query": {
+          "type": "SMART",
+          "value": "{{issue.components.last.name}}"
+        },
+        "lazy": false
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "144252",
       "component": "ACTION",
       "schemaVersion": 3,
       "type": "jira.issue.outgoing.email",
@@ -95,8 +116,8 @@
         ],
         "cc": [],
         "bcc": [],
-        "subject": "Sprint {{issue.fields.sprint}}: Changelogs erstellen",
-        "body": "Hallo,\n\ndie finale Freigabe für {{issue.fields.summary}} wurde erteilt. Bitte denke daran die <a href=\"https://partner.bdr.de/confluence/x/UBxSBg\">Changelogs in Confluence></a> für die aktualisierten Komponenten zu erstellen und zu veröffentlichen.\n\nViele Grüße\n\nDeine Jira-Automation <a href=\"https://partner.bdr.de/jira/secure/AutomationProjectAdminAction!default.jspa?projectKey=CER#/rule/531\">{{rule.name}}</a>",
+        "subject": "Sprint {{issue.fields.sprint}}: Changelogs für {{componentName}} erstellen",
+        "body": "Hallo,\n\ndie finale Freigabe für {{issue.fields.summary}} wurde erteilt. Betroffene Komponente: <strong>{{componentName}}</strong>. Bitte denke daran die <a href=\"https://partner.bdr.de/confluence/x/UBxSBg\">Changelogs in Confluence></a> für diese Komponente zu erstellen und zu veröffentlichen.\n\nViele Grüße\n\nDeine Jira-Automation <a href=\"https://partner.bdr.de/jira/secure/AutomationProjectAdminAction!default.jspa?projectKey=CER#/rule/531\">{{rule.name}}</a>",
         "mimeType": "text/html",
         "convertLineBreaks": true
       },
@@ -104,7 +125,28 @@
       "conditions": []
     },
     {
-      "id": "103929",
+      "id": "144253",
+      "component": "CONDITION",
+      "schemaVersion": 3,
+      "type": "jira.issue.condition",
+      "value": {
+        "selectedField": {
+          "type": "ID",
+          "value": "components"
+        },
+        "selectedFieldType": "components",
+        "comparison": "CONTAINS_ANY",
+        "compareValue": {
+          "type": "NAME",
+          "value": "[\"CeromaCore\"]",
+          "multiValue": true
+        }
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "144254",
       "component": "ACTION",
       "schemaVersion": 3,
       "type": "jira.issue.outgoing.email",

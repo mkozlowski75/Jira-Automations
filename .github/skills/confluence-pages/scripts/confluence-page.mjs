@@ -278,6 +278,7 @@ function normalizeStorageForComparison(value) {
   return String(value ?? '')
     .replace(/\r\n?/g, '\n')
     .trim()
+    .replace(/\s+ac:macro-id=(?:"[^"]*"|'[^']*')/g, '')
     .replace(/<([A-Za-z][\w:.-]*)([^<>]*)><\/\1>/g, '<$1$2/>')
     .replace(/\s*\/>/g, '/>');
 }

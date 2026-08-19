@@ -149,6 +149,13 @@ test('Create akzeptiert Confluence-Normalisierung leerer Tags und Schlusszeilen'
   assert.equal(result.pageId, '21074849');
 });
 
+test('normalisiert von Confluence ergänzte Makro-IDs', () => {
+  const local = '<ac:structured-macro ac:name="jira" ac:schema-version="1"><ac:parameter ac:name="key">CER-123</ac:parameter></ac:structured-macro>';
+  const remote = '<ac:structured-macro ac:name="jira" ac:schema-version="1" ac:macro-id="63f97550-803c-4344-a0d8-d9ed4d7fb4b1"><ac:parameter ac:name="key">CER-123</ac:parameter></ac:structured-macro>';
+
+  assert.equal(normalizeStorageForComparison(remote), normalizeStorageForComparison(local));
+});
+
 test('Create blockiert weiterhin inhaltlich abweichenden Serverstand', async () => {
   let reads = 0;
   const service = createConfluencePageService({

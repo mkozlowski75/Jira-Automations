@@ -11,10 +11,6 @@ Erstelle den Seiteninhalt als Confluence Storage Format in dieser Reihenfolge:
 <h1>Release-Inhalt</h1>
 <h2>Task</h2>
 <ul><li>[<a href="https://partner.bdr.de/jira/browse/CER-123">CER-123</a>] - Ticket-Summary</li></ul>
-<h2>Bug</h2>
-<ul>...</ul>
-<h2>Story</h2>
-<ul>...</ul>
 ```
 
 Setze in jeder Tabellenzeile der Jira-Release-Summary die linke Zelle als
@@ -27,6 +23,6 @@ nur Jira-Wiki-Linksyntax durch sichere Confluence-Storage-Links.
 - Jede Zeile enthält genau einen absoluten Jira-Link, Ticket-Key und die
   unveränderte Summary.
 - HTML-Sonderzeichen in Summaries werden escaped.
-- Leere Ergebnislisten erhalten einen leeren `<ul />`; verschweige keinen der
-  drei Vorgangstypen.
+- Erstelle die Überschrift und Liste eines Vorgangstyps nur, wenn dessen
+  Ergebnisliste mindestens ein Ticket enthält.
 - Jira-Makros erhalten keinen `ac:macro-id`; Confluence ergänzt diesen selbst.

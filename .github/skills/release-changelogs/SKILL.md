@@ -39,8 +39,9 @@ erstellst.
    vom Workflow-Status auf und verwende Key sowie Summary unverändert.
 3. Verwende den Seitentitel `<Komponente> <Version> Changelog`, oben ein Jira-
    Makro zum Release-Ticket und darunter `Release Summary` sowie
-   `Release-Inhalt` mit den drei Vorgangstyp-Abschnitten. Erfinde keine
-   Makro-IDs, Release-Daten oder Tabellenzeilen.
+   `Release-Inhalt`. Erstelle einen Vorgangstyp-Abschnitt nur, wenn dessen
+   Ticketliste nicht leer ist. Erfinde keine Makro-IDs, Release-Daten oder
+   Tabellenzeilen.
 4. Lege den UTF-8-Entwurf ausschließlich unter `.tmp/` ab. Lies bei Bedarf eine
    bestehende Changelog-Unterseite derselben Komponente als Formatreferenz,
    ohne deren Inhalte oder Makro-IDs zu kopieren.

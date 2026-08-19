@@ -346,6 +346,8 @@ for (const requiredText of [
   'Weiterführende Links',
   'Ceroma Releaseplan',
   'CEROMA-Release-Ticket',
+  'verbindliche Vorlage',
+  'strukturell mit der Vorlage',
 ]) {
   if (!sprintReviewSkill.includes(requiredText)) {
     errors.push(`sprint-reviews/SKILL.md dokumentiert "${requiredText}" nicht.`);
@@ -354,6 +356,14 @@ for (const requiredText of [
 
 if (!sprintReviewReference.includes('nicht-produktionsrelevanten')) {
   errors.push('sprint-reviews-Referenz muss die kuratierte Nicht-Produktionsregel dokumentieren.');
+}
+for (const requiredText of [
+  'verbindliche Vorlage',
+  'Makro-Parameter',
+]) {
+  if (!sprintReviewReference.includes(requiredText)) {
+    errors.push(`sprint-reviews-Referenz muss "${requiredText}" für die Vorlagenübernahme dokumentieren.`);
+  }
 }
 for (const requiredText of [
   'ac:name="info"',

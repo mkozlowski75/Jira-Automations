@@ -19,8 +19,14 @@ Zugriffs- und Freigaberegeln nicht.
 - Lies die Übersichtsseite live und prüfe Space `CER`, Status `current` und
   Seite `100667048`. Prüfe für einen neuen Review-Titel vor dem Preflight, ob
   bereits eine gleichnamige Unterseite existiert.
-- Lies die jüngsten passenden Unterseiten als Formatreferenz. Übernimm deren
-  Struktur, aber keine fachlichen Inhalte und keine `ac:macro-id`-Werte.
+- Ermittle unter `Sprint-Reviews` die zuletzt angelegte aktuelle direkte
+  Unterseite, deren Titel einer Sprint-Review entspricht, und verwende sie als
+  verbindliche Vorlage. Ist keine eindeutige letzte Review ermittelbar, stoppe
+  und frage nach der Referenzseite.
+- Starte den Entwurf als strukturelle Kopie dieser Vorlage. Erhalte Layout,
+  Abschnittsreihenfolge, Makro-Parameter, Panels, Tabellen und manuell
+  ergänzte Inhalte; ersetze nur sprint-, versions- und ticketbezogene Werte.
+  Übernimm keine `ac:macro-id`-Werte.
 - Ermittle die Ceroma-Release-Version aus den Fix-Versionen des Sprint-Backlogs
   und bestätige sie mit dem zugehörigen CEROMA-Release-Ticket. Bei keinem oder
   mehreren passenden Kandidaten frage vor dem Preflight nach der Version.
@@ -49,12 +55,16 @@ erstellst.
    muss in deren Ergebnis vorkommen; ein Vorgang mit einer produktionsrelevanten
    Rolle darf dort nicht erscheinen. Bitte um Auswahl, wenn mehrere passende
    Vorgänge fachlich gleichwertig sind.
-4. Setze bei neuen Reviews direkt nach dem TOC und vor `Allgemein` ein
-   Info-Makro `Weiterführende Links` mit genau zwei Confluence-Seitenlinks:
+4. Prüfe im übernommenen Vorlage-Layout das Info-Makro `Weiterführende Links`.
+   Fehlt es, setze es direkt nach dem TOC und vor `Allgemein` mit genau zwei
+   Confluence-Seitenlinks:
    `Ceroma <Release-Version> Changelog` und `Ceroma Releaseplan`. Verwende die
    zuvor live bestätigten Seitentitel, keine hart codierte Version und keine
    `ac:macro-id`-Werte.
-5. Lege den UTF-8-Entwurf ausschließlich unter `.tmp/` ab. Verwende Jira-Makros
+5. Vergleiche den Entwurf vor dem Preflight strukturell mit der Vorlage. Nur
+   Titel, Sprint-/Release-Versionen, Jira-JQL, Jira-Ticket-Keys und die vom
+   Nutzer beauftragten Inhalte dürfen abweichen.
+6. Lege den UTF-8-Entwurf ausschließlich unter `.tmp/` ab. Verwende Jira-Makros
    ohne `ac:macro-id`; Confluence ergänzt sie beim Speichern.
 
 ## Veröffentlichung und Prüfung

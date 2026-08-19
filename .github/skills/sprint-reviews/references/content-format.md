@@ -1,6 +1,12 @@
 # Inhaltsformat
 
-## Struktur
+## Vorlage und Struktur
+
+Die zuletzt angelegte aktuelle direkte Sprint-Review-Unterseite ist die
+verbindliche Vorlage. Übernimm deren Storage-Struktur semantisch: Layout,
+Abschnittsreihenfolge, Panels, Tabellen und Makro-Parameter. Ersetze nur
+Titel, Sprint-/Release-Versionen, Jira-JQL, Jira-Ticket-Keys und beauftragte
+fachliche Inhalte. `ac:macro-id`-Werte werden nicht kopiert.
 
 Verwende Confluence Storage Format mit den Bereichen `Allgemein`,
 `Sprint-Übersicht` und optional `Ausblick Sprint <Folgesprint>`. Der Abschnitt
@@ -23,8 +29,8 @@ Bei neuen Reviews steht nach dem TOC und vor `Allgemein` dieses Info-Makro:
 
 Ersetze `<Release-Version>` nur durch die aus Fix-Versionen und dem
 CEROMA-Release-Ticket bestätigte Version. Prüfe beide Linkziele vorher live in
-Confluence. Füge bei Updates kein zweites Panel hinzu und überschreibe kein
-vorhandenes manuell gepflegtes Panel.
+Confluence. Ein vorhandenes Panel der Vorlage wird mit den neu bestätigten
+Linkzielen übernommen; füge nur bei fehlendem Panel ein neues hinzu.
 
 ## Jira-Makros und Filter
 

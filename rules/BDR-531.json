@@ -9,9 +9,9 @@
   "authorAccountId": "JIRAUSER15085",
   "actorAccountId": "JIRAUSER23851",
   "created": 1730745278593,
-  "updated": 1787155194183,
+  "updated": 1787155294047,
   "trigger": {
-    "id": "144248",
+    "id": "144255",
     "component": "TRIGGER",
     "schemaVersion": 1,
     "type": "jira.issue.event.trigger:transitioned",
@@ -37,7 +37,7 @@
   },
   "components": [
     {
-      "id": "144249",
+      "id": "144256",
       "component": "CONDITION",
       "schemaVersion": 3,
       "type": "jira.issue.condition",
@@ -58,7 +58,7 @@
       "conditions": []
     },
     {
-      "id": "144250",
+      "id": "144257",
       "component": "CONDITION",
       "schemaVersion": 3,
       "type": "jira.issue.condition",
@@ -79,7 +79,7 @@
       "conditions": []
     },
     {
-      "id": "144251",
+      "id": "144258",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -100,7 +100,7 @@
       "conditions": []
     },
     {
-      "id": "144252",
+      "id": "144259",
       "component": "ACTION",
       "schemaVersion": 3,
       "type": "jira.issue.outgoing.email",
@@ -116,8 +116,8 @@
         ],
         "cc": [],
         "bcc": [],
-        "subject": "Sprint {{issue.fields.sprint}}: Changelogs für {{componentName}} erstellen",
-        "body": "Hallo,\n\ndie finale Freigabe für {{issue.fields.summary}} wurde erteilt. Betroffene Komponente: <strong>{{componentName}}</strong>. Bitte denke daran die <a href=\"https://partner.bdr.de/confluence/x/UBxSBg\">Changelogs in Confluence></a> für diese Komponente zu erstellen und zu veröffentlichen.\n\nViele Grüße\n\nDeine Jira-Automation <a href=\"https://partner.bdr.de/jira/secure/AutomationProjectAdminAction!default.jspa?projectKey=CER#/rule/531\">{{rule.name}}</a>",
+        "subject": "Sprint {{issue.fields.sprint}}: Changelog für {{componentName}} erstellen",
+        "body": "Hallo,\n\ndie finale Freigabe für {{issue.fields.summary}} wurde erteilt. Betroffene Komponente: <strong>{{componentName}}</strong>. Bitte denke daran das <a href=\"https://partner.bdr.de/confluence/x/UBxSBg\">Changelog in Confluence></a> für diese Komponente zu erstellen und zu veröffentlichen.\n\nViele Grüße\n\nDeine Jira-Automation <a href=\"https://partner.bdr.de/jira/secure/AutomationProjectAdminAction!default.jspa?projectKey=CER#/rule/531\">{{rule.name}}</a>",
         "mimeType": "text/html",
         "convertLineBreaks": true
       },
@@ -125,7 +125,7 @@
       "conditions": []
     },
     {
-      "id": "144253",
+      "id": "144260",
       "component": "CONDITION",
       "schemaVersion": 3,
       "type": "jira.issue.condition",
@@ -146,7 +146,7 @@
       "conditions": []
     },
     {
-      "id": "144254",
+      "id": "144261",
       "component": "ACTION",
       "schemaVersion": 3,
       "type": "jira.issue.outgoing.email",

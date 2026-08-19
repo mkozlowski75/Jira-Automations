@@ -105,9 +105,11 @@ vor genau einem POST und liest das neue Ticket zur Remote-Verifikation erneut.
 Bei Fehlern oder einem abgelaufenen/geänderten Preflight ist ein neuer Preflight
 mit neuer Benutzerfreigabe erforderlich.
 
-In Codex kann derselbe kontrollierte Ablauf natürlichsprachlich mit
-`$cve-ticket-factory` gestartet werden. Der Skill fragt fehlende Pflichtwerte ab
-und darf die projektspezifische Bewertung nicht selbst ableiten oder erfinden.
+In Codex kann derselbe kontrollierte Ablauf zum Beispiel mit „Bewerte diesen
+Trivy-Scan-Fund und bereite einen Entwurf für ein CER-CVE-Task-Ticket vor. Nicht
+anlegen.“ gestartet werden. Der Skill fragt fehlende Pflichtwerte ab und darf
+die projektspezifische Bewertung nicht selbst ableiten oder erfinden. Weitere
+Beispiele stehen in [der Workspace-Skill-Übersicht](.github/skills/README.md).
 
 ## Neue Regeln
 
@@ -144,9 +146,13 @@ Export als `rules/BDR-{id}.json` aufnehmen und erst danach bearbeiten.
 ```text
 .github/skills/jira-automation-rules/  Verbindlicher KI-Workflow und Referenzen
 .github/skills/jira-tickets/           Sicherer Lese- und Änderungsworkflow für Tickets
-.github/skills/cer-jira-tickets/       Live-vorlagenkonforme CER-Storys und -Bugs
+.github/skills/cer-jira-tickets/       Live-vorlagenkonforme CER-Storys, -Bugs und -Tasks
 .github/skills/confluence-pages/       Sicherer Lese- und Änderungsworkflow für Seiten
-.github/skills/cve-ticket-factory/      Freigabegesteuerte CER-CVE-Ticketanlage
+.github/skills/cve-ticket-factory/     Freigabegesteuerte CER-CVE-Ticketanlage
+.github/skills/gitlab-access/          Sicherer schreibgeschützter GitLab-Zugriff
+.github/skills/jira-rule-documentation/ Regel-Dokumentation und Abgleich in Confluence
+.github/skills/release-changelogs/     CER-Komponenten-Changelogs in Confluence
+.github/skills/README.md               Übersicht mit natürlichsprachlichen Beispiel-Prompts
 .vscode/settings.json                  Schema-Zuordnung für Visual Studio Code
 config/.env.example                    Bereinigte Verbindungskonfiguration
 rules/BDR-*.json                       Produktive Jira-Exporte

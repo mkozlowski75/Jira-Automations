@@ -152,6 +152,7 @@ Export als `rules/BDR-{id}.json` aufnehmen und erst danach bearbeiten.
 .github/skills/gitlab-access/          Sicherer schreibgeschützter GitLab-Zugriff
 .github/skills/jira-rule-documentation/ Regel-Dokumentation und Abgleich in Confluence
 .github/skills/release-changelogs/     CER-Komponenten-Changelogs in Confluence
+.github/skills/sprint-reviews/         CER-Sprint-Reviews in Confluence
 .github/skills/README.md               Übersicht mit natürlichsprachlichen Beispiel-Prompts
 .vscode/settings.json                  Schema-Zuordnung für Visual Studio Code
 config/.env.example                    Bereinigte Verbindungskonfiguration

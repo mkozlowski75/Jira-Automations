@@ -28,7 +28,7 @@ function usage() {
     '  confluence-page.mjs get <page-id> [--include-body]',
     '  confluence-page.mjs search --cql <CQL> [--max-results 20]',
     '  confluence-page.mjs children <page-id> [--max-results 20]',
-    '  confluence-page.mjs create --space-key <key> --title <title> --body-file <path> [--parent-id <id>] [--apply --expected-absent true]',
+    '  confluence-page.mjs create --space-key <key> --title <title> --body-file <path> [--parent-id <id>] [--labels label-a,label-b] [--apply --expected-absent true]',
     '  confluence-page.mjs update <page-id> [--title <title>] [--body-file <path>] [--apply --expected-version <number>]',
   ].join('\n');
 }
@@ -71,6 +71,23 @@ function parseMaxResults(value) {
     throw new Error('--max-results muss eine ganze Zahl zwischen 1 und 100 sein.');
   }
   return parsed;
+}
+
+function parseLabels(value) {
+  if (value === undefined) return [];
+  const labels = String(value).split(',').map(label => label.trim());
+  if (labels.length === 0 || labels.some(label => !/^[a-z0-9][a-z0-9-]*$/.test(label))) {
+    throw new Error('--labels muss kommagetrennte globale Labels in Kleinbuchstaben enthalten.');
+  }
+  if (new Set(labels).size !== labels.length) {
+    throw new Error('--labels darf kein Label mehrfach enthalten.');
+  }
+  return labels;
+}
+
+function normalizeLabels(value) {
+  if (Array.isArray(value)) return value.length === 0 ? [] : parseLabels(value.join(','));
+  return parseLabels(value);
 }
 
 function resolveConfiguredPath(value) {
@@ -327,10 +344,30 @@ function createConfluencePageService({ request, configuration }) {
     };
   }
 
-  async function prepareCreate({ spaceKey, title, parentId, bodyStorage }) {
+  async function getLabels(pageId) {
+    const id = requirePositiveInteger(pageId, 'Seiten-ID');
+    const response = await request(configuration, 'GET', `/content/${id}/label`, {
+      query: { limit: 200 },
+    });
+    return (response.results || [])
+      .filter(label => label?.prefix === 'global' && typeof label?.name === 'string')
+      .map(label => label.name);
+  }
+
+  async function addLabels(pageId, labels) {
+    const id = requirePositiveInteger(pageId, 'Seiten-ID');
+    for (const label of labels) {
+      await request(configuration, 'POST', `/content/${id}/label`, {
+        body: { prefix: 'global', name: label },
+      });
+    }
+  }
+
+  async function prepareCreate({ spaceKey, title, parentId, bodyStorage, labels = [] }) {
     if (!String(spaceKey || '').trim()) throw new Error('--space-key darf nicht leer sein.');
     if (!String(title || '').trim()) throw new Error('--title darf nicht leer sein.');
     if (!String(bodyStorage || '').trim()) throw new Error('Seitendatei darf nicht leer sein.');
+    const normalizedLabels = normalizeLabels(labels);
     await request(configuration, 'GET', `/space/${encodeURIComponent(spaceKey)}`);
 
     let parent;
@@ -353,6 +390,7 @@ function createConfluencePageService({ request, configuration }) {
       parentId: parent ? String(parent.id) : undefined,
       parentTitle: parent?.title,
       bodyLength: bodyStorage.length,
+      labels: normalizedLabels,
       expectedAbsent: true,
     };
   }
@@ -361,7 +399,8 @@ function createConfluencePageService({ request, configuration }) {
     if (String(expectedAbsent) !== 'true') {
       throw new Error('--expected-absent true aus dem Preflight fehlt.');
     }
-    const preflight = await prepareCreate(input);
+    const labels = normalizeLabels(input.labels);
+    const preflight = await prepareCreate({ ...input, labels });
     const payload = {
       type: 'page',
       title: input.title,
@@ -379,10 +418,24 @@ function createConfluencePageService({ request, configuration }) {
     const created = await request(configuration, 'POST', '/content', { body: payload });
     const remote = await getPageRaw(created.id);
     const normalized = pageView(remote, { includeBody: true });
+    let labelsVerified = labels.length === 0;
+    if (labels.length > 0) {
+      try {
+        await addLabels(created.id, labels);
+        const remoteLabels = await getLabels(created.id);
+        labelsVerified = labels.every(label => remoteLabels.includes(label));
+        if (!labelsVerified) {
+          throw new Error('Angeforderte Labels fehlen nach dem Read-back.');
+        }
+      } catch {
+        throw new Error(`Seite ${created.id} wurde erstellt, aber Labels konnten nicht gesetzt oder verifiziert werden.`);
+      }
+    }
     const verified = normalized.title === input.title
       && normalized.spaceKey === input.spaceKey
       && normalized.parentId === (input.parentId ? String(input.parentId) : undefined)
-      && storageValuesEqual(normalized.bodyStorage, input.bodyStorage);
+      && storageValuesEqual(normalized.bodyStorage, input.bodyStorage)
+      && labelsVerified;
     if (!verified) throw new Error('Remote-Verifikation der erstellten Seite fehlgeschlagen.');
     return {
       ...preflight,
@@ -461,6 +514,7 @@ function createConfluencePageService({ request, configuration }) {
     applyCreate,
     applyUpdate,
     getChildren,
+    getLabels,
     getPage,
     prepareCreate,
     prepareUpdate,
@@ -504,6 +558,7 @@ async function runCli(args, dependencies = {}) {
       title: options.title,
       parentId: options['parent-id'],
       bodyStorage: await readBodyFile(options['body-file'], readText),
+      labels: parseLabels(options.labels),
     };
     if (!options['body-file']) throw new Error(usage());
     return options.apply
@@ -559,6 +614,7 @@ export {
   normalizeApiBase,
   pageView,
   parseArgs,
+  parseLabels,
   parseMaxResults,
   runCli,
   safeErrorMessage,

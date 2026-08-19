@@ -85,7 +85,10 @@ den neuen Preflight und hole eine neue Freigabe ein.
 ## Harte Grenzen
 
 - Lösche keine Seiten.
-- Ändere weder Anhänge, Kommentare, Labels, Berechtigungen noch Restriktionen.
+- Ändere weder Anhänge, Kommentare, Berechtigungen noch Restriktionen.
+- Labels sind ausschließlich bei der Seitenerstellung über `--labels` erlaubt.
+  Der Preflight zeigt sie an; die Ausführung setzt und verifiziert sie. Ändere
+  keine Labels bestehender Seiten und verwende keine Labels bei Updates.
 - Verschiebe keine bestehende Seite in einen anderen Space oder unter eine
   andere Elternseite.
 - Verwende ausschließlich Confluence Data Center REST API unter `/rest/api`;

@@ -13,9 +13,13 @@ Das Skript verwendet ausschließlich die Confluence Data Center REST API:
 | Titelkonflikt prüfen | `GET /content?spaceKey=...&title=...` |
 | Seite erstellen | `POST /content` |
 | Seite aktualisieren | `PUT /content/{id}` |
+| Globale Labels einer neuen Seite setzen | `POST /content/{id}/label` |
+| Labels einer Seite prüfen | `GET /content/{id}/label` |
 
-Löschen, Verschieben, Anhänge, Kommentare, Labels und Berechtigungen sind
-absichtlich nicht implementiert. `/rest/api/2` ist ein Cloud-Pfad und wird für
+Löschen, Verschieben, Anhänge, Kommentare, Label-Änderungen an bestehenden
+Seiten und Berechtigungen sind absichtlich nicht implementiert. Neue Seiten
+können beim Create mit `--labels label-a,label-b` globale Labels erhalten.
+`/rest/api/2` ist ein Cloud-Pfad und wird für
 die Data-Center-Instanz nicht verwendet.
 
 ## Storage Format
@@ -45,6 +49,9 @@ Ohne `--apply` führen `create` und `update` nur Lesezugriffe aus.
 Bei Erstellung prüft das Skript Space, optionale Elternseite und bestehende
 aktuelle Seiten mit demselben Titel im Space. Die Ausführung verlangt
 `--expected-absent true` und wiederholt die Prüfung unmittelbar vor dem POST.
+Angeforderte Labels werden im Preflight validiert und nach dem POST einzeln
+gesetzt sowie mit `GET /content/{id}/label` verifiziert. Scheitert das Labeln,
+wird die bereits angelegte Seite nicht erneut erstellt.
 
 Bei Aktualisierung liest das Skript Seite, Version und Storage-Inhalt. Die
 Ausführung verlangt die unveränderte `expectedVersion` aus dem Preflight. Ein

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Release-Changelogs"
+  short_description: "CER-Komponenten-Changelogs aus Jira erstellen"
+  default_prompt: "Use $release-changelogs to prepare a CER component release changelog from its release ticket and fix version."

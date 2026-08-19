@@ -4,6 +4,7 @@ import {
   createConfluencePageService,
   normalizeApiBase,
   normalizeStorageForComparison,
+  parseLabels,
   parseMaxResults,
   runCli,
   safeErrorMessage,
@@ -42,6 +43,13 @@ test('begrenzt Listengrößen auf 1 bis 100', () => {
   assert.equal(parseMaxResults(undefined), 20);
   assert.equal(parseMaxResults('100'), 100);
   assert.throws(() => parseMaxResults('101'), /zwischen 1 und 100/);
+});
+
+test('validiert optionale globale Labels für neue Seiten', () => {
+  assert.deepEqual(parseLabels(undefined), []);
+  assert.deepEqual(parseLabels('release-protokoll,archiv'), ['release-protokoll', 'archiv']);
+  assert.throws(() => parseLabels('Release-Protokoll'), /Kleinbuchstaben/);
+  assert.throws(() => parseLabels('release-protokoll,release-protokoll'), /mehrfach/);
 });
 
 test('liest Seiten normalisiert und Inhalt nur auf Wunsch', async () => {
@@ -167,6 +175,109 @@ test('Create blockiert weiterhin inhaltlich abweichenden Serverstand', async () 
       bodyStorage: '<p>Erwarteter Inhalt</p>\n',
     }, 'true'),
     /Remote-Verifikation/,
+  );
+});
+
+test('Create setzt angeforderte Labels und verifiziert sie', async () => {
+  const requests = [];
+  let reads = 0;
+  const service = createConfluencePageService({
+    configuration: {},
+    request: async (configuration, method, path, options = {}) => {
+      requests.push({ method, path, options });
+      if (path.startsWith('/space/')) return { key: 'CER' };
+      if (path === '/content' && method === 'GET') return { results: [] };
+      if (path === '/content' && method === 'POST') return { id: '21074849' };
+      if (path === '/content/21074849/label' && method === 'POST') return {};
+      if (path === '/content/21074849/label' && method === 'GET') {
+        return { results: [{ prefix: 'global', name: 'release-protokoll' }] };
+      }
+      reads += 1;
+      return reads === 1
+        ? page()
+        : page({
+          id: '21074849',
+          title: 'Neue Seite',
+          ancestors: [{ id: '21074848', title: 'Ceroma Home' }],
+          body: { storage: { value: '<p>Neu</p>' } },
+        });
+    },
+  });
+
+  const result = await service.applyCreate({
+    spaceKey: 'CER',
+    title: 'Neue Seite',
+    parentId: '21074848',
+    bodyStorage: '<p>Neu</p>',
+    labels: ['release-protokoll'],
+  }, 'true');
+
+  assert.equal(result.verified, true);
+  assert.deepEqual(result.labels, ['release-protokoll']);
+  assert.equal(requests.filter(request => request.path.endsWith('/label') && request.method === 'POST').length, 1);
+  assert.deepEqual(requests.find(request => request.path.endsWith('/label') && request.method === 'POST').options.body, {
+    prefix: 'global',
+    name: 'release-protokoll',
+  });
+});
+
+test('Create meldet eine bereits angelegte Seite, wenn das Labeln fehlschlägt', async () => {
+  let contentPosts = 0;
+  const service = createConfluencePageService({
+    configuration: {},
+    request: async (configuration, method, path) => {
+      if (path.startsWith('/space/')) return { key: 'CER' };
+      if (path === '/content' && method === 'GET') return { results: [] };
+      if (path === '/content' && method === 'POST') {
+        contentPosts += 1;
+        return { id: '21074849' };
+      }
+      if (path === '/content/21074849/label') throw new Error('HTTP 500');
+      return page({
+        id: '21074849',
+        title: 'Neue Seite',
+        body: { storage: { value: '<p>Neu</p>' } },
+      });
+    },
+  });
+
+  await assert.rejects(
+    service.applyCreate({
+      spaceKey: 'CER',
+      title: 'Neue Seite',
+      bodyStorage: '<p>Neu</p>',
+      labels: ['release-protokoll'],
+    }, 'true'),
+    /wurde erstellt, aber Labels/,
+  );
+  assert.equal(contentPosts, 1);
+});
+
+test('Create meldet eine bereits angelegte Seite bei fehlendem Read-back-Label', async () => {
+  const service = createConfluencePageService({
+    configuration: {},
+    request: async (configuration, method, path) => {
+      if (path.startsWith('/space/')) return { key: 'CER' };
+      if (path === '/content' && method === 'GET') return { results: [] };
+      if (path === '/content' && method === 'POST') return { id: '21074849' };
+      if (path === '/content/21074849/label' && method === 'POST') return {};
+      if (path === '/content/21074849/label' && method === 'GET') return { results: [] };
+      return page({
+        id: '21074849',
+        title: 'Neue Seite',
+        body: { storage: { value: '<p>Neu</p>' } },
+      });
+    },
+  });
+
+  await assert.rejects(
+    service.applyCreate({
+      spaceKey: 'CER',
+      title: 'Neue Seite',
+      bodyStorage: '<p>Neu</p>',
+      labels: ['release-protokoll'],
+    }, 'true'),
+    /wurde erstellt, aber Labels/,
   );
 });
 

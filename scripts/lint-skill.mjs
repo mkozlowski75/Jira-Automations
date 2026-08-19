@@ -251,6 +251,62 @@ for (const match of ruleDocumentationSkill.matchAll(/\]\(([^)]+)\)/g)) {
   if (!existsSync(path)) errors.push(`Fehlender Link in ${ruleDocumentationSkillPath}: ${target}`);
 }
 
+const releaseChangelogSkillRoot = join(__dir, '..', '.github', 'skills', 'release-changelogs');
+const releaseChangelogSkillPath = join(releaseChangelogSkillRoot, 'SKILL.md');
+const releaseChangelogReferencePath = join(releaseChangelogSkillRoot, 'references', 'content-format.md');
+const releaseChangelogAgentPath = join(releaseChangelogSkillRoot, 'agents', 'openai.yaml');
+const releaseChangelogSkill = readFileSync(releaseChangelogSkillPath, 'utf8');
+const releaseChangelogReference = readFileSync(releaseChangelogReferencePath, 'utf8');
+const releaseChangelogAgent = readFileSync(releaseChangelogAgentPath, 'utf8');
+const releaseChangelogFrontmatter = /^---\r?\n([\s\S]*?)\r?\n---\r?\n/.exec(releaseChangelogSkill);
+
+if (!releaseChangelogFrontmatter) {
+  errors.push('release-changelogs/SKILL.md besitzt kein gültiges YAML-Frontmatter.');
+} else {
+  const fields = [...releaseChangelogFrontmatter[1].matchAll(/^([a-zA-Z][\w-]*):\s*(.+)$/gm)]
+    .map(match => ({ name: match[1], value: match[2].trim() }));
+  if (fields.map(field => field.name).join(',') !== 'name,description') {
+    errors.push('release-changelogs-Frontmatter muss genau name und description enthalten.');
+  }
+  if (fields.find(field => field.name === 'name')?.value !== 'release-changelogs') {
+    errors.push('release-changelogs-Frontmatter-name muss release-changelogs sein.');
+  }
+}
+
+for (const [label, content] of [
+  ['release-changelogs/SKILL.md', releaseChangelogSkill],
+  ['release-changelogs/references/content-format.md', releaseChangelogReference],
+  ['release-changelogs/agents/openai.yaml', releaseChangelogAgent],
+]) {
+  if (content.includes('TODO')) errors.push(`${label} enthält noch TODO-Platzhalter.`);
+}
+
+for (const requiredText of [
+  '106044496',
+  'release-protokoll',
+  'npm run confluence-page',
+  'expectedAbsent',
+  'Release Summary',
+]) {
+  if (!releaseChangelogSkill.includes(requiredText)) {
+    errors.push(`release-changelogs/SKILL.md dokumentiert "${requiredText}" nicht.`);
+  }
+}
+
+if (!releaseChangelogAgent.includes('$release-changelogs')) {
+  errors.push('release-changelogs/agents/openai.yaml muss $release-changelogs im default_prompt nennen.');
+}
+
+for (const markdownPath of [releaseChangelogSkillPath, releaseChangelogReferencePath]) {
+  const markdown = readFileSync(markdownPath, 'utf8');
+  for (const match of markdown.matchAll(/\]\(([^)]+)\)/g)) {
+    const target = match[1];
+    if (/^(https?:|#)/.test(target)) continue;
+    const path = resolve(dirname(markdownPath), target);
+    if (!existsSync(path)) errors.push(`Fehlender Link in ${markdownPath}: ${target}`);
+  }
+}
+
 const gitlabSkill = readFileSync(gitlabSkillPath, 'utf8');
 const gitlabReference = readFileSync(gitlabReferencePath, 'utf8');
 const gitlabAgent = readFileSync(gitlabAgentPath, 'utf8');

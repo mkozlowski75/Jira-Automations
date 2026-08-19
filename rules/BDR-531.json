@@ -9,9 +9,9 @@
   "authorAccountId": "JIRAUSER15085",
   "actorAccountId": "JIRAUSER23851",
   "created": 1730745278593,
-  "updated": 1787155294047,
+  "updated": 1787155448246,
   "trigger": {
-    "id": "144255",
+    "id": "144262",
     "component": "TRIGGER",
     "schemaVersion": 1,
     "type": "jira.issue.event.trigger:transitioned",
@@ -37,7 +37,7 @@
   },
   "components": [
     {
-      "id": "144256",
+      "id": "144263",
       "component": "CONDITION",
       "schemaVersion": 3,
       "type": "jira.issue.condition",
@@ -58,7 +58,7 @@
       "conditions": []
     },
     {
-      "id": "144257",
+      "id": "144264",
       "component": "CONDITION",
       "schemaVersion": 3,
       "type": "jira.issue.condition",
@@ -79,7 +79,7 @@
       "conditions": []
     },
     {
-      "id": "144258",
+      "id": "144265",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -100,7 +100,16 @@
       "conditions": []
     },
     {
-      "id": "144259",
+      "id": "144266",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "codebarrel.action.log",
+      "value": "Changelog-Benachrichtigung wird versendet: Komponente={{componentName}} | Ticket={{issue.key}} | Summary={{issue.summary}}",
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "144267",
       "component": "ACTION",
       "schemaVersion": 3,
       "type": "jira.issue.outgoing.email",
@@ -125,7 +134,7 @@
       "conditions": []
     },
     {
-      "id": "144260",
+      "id": "144268",
       "component": "CONDITION",
       "schemaVersion": 3,
       "type": "jira.issue.condition",
@@ -146,7 +155,16 @@
       "conditions": []
     },
     {
-      "id": "144261",
+      "id": "144269",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "codebarrel.action.log",
+      "value": "Sprint-Review-Benachrichtigung wird versendet: Komponente=CeromaCore | Ticket={{issue.key}} | Summary={{issue.summary}}",
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "144270",
       "component": "ACTION",
       "schemaVersion": 3,
       "type": "jira.issue.outgoing.email",

@@ -1,0 +1,44 @@
+{
+  "id": 1079,
+  "clientKey": "com.codebarrel.tenant.global",
+  "name": "Jira: Create Release Ticket From Issue",
+  "state": "ENABLED",
+  "canOtherRuleTrigger": false,
+  "notifyOnError": "FIRSTERROR",
+  "authorAccountId": "JIRAUSER15085",
+  "actorAccountId": "JIRAUSER15085",
+  "created": 1787232621001,
+  "updated": 1787232621001,
+  "trigger": {
+    "id": "144286",
+    "component": "TRIGGER",
+    "schemaVersion": 1,
+    "type": "jira.manual.trigger.issue",
+    "value": {
+      "groups": [
+        "prj-cer-pa"
+      ]
+    },
+    "children": [],
+    "conditions": []
+  },
+  "components": [
+    {
+      "id": "144287",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "codebarrel.action.log",
+      "value": "Test",
+      "children": [],
+      "conditions": []
+    }
+  ],
+  "projects": [
+    {
+      "projectId": "11215",
+      "projectTypeKey": "software"
+    }
+  ],
+  "labels": [],
+  "tags": []
+}

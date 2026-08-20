@@ -119,7 +119,7 @@ test('Regel 1079 validiert Ticketdaten und übergibt sie an den Release-Worker',
   assert.ok(comparators.some(component => component.value.operator === 'REGEX_MATCHES'));
   assert.ok(comparators.some(component => component.value.operator === 'REGEX_NOT_MATCHES'));
   assert.ok(comparators.every(component => component.value.second.includes('Benutzerhandbuch')));
-  assert.equal(worker.components.find(component => component.value?.name?.value === 'releaseComponent')?.value?.query?.value, '{{component}}');
+  assert.equal(worker.components.some(component => component.value?.name?.value === 'releaseComponent'), false);
   assert.equal(JSON.stringify(worker).includes('CeromaManual'), false);
   assert.equal(JSON.stringify(rule).toLowerCase().includes('product'), false);
   assert.equal(JSON.stringify(worker).toLowerCase().includes('product'), false);

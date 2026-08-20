@@ -18,6 +18,10 @@ const GUARDED_TOP_LEVEL_FIELDS = Object.freeze([
 
 const SENSITIVE_KEY_PATTERN = /(authorization|password|passphrase|secret|token|webhooktoken|api[-_ ]?key|credential)/i;
 
+function isAutomationHookUrl(value) {
+  return /\/cb-automation\/latest\/hooks\//.test(String(value || ''));
+}
+
 function isPlainObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
@@ -219,7 +223,9 @@ export function redactSensitive(value) {
 
   const result = {};
   for (const [key, child] of Object.entries(value)) {
-    result[key] = keyIsSensitive(key, value) ? '[REDACTED]' : redactSensitive(child);
+    result[key] = keyIsSensitive(key, value) || (key === 'url' && isAutomationHookUrl(child))
+      ? '[REDACTED]'
+      : redactSensitive(child);
   }
   return result;
 }
@@ -234,6 +240,16 @@ function collectChanges(before, after, path = '', parentBefore = null, parentAft
       before: '[REDACTED]',
       after: '[REDACTED]',
       sensitive: true,
+    });
+    return changes;
+  }
+
+  if (key === 'url' && (isAutomationHookUrl(before) || isAutomationHookUrl(after))) {
+    changes.push({
+      path: path || '/',
+      before: '[REDACTED]',
+      after: '[REDACTED]',
+      sensitive: false,
     });
     return changes;
   }

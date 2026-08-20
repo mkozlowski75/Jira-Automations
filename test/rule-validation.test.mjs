@@ -92,9 +92,30 @@ test('validiert alle produktiven Exporte ohne Fehler oder Warnungen', () => {
 
   const result = validateRuleSet(entries);
 
-  assert.equal(entries.length, 29);
+  assert.equal(entries.length, 30);
   assert.deepEqual(result.errors, []);
   assert.deepEqual(result.warnings, []);
+});
+
+test('Regel 1079 validiert Ticketdaten und übergibt sie an den Release-Worker', () => {
+  const rule = JSON.parse(readFileSync(join(rulesDir, 'BDR-1079.json'), 'utf8'));
+  const variables = rule.components.filter(component => component.type === 'jira.create.variable');
+  const variableQuery = name => variables.find(component => component.value?.name?.value === name)?.value?.query?.value;
+  const containers = rule.components.filter(component => component.type === 'jira.condition.container.block');
+  const allComponents = containers.flatMap(container => [container, ...container.children, ...container.children.flatMap(block => [...block.children, ...block.conditions])]);
+  const webhook = allComponents.find(component => component.type === 'jira.issue.outgoing.webhook');
+  const comparators = allComponents.filter(component => component.type === 'jira.comparator.condition');
+
+  assert.deepEqual(rule.trigger.value.groups, ['prj-cer-pa']);
+  assert.equal(variableQuery('product'), '{{issue.components.last.name.replaceAll("Benutzerhandbuch", "CeromaManual")}}');
+  assert.equal(variableQuery('releaseVersion'), '{{issue.fixVersions.last.name}}');
+  assert.equal(variableQuery('workerFixVersion'), '{{issue.fixVersions.last.name}}');
+  assert.equal(variableQuery('workerSprintId'), '{{issue.sprint.last.id}}');
+  assert.equal(webhook.value.method, 'POST');
+  assert.match(webhook.value.customBody, /"product": "\{\{product\}\}"/);
+  assert.match(webhook.value.customBody, /"sourceIssueKey": "\{\{issue\.key\}\}"/);
+  assert.ok(comparators.some(component => component.value.operator === 'REGEX_MATCHES'));
+  assert.ok(comparators.some(component => component.value.operator === 'REGEX_NOT_MATCHES'));
 });
 
 test('stellt eine eindeutige und vollständige Befehlsoberfläche bereit', () => {
@@ -334,6 +355,16 @@ test('redigiert Secret-Werte in Objekten und Diffs', () => {
     before: '[REDACTED]',
     after: '[REDACTED]',
     sensitive: true,
+  }]);
+
+  const hookBefore = { url: 'https://partner.example/jira/rest/cb-automation/latest/hooks/before-token' };
+  const hookAfter = { url: 'https://partner.example/jira/rest/cb-automation/latest/hooks/after-token' };
+  assert.equal(redactSensitive(hookAfter).url, '[REDACTED]');
+  assert.deepEqual(diffRules(hookBefore, hookAfter), [{
+    path: '/url',
+    before: '[REDACTED]',
+    after: '[REDACTED]',
+    sensitive: false,
   }]);
 });
 

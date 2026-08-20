@@ -8,9 +8,9 @@
   "authorAccountId": "JIRAUSER15085",
   "actorAccountId": "JIRAUSER15085",
   "created": 1787232621001,
-  "updated": 1787232621001,
+  "updated": 1787241371906,
   "trigger": {
-    "id": "144286",
+    "id": "144288",
     "component": "TRIGGER",
     "schemaVersion": 1,
     "type": "jira.manual.trigger.issue",
@@ -24,12 +24,200 @@
   },
   "components": [
     {
-      "id": "144287",
+      "id": "144289",
       "component": "ACTION",
       "schemaVersion": 1,
-      "type": "codebarrel.action.log",
-      "value": "Test",
+      "type": "jira.create.variable",
+      "value": {
+        "id": "_customsmartvalue_id_release_request_product",
+        "name": {
+          "type": "FREE",
+          "value": "product"
+        },
+        "type": "SMART",
+        "query": {
+          "type": "SMART",
+          "value": "{{issue.components.last.name.replaceAll(\"Benutzerhandbuch\", \"CeromaManual\")}}"
+        },
+        "lazy": false
+      },
       "children": [],
+      "conditions": []
+    },
+    {
+      "id": "144290",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "jira.create.variable",
+      "value": {
+        "id": "_customsmartvalue_id_release_request_fix_version",
+        "name": {
+          "type": "FREE",
+          "value": "workerFixVersion"
+        },
+        "type": "SMART",
+        "query": {
+          "type": "SMART",
+          "value": "{{issue.fixVersions.last.name}}"
+        },
+        "lazy": false
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "144291",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "jira.create.variable",
+      "value": {
+        "id": "_customsmartvalue_id_release_request_sprint",
+        "name": {
+          "type": "FREE",
+          "value": "workerSprintId"
+        },
+        "type": "SMART",
+        "query": {
+          "type": "SMART",
+          "value": "{{issue.sprint.last.id}}"
+        },
+        "lazy": false
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "144292",
+      "component": "ACTION",
+      "schemaVersion": 1,
+      "type": "jira.create.variable",
+      "value": {
+        "id": "_customsmartvalue_id_release_request_version",
+        "name": {
+          "type": "FREE",
+          "value": "releaseVersion"
+        },
+        "type": "SMART",
+        "query": {
+          "type": "SMART",
+          "value": "{{issue.fixVersions.last.name}}"
+        },
+        "lazy": false
+      },
+      "children": [],
+      "conditions": []
+    },
+    {
+      "id": "144293",
+      "component": "CONDITION",
+      "schemaVersion": 1,
+      "type": "jira.condition.container.block",
+      "children": [
+        {
+          "id": "144294",
+          "component": "CONDITION_BLOCK",
+          "parentId": "144293",
+          "schemaVersion": 1,
+          "type": "jira.condition.if.block",
+          "value": {
+            "conditionMatchType": "ALL"
+          },
+          "children": [
+            {
+              "id": "144296",
+              "component": "ACTION",
+              "parentId": "144294",
+              "schemaVersion": 1,
+              "type": "codebarrel.action.log",
+              "value": "Release-Auftrag an Worker 875: Produkt={{product}} | Release-Version={{releaseVersion}} | Fix-Version={{workerFixVersion}} | Sprint-ID={{workerSprintId}} | Quell-Ticket={{issue.key}}",
+              "children": [],
+              "conditions": []
+            },
+            {
+              "id": "144297",
+              "component": "ACTION",
+              "parentId": "144294",
+              "schemaVersion": 2,
+              "type": "jira.issue.outgoing.webhook",
+              "value": {
+                "url": "https://partner.bdr.de/jira/rest/cb-automation/latest/hooks/d4d44fdd080e726948539f84d543b3336ef42ba4",
+                "headers": [],
+                "sendIssue": false,
+                "contentType": "custom",
+                "customBody": "{\n  \"product\": \"{{product}}\",\n  \"releaseVersion\": \"{{releaseVersion}}\",\n  \"sprintId\": \"{{workerSprintId}}\",\n  \"fixVersion\": \"{{workerFixVersion}}\",\n  \"origin\": \"manual-rule-1079\",\n  \"sourceIssueKey\": \"{{issue.key}}\"\n}",
+                "method": "POST",
+                "responseEnabled": true,
+                "usedSecretsKeys": []
+              },
+              "children": [],
+              "conditions": []
+            }
+          ],
+          "conditions": [
+            {
+              "id": "144295",
+              "component": "CONDITION",
+              "conditionParentId": "144294",
+              "schemaVersion": 1,
+              "type": "jira.comparator.condition",
+              "value": {
+                "first": "{{product}}|{{releaseVersion}}|{{workerSprintId}}",
+                "second": "^(CeromaCore|CeromaManual|Mediator|PostIdentService)\\|[^|]+\\|[0-9]+$",
+                "operator": "REGEX_MATCHES"
+              },
+              "children": [],
+              "conditions": []
+            }
+          ]
+        }
+      ],
+      "conditions": []
+    },
+    {
+      "id": "144298",
+      "component": "CONDITION",
+      "schemaVersion": 1,
+      "type": "jira.condition.container.block",
+      "children": [
+        {
+          "id": "144299",
+          "component": "CONDITION_BLOCK",
+          "parentId": "144298",
+          "schemaVersion": 1,
+          "type": "jira.condition.if.block",
+          "value": {
+            "conditionMatchType": "ALL"
+          },
+          "children": [
+            {
+              "id": "144301",
+              "component": "ACTION",
+              "parentId": "144299",
+              "schemaVersion": 1,
+              "type": "codebarrel.action.log",
+              "value": "Release-Auftrag nicht an Worker 875 gesendet: Produkt muss CeromaCore, Benutzerhandbuch, Mediator oder PostIdentService sein; Fix-Version und Sprint-ID müssen vorhanden sein. Ermittelt: Produkt={{product}} | Release-Version={{releaseVersion}} | Sprint-ID={{workerSprintId}} | Quell-Ticket={{issue.key}}",
+              "children": [],
+              "conditions": []
+            }
+          ],
+          "conditions": [
+            {
+              "id": "144300",
+              "component": "CONDITION",
+              "conditionParentId": "144299",
+              "schemaVersion": 1,
+              "type": "jira.comparator.condition",
+              "value": {
+                "first": "{{product}}|{{releaseVersion}}|{{workerSprintId}}",
+                "second": "^(CeromaCore|CeromaManual|Mediator|PostIdentService)\\|[^|]+\\|[0-9]+$",
+                "operator": "REGEX_NOT_MATCHES"
+              },
+              "children": [],
+              "conditions": []
+            }
+          ]
+        }
+      ],
       "conditions": []
     }
   ],

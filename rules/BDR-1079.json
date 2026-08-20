@@ -3,14 +3,15 @@
   "clientKey": "com.codebarrel.tenant.global",
   "name": "Jira: Create Release Ticket From Issue",
   "state": "ENABLED",
+  "description": "Erstellt auf Anforderung aus einem CER-Ticket ein Release-Ticket. Die Regel liest die letzte Komponente, Fix-Version und Sprint-ID des aktuellen Tickets, prüft die Werte und übergibt sie an den Release-Ticket-Worker. Bei fehlenden oder nicht unterstützten Daten wird kein Release-Auftrag gesendet.",
   "canOtherRuleTrigger": false,
   "notifyOnError": "FIRSTERROR",
   "authorAccountId": "JIRAUSER15085",
   "actorAccountId": "JIRAUSER15085",
   "created": 1787232621001,
-  "updated": 1787241371906,
+  "updated": 1787242457639,
   "trigger": {
-    "id": "144288",
+    "id": "144366",
     "component": "TRIGGER",
     "schemaVersion": 1,
     "type": "jira.manual.trigger.issue",
@@ -24,7 +25,7 @@
   },
   "components": [
     {
-      "id": "144289",
+      "id": "144367",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -37,7 +38,7 @@
         "type": "SMART",
         "query": {
           "type": "SMART",
-          "value": "{{issue.components.last.name.replaceAll(\"Benutzerhandbuch\", \"CeromaManual\")}}"
+          "value": "{{issue.components.last.name}}"
         },
         "lazy": false
       },
@@ -45,7 +46,7 @@
       "conditions": []
     },
     {
-      "id": "144290",
+      "id": "144368",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -66,7 +67,7 @@
       "conditions": []
     },
     {
-      "id": "144291",
+      "id": "144369",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -87,7 +88,7 @@
       "conditions": []
     },
     {
-      "id": "144292",
+      "id": "144370",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -108,15 +109,15 @@
       "conditions": []
     },
     {
-      "id": "144293",
+      "id": "144371",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.condition.container.block",
       "children": [
         {
-          "id": "144294",
+          "id": "144372",
           "component": "CONDITION_BLOCK",
-          "parentId": "144293",
+          "parentId": "144371",
           "schemaVersion": 1,
           "type": "jira.condition.if.block",
           "value": {
@@ -124,9 +125,9 @@
           },
           "children": [
             {
-              "id": "144296",
+              "id": "144374",
               "component": "ACTION",
-              "parentId": "144294",
+              "parentId": "144372",
               "schemaVersion": 1,
               "type": "codebarrel.action.log",
               "value": "Release-Auftrag an Worker 875: Produkt={{product}} | Release-Version={{releaseVersion}} | Fix-Version={{workerFixVersion}} | Sprint-ID={{workerSprintId}} | Quell-Ticket={{issue.key}}",
@@ -134,9 +135,9 @@
               "conditions": []
             },
             {
-              "id": "144297",
+              "id": "144375",
               "component": "ACTION",
-              "parentId": "144294",
+              "parentId": "144372",
               "schemaVersion": 2,
               "type": "jira.issue.outgoing.webhook",
               "value": {
@@ -155,14 +156,14 @@
           ],
           "conditions": [
             {
-              "id": "144295",
+              "id": "144373",
               "component": "CONDITION",
-              "conditionParentId": "144294",
+              "conditionParentId": "144372",
               "schemaVersion": 1,
               "type": "jira.comparator.condition",
               "value": {
                 "first": "{{product}}|{{releaseVersion}}|{{workerSprintId}}",
-                "second": "^(CeromaCore|CeromaManual|Mediator|PostIdentService)\\|[^|]+\\|[0-9]+$",
+                "second": "^(CeromaCore|Benutzerhandbuch|Mediator|PostIdentService)\\|[^|]+\\|[0-9]+$",
                 "operator": "REGEX_MATCHES"
               },
               "children": [],
@@ -174,15 +175,15 @@
       "conditions": []
     },
     {
-      "id": "144298",
+      "id": "144376",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.condition.container.block",
       "children": [
         {
-          "id": "144299",
+          "id": "144377",
           "component": "CONDITION_BLOCK",
-          "parentId": "144298",
+          "parentId": "144376",
           "schemaVersion": 1,
           "type": "jira.condition.if.block",
           "value": {
@@ -190,9 +191,9 @@
           },
           "children": [
             {
-              "id": "144301",
+              "id": "144379",
               "component": "ACTION",
-              "parentId": "144299",
+              "parentId": "144377",
               "schemaVersion": 1,
               "type": "codebarrel.action.log",
               "value": "Release-Auftrag nicht an Worker 875 gesendet: Produkt muss CeromaCore, Benutzerhandbuch, Mediator oder PostIdentService sein; Fix-Version und Sprint-ID müssen vorhanden sein. Ermittelt: Produkt={{product}} | Release-Version={{releaseVersion}} | Sprint-ID={{workerSprintId}} | Quell-Ticket={{issue.key}}",
@@ -202,14 +203,14 @@
           ],
           "conditions": [
             {
-              "id": "144300",
+              "id": "144378",
               "component": "CONDITION",
-              "conditionParentId": "144299",
+              "conditionParentId": "144377",
               "schemaVersion": 1,
               "type": "jira.comparator.condition",
               "value": {
                 "first": "{{product}}|{{releaseVersion}}|{{workerSprintId}}",
-                "second": "^(CeromaCore|CeromaManual|Mediator|PostIdentService)\\|[^|]+\\|[0-9]+$",
+                "second": "^(CeromaCore|Benutzerhandbuch|Mediator|PostIdentService)\\|[^|]+\\|[0-9]+$",
                 "operator": "REGEX_NOT_MATCHES"
               },
               "children": [],

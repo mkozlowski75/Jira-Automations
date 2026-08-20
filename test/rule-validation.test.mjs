@@ -99,6 +99,7 @@ test('validiert alle produktiven Exporte ohne Fehler oder Warnungen', () => {
 
 test('Regel 1079 validiert Ticketdaten und übergibt sie an den Release-Worker', () => {
   const rule = JSON.parse(readFileSync(join(rulesDir, 'BDR-1079.json'), 'utf8'));
+  const worker = JSON.parse(readFileSync(join(rulesDir, 'BDR-875.json'), 'utf8'));
   const variables = rule.components.filter(component => component.type === 'jira.create.variable');
   const variableQuery = name => variables.find(component => component.value?.name?.value === name)?.value?.query?.value;
   const containers = rule.components.filter(component => component.type === 'jira.condition.container.block');
@@ -107,7 +108,8 @@ test('Regel 1079 validiert Ticketdaten und übergibt sie an den Release-Worker',
   const comparators = allComponents.filter(component => component.type === 'jira.comparator.condition');
 
   assert.deepEqual(rule.trigger.value.groups, ['prj-cer-pa']);
-  assert.equal(variableQuery('product'), '{{issue.components.last.name.replaceAll("Benutzerhandbuch", "CeromaManual")}}');
+  assert.match(rule.description, /letzte Komponente, Fix-Version und Sprint-ID/);
+  assert.equal(variableQuery('product'), '{{issue.components.last.name}}');
   assert.equal(variableQuery('releaseVersion'), '{{issue.fixVersions.last.name}}');
   assert.equal(variableQuery('workerFixVersion'), '{{issue.fixVersions.last.name}}');
   assert.equal(variableQuery('workerSprintId'), '{{issue.sprint.last.id}}');
@@ -116,6 +118,9 @@ test('Regel 1079 validiert Ticketdaten und übergibt sie an den Release-Worker',
   assert.match(webhook.value.customBody, /"sourceIssueKey": "\{\{issue\.key\}\}"/);
   assert.ok(comparators.some(component => component.value.operator === 'REGEX_MATCHES'));
   assert.ok(comparators.some(component => component.value.operator === 'REGEX_NOT_MATCHES'));
+  assert.ok(comparators.every(component => component.value.second.includes('Benutzerhandbuch')));
+  assert.equal(worker.components.find(component => component.value?.name?.value === 'releaseComponent')?.value?.query?.value, '{{product}}');
+  assert.equal(JSON.stringify(worker).includes('CeromaManual'), false);
 });
 
 test('stellt eine eindeutige und vollständige Befehlsoberfläche bereit', () => {

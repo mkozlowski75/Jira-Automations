@@ -109,18 +109,20 @@ test('Regel 1079 validiert Ticketdaten und übergibt sie an den Release-Worker',
 
   assert.deepEqual(rule.trigger.value.groups, ['prj-cer-pa']);
   assert.match(rule.description, /letzte Komponente, Fix-Version und Sprint-ID/);
-  assert.equal(variableQuery('product'), '{{issue.components.last.name}}');
+  assert.equal(variableQuery('component'), '{{issue.components.last.name}}');
   assert.equal(variableQuery('releaseVersion'), '{{issue.fixVersions.last.name}}');
   assert.equal(variableQuery('workerFixVersion'), '{{issue.fixVersions.last.name}}');
   assert.equal(variableQuery('workerSprintId'), '{{issue.sprint.last.id}}');
   assert.equal(webhook.value.method, 'POST');
-  assert.match(webhook.value.customBody, /"product": "\{\{product\}\}"/);
+  assert.match(webhook.value.customBody, /"component": "\{\{component\}\}"/);
   assert.match(webhook.value.customBody, /"sourceIssueKey": "\{\{issue\.key\}\}"/);
   assert.ok(comparators.some(component => component.value.operator === 'REGEX_MATCHES'));
   assert.ok(comparators.some(component => component.value.operator === 'REGEX_NOT_MATCHES'));
   assert.ok(comparators.every(component => component.value.second.includes('Benutzerhandbuch')));
-  assert.equal(worker.components.find(component => component.value?.name?.value === 'releaseComponent')?.value?.query?.value, '{{product}}');
+  assert.equal(worker.components.find(component => component.value?.name?.value === 'releaseComponent')?.value?.query?.value, '{{component}}');
   assert.equal(JSON.stringify(worker).includes('CeromaManual'), false);
+  assert.equal(JSON.stringify(rule).toLowerCase().includes('product'), false);
+  assert.equal(JSON.stringify(worker).toLowerCase().includes('product'), false);
 });
 
 test('stellt eine eindeutige und vollständige Befehlsoberfläche bereit', () => {

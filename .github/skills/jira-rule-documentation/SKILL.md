@@ -35,16 +35,20 @@ Validierung und Schreibschutz; dieser Skill ersetzt sie nicht.
    ab. Bei Updates erhalte alle bestehenden Makros, Links und Inhalte außerhalb
    der beauftragten Änderung unverändert.
 8. Führe für jede Erstellung oder Aktualisierung zuerst den Confluence-Preflight
-   ohne `--apply` aus. Zeige Operation, Titel, Elternseite, Versionen oder
-   `expectedAbsent` sowie nur die Inhaltslängen. Nutze beim Update den vom
-   Preflight gelieferten Schutzwert `--expected-version`.
+   ohne `--apply` aus. Bei einer neuen Regel-Dokumentation übergib immer
+   `--labels jira-automatisierungsregel`; zeige auch dieses Label neben
+   Operation, Titel, Elternseite, Versionen oder `expectedAbsent` sowie nur den
+   Inhaltslängen. Nutze beim Update den vom Preflight gelieferten Schutzwert
+   `--expected-version` und übergib dabei keine Labels.
 9. Verwende `--apply` erst nach ausdrücklicher Freigabe des konkret angezeigten
    Preflights in der aktuellen Unterhaltung. Prüfe danach die Seite erneut
    lesend auf Titel, Elternseite, Version und Inhalt.
 
 ## Dokumentationsregeln
 
-- Bei neuen Seiten: Übernimm den aktuellen Jira-Regelnamen als Seitentitel.
+- Bei neuen Seiten: Übernimm den aktuellen Jira-Regelnamen als Seitentitel und
+  setze das globale Confluence-Label `jira-automatisierungsregel` über
+  `--labels jira-automatisierungsregel`.
 - Bei vorhandenen Seiten: Aktualisiere den Titel und den Namen im Überblick,
   wenn sie vom aktuellen Jira-Export abweichen.
 - Beschreibe tatsächliches Verhalten, nicht nur den Regel- oder Ticketnamen.
@@ -65,7 +69,9 @@ Validierung und Schreibschutz; dieser Skill ersetzt sie nicht.
 ## Grenzen
 
 - Keine Regel nach Jira pushen, um Dokumentation zu erzeugen oder zu testen.
-- Keine Seiten löschen, verschieben, Berechtigungen, Labels, Anhänge oder
-  Kommentare ändern.
+- Keine Seiten löschen, verschieben, Berechtigungen, Labels bestehender Seiten,
+  Anhänge oder Kommentare ändern. Das Label
+  `jira-automatisierungsregel` ist ausschließlich bei der Erstellung neuer
+  Regel-Dokumentationen erlaubt.
 - Bei Import aus Jira ohne fachlichen Diff darf die Confluence-Seite unverändert
   bleiben. Berichte diese Deckungsgleichheit.

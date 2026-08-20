@@ -381,6 +381,22 @@ test('redigiert Secret-Werte in Objekten und Diffs', () => {
     after: '[REDACTED]',
     sensitive: false,
   }]);
+
+  assert.deepEqual(diffRules({}, { usedSecretsKeys: [] }), [{
+    path: '/usedSecretsKeys',
+    before: undefined,
+    after: [],
+    sensitive: false,
+  }]);
+  assert.deepEqual(diffRules(
+    { usedSecretsKeys: ['existing-secret'] },
+    { usedSecretsKeys: [] },
+  ), [{
+    path: '/usedSecretsKeys',
+    before: '[REDACTED]',
+    after: '[REDACTED]',
+    sensitive: true,
+  }]);
 });
 
 test('ermittelt Component-IDs repositoryweit statt pro Regel', () => {

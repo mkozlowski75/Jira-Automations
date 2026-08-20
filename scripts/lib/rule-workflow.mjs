@@ -211,7 +211,7 @@ export function synchronizeVerifiedRule(localRule, remoteRule) {
 
 function keyIsSensitive(key, parent) {
   if (key === 'secret' && typeof parent?.[key] === 'boolean') return false;
-  if (key === 'usedSecretsKeys') return true;
+  if (key === 'usedSecretsKeys') return Array.isArray(parent?.[key]) && parent[key].length > 0;
   if (SENSITIVE_KEY_PATTERN.test(key)) return true;
   if (key === 'value' && SENSITIVE_KEY_PATTERN.test(String(parent?.name || ''))) return true;
   return key === 'keyOrValue' && parent?.secret === true;

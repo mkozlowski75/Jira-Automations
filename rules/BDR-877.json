@@ -3,15 +3,15 @@
   "clientKey": "com.codebarrel.tenant.global",
   "name": "Jira: Create Release Tickets after Sprint Start",
   "state": "ENABLED",
-  "description": "CER-7537: Creates release tickets for CeromaCore, Ceroma manual and (if required) Mediator and PostIdentService.\n\nSends a confirmation E-Mail.\n\n- For CeromaCore and Ceroma manual the release version is determined from the sprint number (X.XX -> X.XX.0).\n- For Mediator and PostIdentService the release version is determined from the sprint goal. The versions have to be included in the sprint goal in this pattern:\n<actual description of the goal>\nMediator <version>\nPostIdentService <version>\ne.g.\neArchiv\nMediator 1.33.0\nPostIdentService 2.11.0\n\nIf the version does not exist yet, it will be created",
+  "description": "CER-7537: Sends release-generation requests to Worker 875 after the CER sprint starts. Worker 875 creates the matching versions and release tickets, prevents duplicates, and sends the outcome notifications.\n\n- For CeromaCore and Ceroma manual the release version is determined from the sprint number (X.XX -> X.XX.0).\n- For Mediator and PostIdentService the release version is determined from the sprint goal. The versions have to be included in the sprint goal in this pattern:\n<actual description of the goal>\nMediator <version>\nPostIdentService <version>\ne.g.\neArchiv\nMediator 1.33.0\nPostIdentService 2.11.0",
   "canOtherRuleTrigger": false,
   "notifyOnError": "FIRSTERROR",
   "authorAccountId": "JIRAUSER15085",
   "actorAccountId": "JIRAUSER23851",
   "created": 1768396012880,
-  "updated": 1786118667426,
+  "updated": 1787250122234,
   "trigger": {
-    "id": "143180",
+    "id": "144648",
     "component": "TRIGGER",
     "schemaVersion": 1,
     "type": "jira.sprint.event.trigger:started",
@@ -24,7 +24,7 @@
   },
   "components": [
     {
-      "id": "143181",
+      "id": "144649",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -45,7 +45,7 @@
       "conditions": []
     },
     {
-      "id": "143182",
+      "id": "144650",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -66,7 +66,7 @@
       "conditions": []
     },
     {
-      "id": "143183",
+      "id": "144651",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -87,7 +87,7 @@
       "conditions": []
     },
     {
-      "id": "143184",
+      "id": "144652",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -108,7 +108,7 @@
       "conditions": []
     },
     {
-      "id": "143185",
+      "id": "144653",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "codebarrel.action.log",
@@ -117,7 +117,7 @@
       "conditions": []
     },
     {
-      "id": "143186",
+      "id": "144654",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "codebarrel.action.log",
@@ -126,7 +126,7 @@
       "conditions": []
     },
     {
-      "id": "143187",
+      "id": "144655",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -147,7 +147,7 @@
       "conditions": []
     },
     {
-      "id": "143188",
+      "id": "144656",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.comparator.condition",
@@ -160,7 +160,7 @@
       "conditions": []
     },
     {
-      "id": "143189",
+      "id": "144657",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.comparator.condition",
@@ -173,308 +173,51 @@
       "conditions": []
     },
     {
-      "id": "143190",
       "component": "ACTION",
-      "schemaVersion": 1,
-      "type": "jira.version.create",
+      "schemaVersion": 2,
+      "type": "jira.issue.outgoing.webhook",
       "value": {
-        "versionName": "{{ceromaVersion}}",
-        "project": {
-          "type": "ID",
-          "value": "11215",
-          "additional": "software"
-        },
-        "overrideReleaseDate": "SET_ON_EMPTY"
+        "url": "https://partner.bdr.de/jira/rest/cb-automation/latest/hooks/d4d44fdd080e726948539f84d543b3336ef42ba4",
+        "headers": [],
+        "sendIssue": false,
+        "contentType": "custom",
+        "customBody": "{\n  \"component\": \"CeromaCore\",\n  \"releaseVersion\": \"{{ceromaVersion}}\",\n  \"sprintId\": \"{{sprintId}}\",\n  \"fixVersion\": \"{{ceromaVersion}}\",\n  \"origin\": \"sprint-start-rule-877\"\n}",
+        "method": "POST",
+        "responseEnabled": true,
+        "usedSecretsKeys": []
       },
       "children": [],
-      "conditions": []
+      "conditions": [],
+      "id": "144658"
     },
     {
-      "id": "143191",
       "component": "ACTION",
-      "schemaVersion": 6,
-      "type": "jira.issue.create",
+      "schemaVersion": 2,
+      "type": "jira.issue.outgoing.webhook",
       "value": {
-        "operations": [
-          {
-            "fieldId": "summary",
-            "fieldType": "summary",
-            "type": "SET",
-            "value": "CEROMA Release {{ceromaVersion}}"
-          },
-          {
-            "fieldId": "description",
-            "fieldType": "description",
-            "type": "SET",
-            "value": "h1. Release Summary\n||Produkt|_Ceroma_|\n||Release-Version|{{{}ceromaVersion{}}}-TBD|\n||Changeset|TBD|\n||Lieferort|[https://partner.bdr.de/artifactory/ceroma-generic-dsl/Ceroma/{{ceromaVersion}}-TBD/|https://partner.bdr.de/artifactory/ceroma-generic-dsl/Ceroma/%7B%7BceromaVersion%7D%7D-TBD/]|\n||_Checkliste zur Sicherheitsbewertung_|Ceroma {{ceromaVersion}} DE Checkliste zur Sicherheitsbewertung eines Software-Releases|\n||Code-Report-Analyse|🟢🟡🔴|\n||Systemkomponenten|CeromaCore\nCeromaFrontendBDrIn\nCeromaFrontendDownloadServer\nCeromaFrontendOrderStore\nCeromaFrontendSupport\nCeromaSupportUI|\n||Release-Beschreibung|TBD|\n||Abhängigkeiten|[Linux, Subsysteme, 3rd-Party] - OpenJDK 21.x\n - MySQL 8.4.x\n - Red Hat Enterprise Linux 8.10 (Ootpa) 64bit|\n||Bemerkungen|Zur Lieferung für Aufbau in Test-/Referenz-/Produktiv-Umgebung der D-Trust|\n||Inhalt|[https://partner.bdr.de/jira/issues/?jql=project+%3D+CER+AND+fixVersion+%3D+{{ceromaVersion}}|https://partner.bdr.de/jira/issues/?jql=project+%3D+CER+AND+fixVersion+%3D+{{ceromaVersion}}] |\nh1. Test and Quality Reports\n||Sonar Report|[https://partner.bdr.de/artifactory/ceroma-generic-dsl/Ceroma/\\{{ceromaVersion}}-TBD/reports/|https://partner.bdr.de/artifactory/ceroma-generic-dsl/Ceroma/%7B%7BceromaVersion%7D%7D-TBD/reports/]|\n||SBOM Report|[https://partner.bdr.de/artifactory/ceroma-generic-dsl/Ceroma/\\{{ceromaVersion}}-TBD/reports/|https://partner.bdr.de/artifactory/ceroma-generic-dsl/Ceroma/%7B%7BceromaVersion%7D%7D-TBD/reports/]|\n||Systemtest Report|Siehe Anhang (Testprotokoll)|\n||Vorläufige Freigabeempfehlung|<Datum>TBD|\n||Freigabeempfehlung|<Datum>TBD|\nh1. Installationsinformation\n\nSiehe Anhang (Installationscheckliste).\n|h3. Zusatzinformationen zur Installation:|\n|*HINWEISE:*\nTBD|"
-          },
-          {
-            "fieldId": "project",
-            "fieldType": "project",
-            "type": "SET",
-            "value": {
-              "type": "ID",
-              "value": "11215"
-            }
-          },
-          {
-            "fieldId": "issuetype",
-            "fieldType": "issuetype",
-            "type": "SET",
-            "value": {
-              "type": "ID",
-              "value": "10200"
-            }
-          },
-          {
-            "fieldId": "customfield_10004",
-            "fieldType": "com.pyxis.greenhopper.jira:gh-sprint",
-            "type": "SET",
-            "value": {
-              "type": "SMART",
-              "value": "{{sprintId}}"
-            }
-          },
-          {
-            "fieldId": "components",
-            "fieldType": "components",
-            "type": "SET",
-            "value": [
-              {
-                "type": "NAME",
-                "value": "CeromaCore"
-              },
-              {
-                "type": "NAME",
-                "value": "DownloadServer"
-              },
-              {
-                "type": "NAME",
-                "value": "FrontendBDrIn"
-              },
-              {
-                "type": "NAME",
-                "value": "FrontendSupport"
-              },
-              {
-                "type": "NAME",
-                "value": "OrderStore"
-              },
-              {
-                "type": "NAME",
-                "value": "SupportUI"
-              }
-            ]
-          },
-          {
-            "fieldId": "fixVersions",
-            "fieldType": "fixVersions",
-            "type": "SET",
-            "value": [
-              {
-                "type": "SMART",
-                "value": "{{ceromaVersion}}"
-              }
-            ]
-          }
-        ],
-        "sendNotifications": false,
-        "useLegacyRendering": false
+        "url": "https://partner.bdr.de/jira/rest/cb-automation/latest/hooks/d4d44fdd080e726948539f84d543b3336ef42ba4",
+        "headers": [],
+        "sendIssue": false,
+        "contentType": "custom",
+        "customBody": "{\n  \"component\": \"Benutzerhandbuch\",\n  \"releaseVersion\": \"{{ceromaVersion}}\",\n  \"sprintId\": \"{{sprintId}}\",\n  \"fixVersion\": \"{{ceromaVersion}}\",\n  \"origin\": \"sprint-start-rule-877\"\n}",
+        "method": "POST",
+        "responseEnabled": true,
+        "usedSecretsKeys": []
       },
       "children": [],
-      "conditions": []
+      "conditions": [],
+      "id": "144659"
     },
     {
-      "id": "143192",
-      "component": "ACTION",
-      "schemaVersion": 1,
-      "type": "jira.create.variable",
-      "value": {
-        "id": "_customsmartvalue_id_1768392465844",
-        "name": {
-          "type": "FREE",
-          "value": "ceromaReleaseKey"
-        },
-        "type": "SMART",
-        "query": {
-          "type": "SMART",
-          "value": "{{createdIssue.key}}"
-        },
-        "lazy": false
-      },
-      "children": [],
-      "conditions": []
-    },
-    {
-      "id": "143193",
-      "component": "BRANCH",
-      "schemaVersion": 1,
-      "type": "jira.issue.related",
-      "value": {
-        "relatedType": "jql",
-        "jql": "key = {{ceromaReleaseKey}}",
-        "linkTypes": [],
-        "onlyUpdatedIssues": false,
-        "processIssuesInBulk": false
-      },
-      "children": [
-        {
-          "id": "143194",
-          "component": "ACTION",
-          "parentId": "143193",
-          "schemaVersion": 1,
-          "type": "jira.issue.comment",
-          "value": {
-            "comment": "Release-Ticket {{issue.key}} created by Jira Automation [{{rule.name}}|https://partner.bdr.de/jira/secure/AutomationProjectAdminAction!default.jspa?projectKey=CER#/rule/{{ruleId}}]",
-            "publicComment": false,
-            "sendNotifications": true,
-            "addCommentOnce": false,
-            "useLegacyRendering": false
-          },
-          "children": [],
-          "conditions": []
-        }
-      ],
-      "conditions": []
-    },
-    {
-      "id": "143195",
-      "component": "ACTION",
-      "schemaVersion": 6,
-      "type": "jira.issue.create",
-      "value": {
-        "operations": [
-          {
-            "fieldId": "summary",
-            "fieldType": "summary",
-            "type": "SET",
-            "value": "CEROMA Benutzerhandbuch {{ceromaVersion}}"
-          },
-          {
-            "fieldId": "description",
-            "fieldType": "description",
-            "type": "SET",
-            "value": "h1. Release Summary\n||Produkt|_Ceroma-Benutzerhandbuch_|\n||Release-Version|{{ceromaVersion}}|\n||Lieferort|[https://partner.bdr.de/artifactory/ceroma-generic-dsl/Ceroma/\\{{ceromaVersion}}-TBD/doc/ceroma-documentation.zip|https://partner.bdr.de/artifactory/ceroma-generic-dsl/Ceroma/%7B%7BceromaVersion%7D%7D-TBD/doc/ceroma-documentation.zip]|\n||Systemkomponenten|Benutzer-Handbuch.docx\nBenutzer-Handbuch.html\nInstallations-und-Administrationshandbuch.docx\nInstallations-und-Administrationshandbuch.html\nSystem-Handbuch.docx\nSystem-Handbuch.html|\n||Bemerkungen|Zur Lieferung für Aufbau in Test-/Referenz-/Produktiv-Umgebung der D-Trust|"
-          },
-          {
-            "fieldId": "project",
-            "fieldType": "project",
-            "type": "SET",
-            "value": {
-              "type": "ID",
-              "value": "11215"
-            }
-          },
-          {
-            "fieldId": "issuetype",
-            "fieldType": "issuetype",
-            "type": "SET",
-            "value": {
-              "type": "ID",
-              "value": "10200"
-            }
-          },
-          {
-            "fieldId": "customfield_10004",
-            "fieldType": "com.pyxis.greenhopper.jira:gh-sprint",
-            "type": "SET",
-            "value": {
-              "type": "SMART",
-              "value": "{{sprintId}}"
-            }
-          },
-          {
-            "fieldId": "components",
-            "fieldType": "components",
-            "type": "SET",
-            "value": [
-              {
-                "type": "NAME",
-                "value": "Benutzerhandbuch"
-              }
-            ]
-          },
-          {
-            "fieldId": "fixVersions",
-            "fieldType": "fixVersions",
-            "type": "SET",
-            "value": [
-              {
-                "type": "SMART",
-                "value": "{{ceromaVersion}}"
-              }
-            ]
-          }
-        ],
-        "sendNotifications": false,
-        "useLegacyRendering": false
-      },
-      "children": [],
-      "conditions": []
-    },
-    {
-      "id": "143196",
-      "component": "ACTION",
-      "schemaVersion": 1,
-      "type": "jira.create.variable",
-      "value": {
-        "id": "_customsmartvalue_id_1768393674748",
-        "name": {
-          "type": "FREE",
-          "value": "ceromaManualKey"
-        },
-        "type": "SMART",
-        "query": {
-          "type": "SMART",
-          "value": "{{createdIssue.key}}"
-        },
-        "lazy": false
-      },
-      "children": [],
-      "conditions": []
-    },
-    {
-      "id": "143197",
-      "component": "BRANCH",
-      "schemaVersion": 1,
-      "type": "jira.issue.related",
-      "value": {
-        "relatedType": "jql",
-        "jql": "key = {{ceromaManualKey}}",
-        "linkTypes": [],
-        "onlyUpdatedIssues": false,
-        "processIssuesInBulk": false
-      },
-      "children": [
-        {
-          "id": "143198",
-          "component": "ACTION",
-          "parentId": "143197",
-          "schemaVersion": 1,
-          "type": "jira.issue.comment",
-          "value": {
-            "comment": "Release-Ticket {{issue.key}} created by Jira Automation [{{rule.name}}|https://partner.bdr.de/jira/secure/AutomationProjectAdminAction!default.jspa?projectKey=CER#/rule/{{ruleId}}]",
-            "publicComment": false,
-            "sendNotifications": true,
-            "addCommentOnce": true,
-            "useLegacyRendering": false
-          },
-          "children": [],
-          "conditions": []
-        }
-      ],
-      "conditions": []
-    },
-    {
-      "id": "143199",
+      "id": "144660",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.condition.container.block",
       "children": [
         {
-          "id": "143200",
+          "id": "144661",
           "component": "CONDITION_BLOCK",
-          "parentId": "143199",
+          "parentId": "144660",
           "schemaVersion": 1,
           "type": "jira.condition.if.block",
           "value": {
@@ -482,9 +225,9 @@
           },
           "children": [
             {
-              "id": "143202",
+              "id": "144663",
               "component": "ACTION",
-              "parentId": "143200",
+              "parentId": "144661",
               "schemaVersion": 1,
               "type": "jira.create.variable",
               "value": {
@@ -504,9 +247,9 @@
               "conditions": []
             },
             {
-              "id": "143203",
+              "id": "144664",
               "component": "ACTION",
-              "parentId": "143200",
+              "parentId": "144661",
               "schemaVersion": 1,
               "type": "jira.create.variable",
               "value": {
@@ -526,9 +269,9 @@
               "conditions": []
             },
             {
-              "id": "143204",
+              "id": "144665",
               "component": "ACTION",
-              "parentId": "143200",
+              "parentId": "144661",
               "schemaVersion": 1,
               "type": "codebarrel.action.log",
               "value": "mediatorVersion: {{mediatorVersion}}",
@@ -536,161 +279,30 @@
               "conditions": []
             },
             {
-              "id": "143205",
               "component": "ACTION",
-              "parentId": "143200",
-              "schemaVersion": 1,
-              "type": "jira.version.create",
+              "schemaVersion": 2,
+              "type": "jira.issue.outgoing.webhook",
               "value": {
-                "versionName": "{{mediatorFixVersion}}",
-                "project": {
-                  "type": "ID",
-                  "value": "11215",
-                  "additional": "software"
-                },
-                "overrideReleaseDate": "SET_ON_EMPTY"
+                "url": "https://partner.bdr.de/jira/rest/cb-automation/latest/hooks/d4d44fdd080e726948539f84d543b3336ef42ba4",
+                "headers": [],
+                "sendIssue": false,
+                "contentType": "custom",
+                "customBody": "{\n  \"component\": \"Mediator\",\n  \"releaseVersion\": \"{{mediatorVersion}}\",\n  \"sprintId\": \"{{sprintId}}\",\n  \"fixVersion\": \"{{mediatorFixVersion}}\",\n  \"origin\": \"sprint-start-rule-877\"\n}",
+                "method": "POST",
+                "responseEnabled": true,
+                "usedSecretsKeys": []
               },
               "children": [],
-              "conditions": []
-            },
-            {
-              "id": "143206",
-              "component": "ACTION",
-              "parentId": "143200",
-              "schemaVersion": 6,
-              "type": "jira.issue.create",
-              "value": {
-                "operations": [
-                  {
-                    "fieldId": "summary",
-                    "fieldType": "summary",
-                    "type": "SET",
-                    "value": "Mediator Release {{mediatorVersion}}"
-                  },
-                  {
-                    "fieldId": "description",
-                    "fieldType": "description",
-                    "type": "SET",
-                    "value": "h1. Release Summary\n||Produkt|_Mediator_|\n||Release-Version|{{{}mediatorVersion{}}}-TBD|\n||Changeset|TBD|\n||Lieferort|[https://partner.bdr.de/artifactory/cer-generic-dsl/AVS-Ceroma-Mediator/\\{{mediatorVersion}}-TBD/|https://partner.bdr.de/artifactory/cer-generic-dsl/AVS-Ceroma-Mediator/%7B%7BmediatorVersion%7D%7D-TBD/]|\n||_Checkliste zur Sicherheitsbewertung_|Mediator {{mediatorVersion}} DE Checkliste zur Sicherheitsbewertung eines Software-Releases|\n||Code-Report-Analyse|🟢🟡🔴|\n||Systemkomponenten|Mediator|\n||Release-Beschreibung|TBD|\n||Abhängigkeiten|[Linux, Subsysteme, 3rd-Party] - OpenJDK 21.x\n - Red Hat Enterprise Linux 8.10 (Ootpa) 64bit|\n||Bemerkungen|Zur Lieferung für Aufbau in Test-/Referenz-/Produktiv-Umgebung der D-Trust|\n||Inhalt| |\nh1. Test and Quality Reports\n||Sonar Report|[https://partner.bdr.de/artifactory/cer-generic-dsl/AVS-Ceroma-Mediator/\\{{mediatorVersion}}-TBD/reports/|https://partner.bdr.de/artifactory/cer-generic-dsl/AVS-Ceroma-Mediator/%7B%7BmediatorVersion%7D%7D-TBD/reports/]|\n||SBOM Report|[https://partner.bdr.de/artifactory/cer-generic-dsl/AVS-Ceroma-Mediator/\\{{mediatorVersion}}-TBD/reports/|https://partner.bdr.de/artifactory/cer-generic-dsl/AVS-Ceroma-Mediator/%7B%7BmediatorVersion%7D%7D-TBD/reports/]|\n||Systemtest Report|Siehe Anhang (Testprotokoll)|\n||Vorläufige Freigabeempfehlung|<Datum>TBD|\n||Freigabeempfehlung|<Datum>TBD|\nh1. Installationsinformation\n\nSiehe Anhang (Installationscheckliste).\n|h3. Zusatzinformationen zur Installation:|\n|*HINWEISE:*\nTBD|"
-                  },
-                  {
-                    "fieldId": "project",
-                    "fieldType": "project",
-                    "type": "SET",
-                    "value": {
-                      "type": "ID",
-                      "value": "11215"
-                    }
-                  },
-                  {
-                    "fieldId": "issuetype",
-                    "fieldType": "issuetype",
-                    "type": "SET",
-                    "value": {
-                      "type": "ID",
-                      "value": "10200"
-                    }
-                  },
-                  {
-                    "fieldId": "customfield_10004",
-                    "fieldType": "com.pyxis.greenhopper.jira:gh-sprint",
-                    "type": "SET",
-                    "value": {
-                      "type": "SMART",
-                      "value": "{{sprintId}}"
-                    }
-                  },
-                  {
-                    "fieldId": "components",
-                    "fieldType": "components",
-                    "type": "SET",
-                    "value": [
-                      {
-                        "type": "NAME",
-                        "value": "Mediator"
-                      }
-                    ]
-                  },
-                  {
-                    "fieldId": "fixVersions",
-                    "fieldType": "fixVersions",
-                    "type": "SET",
-                    "value": [
-                      {
-                        "type": "SMART",
-                        "value": "{{mediatorFixVersion}}"
-                      }
-                    ]
-                  }
-                ],
-                "advancedFields": "",
-                "sendNotifications": false,
-                "useLegacyRendering": false
-              },
-              "children": [],
-              "conditions": []
-            },
-            {
-              "id": "143207",
-              "component": "ACTION",
-              "parentId": "143200",
-              "schemaVersion": 1,
-              "type": "jira.create.variable",
-              "value": {
-                "id": "_customsmartvalue_id_1768393702393",
-                "name": {
-                  "type": "FREE",
-                  "value": "mediatorReleaseKey"
-                },
-                "type": "SMART",
-                "query": {
-                  "type": "SMART",
-                  "value": "{{createdIssue.key}}"
-                },
-                "lazy": false
-              },
-              "children": [],
-              "conditions": []
-            },
-            {
-              "id": "143208",
-              "component": "BRANCH",
-              "parentId": "143200",
-              "schemaVersion": 1,
-              "type": "jira.issue.related",
-              "value": {
-                "relatedType": "jql",
-                "jql": "key = {{mediatorReleaseKey}}",
-                "linkTypes": [],
-                "onlyUpdatedIssues": false,
-                "processIssuesInBulk": false
-              },
-              "children": [
-                {
-                  "id": "143209",
-                  "component": "ACTION",
-                  "parentId": "143208",
-                  "schemaVersion": 1,
-                  "type": "jira.issue.comment",
-                  "value": {
-                    "comment": "Release-Ticket {{issue.key}} created by Jira Automation [{{rule.name}}|https://partner.bdr.de/jira/secure/AutomationProjectAdminAction!default.jspa?projectKey=CER#/rule/{{ruleId}}]",
-                    "publicComment": false,
-                    "sendNotifications": true,
-                    "addCommentOnce": false,
-                    "useLegacyRendering": false
-                  },
-                  "children": [],
-                  "conditions": []
-                }
-              ],
-              "conditions": []
+              "conditions": [],
+              "id": "144666",
+              "parentId": "144661"
             }
           ],
           "conditions": [
             {
-              "id": "143201",
+              "id": "144662",
               "component": "CONDITION",
-              "conditionParentId": "143200",
+              "conditionParentId": "144661",
               "schemaVersion": 1,
               "type": "jira.comparator.condition",
               "value": {
@@ -707,15 +319,15 @@
       "conditions": []
     },
     {
-      "id": "143210",
+      "id": "144667",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.condition.container.block",
       "children": [
         {
-          "id": "143211",
+          "id": "144668",
           "component": "CONDITION_BLOCK",
-          "parentId": "143210",
+          "parentId": "144667",
           "schemaVersion": 1,
           "type": "jira.condition.if.block",
           "value": {
@@ -723,9 +335,9 @@
           },
           "children": [
             {
-              "id": "143213",
+              "id": "144670",
               "component": "ACTION",
-              "parentId": "143211",
+              "parentId": "144668",
               "schemaVersion": 1,
               "type": "jira.create.variable",
               "value": {
@@ -745,9 +357,9 @@
               "conditions": []
             },
             {
-              "id": "143214",
+              "id": "144671",
               "component": "ACTION",
-              "parentId": "143211",
+              "parentId": "144668",
               "schemaVersion": 1,
               "type": "jira.create.variable",
               "value": {
@@ -767,9 +379,9 @@
               "conditions": []
             },
             {
-              "id": "143215",
+              "id": "144672",
               "component": "ACTION",
-              "parentId": "143211",
+              "parentId": "144668",
               "schemaVersion": 1,
               "type": "codebarrel.action.log",
               "value": "postIdentServiceVersion: {{postIdentServiceVersion}}",
@@ -777,164 +389,30 @@
               "conditions": []
             },
             {
-              "id": "143216",
               "component": "ACTION",
-              "parentId": "143211",
-              "schemaVersion": 1,
-              "type": "jira.version.create",
+              "schemaVersion": 2,
+              "type": "jira.issue.outgoing.webhook",
               "value": {
-                "versionName": "{{postIdentServiceFixVersion}}",
-                "project": {
-                  "type": "ID",
-                  "value": "11215",
-                  "additional": "software"
-                },
-                "overrideReleaseDate": "SET_ON_EMPTY"
+                "url": "https://partner.bdr.de/jira/rest/cb-automation/latest/hooks/d4d44fdd080e726948539f84d543b3336ef42ba4",
+                "headers": [],
+                "sendIssue": false,
+                "contentType": "custom",
+                "customBody": "{\n  \"component\": \"PostIdentService\",\n  \"releaseVersion\": \"{{postIdentServiceVersion}}\",\n  \"sprintId\": \"{{sprintId}}\",\n  \"fixVersion\": \"{{postIdentServiceFixVersion}}\",\n  \"origin\": \"sprint-start-rule-877\"\n}",
+                "method": "POST",
+                "responseEnabled": true,
+                "usedSecretsKeys": []
               },
               "children": [],
-              "conditions": []
-            },
-            {
-              "id": "143217",
-              "component": "ACTION",
-              "parentId": "143211",
-              "schemaVersion": 6,
-              "type": "jira.issue.create",
-              "value": {
-                "operations": [
-                  {
-                    "fieldId": "summary",
-                    "fieldType": "summary",
-                    "type": "SET",
-                    "value": "PostIdentService Release {{postIdentServiceVersion}}"
-                  },
-                  {
-                    "fieldId": "description",
-                    "fieldType": "description",
-                    "type": "SET",
-                    "value": "h1. Release Summary\n||Produkt|_PostIdentService_|\n||Release-Version|{{{}postIdentServiceVersion{}}}-TBD|\n||Changeset|TBD|\n||Lieferort|[https://partner.bdr.de/artifactory/cer-generic-dsl/PostidentService/\\{{postIdentServiceVersion}}-TBD/|https://partner.bdr.de/artifactory/cer-generic-dsl/PostidentService/%7B%7BpostIdentServiceVersion%7D%7D-TBD/]|\n||_Checkliste zur Sicherheitsbewertung_|{{postIdentServiceFixVersion}} DE Checkliste zur Sicherheitsbewertung eines Software-Releases|\n||Code-Report-Analyse|🟢🟡🔴|\n||Systemkomponenten|PostIdentService, PostIdentService-Proxy|\n||Release-Beschreibung|TBD|\n||Abhängigkeiten|[Linux, Subsysteme, 3rd-Party] - OpenJDK 21.x\n - MySQL 8.4.x\n - Red Hat Enterprise Linux 8.10 (Ootpa) 64bit|\n||Bemerkungen|Zur Lieferung für Aufbau in Test-/Referenz-/Produktiv-Umgebung der D-Trust|\n||Inhalt| |\nh1. Test and Quality Reports\n||Sonar Report|[https://partner.bdr.de/artifactory/cer-generic-dsl/PostidentService/\\{{postIdentServiceVersion}}-TBD/reports/|https://partner.bdr.de/artifactory/cer-generic-dsl/PostidentService/%7B%7BpostIdentServiceVersion%7D%7D-TBD/reports/]|\n||SBOM Report|[https://partner.bdr.de/artifactory/cer-generic-dsl/PostidentService/\\{{postIdentServiceVersion}}-TBD/reports/|https://partner.bdr.de/artifactory/cer-generic-dsl/PostidentService/%7B%7BpostIdentServiceVersion%7D%7D-TBD/reports/]|\n||Systemtest Report|Siehe Anhang (Testprotokoll)|\n||Vorläufige Freigabeempfehlung|<Datum>TBD|\n||Freigabeempfehlung|<Datum>TBD|\nh1. Installationsinformation\n\nSiehe Anhang (Installationscheckliste).\n|h3. Zusatzinformationen zur Installation:|\n|*HINWEISE:*\nTBD|"
-                  },
-                  {
-                    "fieldId": "project",
-                    "fieldType": "project",
-                    "type": "SET",
-                    "value": {
-                      "type": "ID",
-                      "value": "11215"
-                    }
-                  },
-                  {
-                    "fieldId": "issuetype",
-                    "fieldType": "issuetype",
-                    "type": "SET",
-                    "value": {
-                      "type": "ID",
-                      "value": "10200"
-                    }
-                  },
-                  {
-                    "fieldId": "customfield_10004",
-                    "fieldType": "com.pyxis.greenhopper.jira:gh-sprint",
-                    "type": "SET",
-                    "value": {
-                      "type": "SMART",
-                      "value": "{{sprintId}}"
-                    }
-                  },
-                  {
-                    "fieldId": "components",
-                    "fieldType": "components",
-                    "type": "SET",
-                    "value": [
-                      {
-                        "type": "NAME",
-                        "value": "PostIdentService"
-                      },
-                      {
-                        "type": "NAME",
-                        "value": "PostIdentService-Proxy"
-                      }
-                    ]
-                  },
-                  {
-                    "fieldId": "fixVersions",
-                    "fieldType": "fixVersions",
-                    "type": "SET",
-                    "value": [
-                      {
-                        "type": "SMART",
-                        "value": "{{postIdentServiceFixVersion}}"
-                      }
-                    ]
-                  }
-                ],
-                "sendNotifications": false,
-                "useLegacyRendering": false
-              },
-              "children": [],
-              "conditions": []
-            },
-            {
-              "id": "143218",
-              "component": "ACTION",
-              "parentId": "143211",
-              "schemaVersion": 1,
-              "type": "jira.create.variable",
-              "value": {
-                "id": "_customsmartvalue_id_1768393746903",
-                "name": {
-                  "type": "FREE",
-                  "value": "postIdentReleaseKey"
-                },
-                "type": "SMART",
-                "query": {
-                  "type": "SMART",
-                  "value": "{{createdIssue.key}}"
-                },
-                "lazy": false
-              },
-              "children": [],
-              "conditions": []
-            },
-            {
-              "id": "143219",
-              "component": "BRANCH",
-              "parentId": "143211",
-              "schemaVersion": 1,
-              "type": "jira.issue.related",
-              "value": {
-                "relatedType": "jql",
-                "jql": "key = {{postIdentReleaseKey}}",
-                "linkTypes": [],
-                "onlyUpdatedIssues": false,
-                "processIssuesInBulk": false
-              },
-              "children": [
-                {
-                  "id": "143220",
-                  "component": "ACTION",
-                  "parentId": "143219",
-                  "schemaVersion": 1,
-                  "type": "jira.issue.comment",
-                  "value": {
-                    "comment": "Release-Ticket {{issue.key}} created by Jira Automation [{{rule.name}}|https://partner.bdr.de/jira/secure/AutomationProjectAdminAction!default.jspa?projectKey=CER#/rule/{{ruleId}}]",
-                    "publicComment": false,
-                    "sendNotifications": true,
-                    "addCommentOnce": true,
-                    "useLegacyRendering": false
-                  },
-                  "children": [],
-                  "conditions": []
-                }
-              ],
-              "conditions": []
+              "conditions": [],
+              "id": "144673",
+              "parentId": "144668"
             }
           ],
           "conditions": [
             {
-              "id": "143212",
+              "id": "144669",
               "component": "CONDITION",
-              "conditionParentId": "143211",
+              "conditionParentId": "144668",
               "schemaVersion": 1,
               "type": "jira.comparator.condition",
               "value": {
@@ -948,39 +426,6 @@
           ]
         }
       ],
-      "conditions": []
-    },
-    {
-      "id": "143221",
-      "component": "ACTION",
-      "schemaVersion": 3,
-      "type": "jira.issue.outgoing.email",
-      "value": {
-        "from": "",
-        "fromName": "",
-        "replyTo": "",
-        "to": [
-          {
-            "type": "FREE",
-            "value": "matthias.kozlowski.extern@bdr.de"
-          },
-          {
-            "type": "FREE",
-            "value": "adrian.laska@bdr.de"
-          },
-          {
-            "type": "FREE",
-            "value": "alexander.kuehl@bdr.de"
-          }
-        ],
-        "cc": [],
-        "bcc": [],
-        "subject": "Release-Tickets für Sprint {{sprint.name}} wurden erstellt",
-        "body": "<p>Hallo,</p>\n<p>folgende Release-Tickets wurden beim Sprint-Start automatisch erstellt</p>\n<ul>\n  <li>Ceroma Release  {{ceromaVersion}}: <a href=\"https://partner.bdr.de/jira/browse/{{ceromaReleaseKey}}\">{{ceromaReleaseKey}}</a></li>\n  <li>Ceroma Benutzerhandbuch {{ceromaVersion}}: <a href=\"https://partner.bdr.de/jira/browse/{{ceromaManualKey}}\">{{ceromaManualKey}}</a></li>\n{{#if(mediatorReleaseKey.isNotEmpty)}}\n  <li>Mediator Release {{mediatorVersion}}: <a href=\"https://partner.bdr.de/jira/browse/{{mediatorReleaseKey}}\">{{mediatorReleaseKey}}</a></li>\n{{/}}\n{{#if(postIdentReleaseKey.isNotEmpty)}}\n  <li>PostIdentService Release {{postIdentServiceVersion}}: <a href=\"https://partner.bdr.de/jira/browse/{{postIdentReleaseKey}}\">{{postIdentReleaseKey}}</a></li>\n{{/}}\n</ul>\n<p><strong>Sprint:</strong><br>{{sprintName}}<br>\n<strong>Goal:</strong><br>{{sprintGoal}}</p>\n<p>Viele Grüße</p>\n<p>\n  Deine Jira-Automation\n  <a href=\"https://partner.bdr.de/jira/secure/AutomationProjectAdminAction!default.jspa?projectKey=CER#/rule/{{ruleId}}\">\n    {{rule.name}}\n  </a>\n</p>",
-        "mimeType": "text/html",
-        "convertLineBreaks": false
-      },
-      "children": [],
       "conditions": []
     }
   ],

@@ -106,6 +106,12 @@ test('Regel 1079 validiert Ticketdaten und übergibt sie an den Release-Worker',
   const allComponents = containers.flatMap(container => [container, ...container.children, ...container.children.flatMap(block => [...block.children, ...block.conditions])]);
   const webhook = allComponents.find(component => component.type === 'jira.issue.outgoing.webhook');
   const comparators = allComponents.filter(component => component.type === 'jira.comparator.condition');
+  const flattenWorkerComponents = components => components.flatMap(component => [
+    component,
+    ...flattenWorkerComponents(component.children ?? []),
+    ...flattenWorkerComponents(component.conditions ?? [])
+  ]);
+  const successEmail = flattenWorkerComponents(worker.components).find(component => component.type === 'jira.issue.outgoing.email' && component.value?.subject?.startsWith('Release-Ticket erstellt:'));
 
   assert.deepEqual(rule.trigger.value.groups, ['prj-cer-pa']);
   assert.match(rule.description, /letzte Komponente, Fix-Version und Sprint-ID/);
@@ -120,6 +126,8 @@ test('Regel 1079 validiert Ticketdaten und übergibt sie an den Release-Worker',
   assert.ok(comparators.some(component => component.value.operator === 'REGEX_NOT_MATCHES'));
   assert.ok(comparators.every(component => component.value.second.includes('Benutzerhandbuch')));
   assert.equal(worker.components.some(component => component.value?.name?.value === 'releaseComponent'), false);
+  assert.equal(successEmail.value.to.length, 3);
+  assert.match(successEmail.value.body, /https:\/\/partner\.bdr\.de\/jira\/browse\/\{\{createdReleaseKey\}\}/);
   assert.equal(JSON.stringify(worker).includes('CeromaManual'), false);
   assert.equal(JSON.stringify(rule).toLowerCase().includes('product'), false);
   assert.equal(JSON.stringify(worker).toLowerCase().includes('product'), false);

@@ -9,9 +9,9 @@
   "authorAccountId": "JIRAUSER15085",
   "actorAccountId": "JIRAUSER15085",
   "created": 1787232621001,
-  "updated": 1787243032607,
+  "updated": 1787251534404,
   "trigger": {
-    "id": "144444",
+    "id": "144674",
     "component": "TRIGGER",
     "schemaVersion": 1,
     "type": "jira.manual.trigger.issue",
@@ -25,7 +25,7 @@
   },
   "components": [
     {
-      "id": "144445",
+      "id": "144675",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -46,7 +46,7 @@
       "conditions": []
     },
     {
-      "id": "144446",
+      "id": "144676",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -67,7 +67,7 @@
       "conditions": []
     },
     {
-      "id": "144447",
+      "id": "144677",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -88,7 +88,7 @@
       "conditions": []
     },
     {
-      "id": "144448",
+      "id": "144678",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -109,15 +109,15 @@
       "conditions": []
     },
     {
-      "id": "144449",
+      "id": "144679",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.condition.container.block",
       "children": [
         {
-          "id": "144450",
+          "id": "144680",
           "component": "CONDITION_BLOCK",
-          "parentId": "144449",
+          "parentId": "144679",
           "schemaVersion": 1,
           "type": "jira.condition.if.block",
           "value": {
@@ -125,9 +125,9 @@
           },
           "children": [
             {
-              "id": "144452",
+              "id": "144682",
               "component": "ACTION",
-              "parentId": "144450",
+              "parentId": "144680",
               "schemaVersion": 1,
               "type": "codebarrel.action.log",
               "value": "Release-Auftrag an Worker 875: Komponente={{component}} | Release-Version={{releaseVersion}} | Fix-Version={{workerFixVersion}} | Sprint-ID={{workerSprintId}} | Quell-Ticket={{issue.key}}",
@@ -135,9 +135,9 @@
               "conditions": []
             },
             {
-              "id": "144453",
+              "id": "144683",
               "component": "ACTION",
-              "parentId": "144450",
+              "parentId": "144680",
               "schemaVersion": 2,
               "type": "jira.issue.outgoing.webhook",
               "value": {
@@ -145,7 +145,7 @@
                 "headers": [],
                 "sendIssue": false,
                 "contentType": "custom",
-                "customBody": "{\n  \"component\": \"{{component}}\",\n  \"releaseVersion\": \"{{releaseVersion}}\",\n  \"sprintId\": \"{{workerSprintId}}\",\n  \"fixVersion\": \"{{workerFixVersion}}\",\n  \"origin\": \"manual-rule-1079\",\n  \"sourceIssueKey\": \"{{issue.key}}\"\n}",
+                "customBody": "{\n  \"component\": \"{{component}}\",\n  \"releaseVersion\": \"{{releaseVersion}}\",\n  \"sprintId\": \"{{workerSprintId}}\",\n  \"sprintName\": \"{{issue.sprint.last.name}}\",\n  \"fixVersion\": \"{{workerFixVersion}}\",\n  \"origin\": \"manual-rule-1079\",\n  \"sourceIssueKey\": \"{{issue.key}}\"\n}",
                 "method": "POST",
                 "responseEnabled": true,
                 "usedSecretsKeys": []
@@ -156,9 +156,9 @@
           ],
           "conditions": [
             {
-              "id": "144451",
+              "id": "144681",
               "component": "CONDITION",
-              "conditionParentId": "144450",
+              "conditionParentId": "144680",
               "schemaVersion": 1,
               "type": "jira.comparator.condition",
               "value": {
@@ -175,15 +175,15 @@
       "conditions": []
     },
     {
-      "id": "144454",
+      "id": "144684",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.condition.container.block",
       "children": [
         {
-          "id": "144455",
+          "id": "144685",
           "component": "CONDITION_BLOCK",
-          "parentId": "144454",
+          "parentId": "144684",
           "schemaVersion": 1,
           "type": "jira.condition.if.block",
           "value": {
@@ -191,9 +191,9 @@
           },
           "children": [
             {
-              "id": "144457",
+              "id": "144687",
               "component": "ACTION",
-              "parentId": "144455",
+              "parentId": "144685",
               "schemaVersion": 1,
               "type": "codebarrel.action.log",
               "value": "Release-Auftrag nicht an Worker 875 gesendet: Komponente muss CeromaCore, Benutzerhandbuch, Mediator oder PostIdentService sein; Fix-Version und Sprint-ID müssen vorhanden sein. Ermittelt: Komponente={{component}} | Release-Version={{releaseVersion}} | Sprint-ID={{workerSprintId}} | Quell-Ticket={{issue.key}}",
@@ -203,9 +203,9 @@
           ],
           "conditions": [
             {
-              "id": "144456",
+              "id": "144686",
               "component": "CONDITION",
-              "conditionParentId": "144455",
+              "conditionParentId": "144685",
               "schemaVersion": 1,
               "type": "jira.comparator.condition",
               "value": {

@@ -9,9 +9,9 @@
   "authorAccountId": "JIRAUSER15085",
   "actorAccountId": "JIRAUSER23851",
   "created": 1768396012880,
-  "updated": 1787250122234,
+  "updated": 1787251535629,
   "trigger": {
-    "id": "144648",
+    "id": "144688",
     "component": "TRIGGER",
     "schemaVersion": 1,
     "type": "jira.sprint.event.trigger:started",
@@ -24,7 +24,7 @@
   },
   "components": [
     {
-      "id": "144649",
+      "id": "144689",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -45,7 +45,7 @@
       "conditions": []
     },
     {
-      "id": "144650",
+      "id": "144690",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -66,7 +66,7 @@
       "conditions": []
     },
     {
-      "id": "144651",
+      "id": "144691",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -87,7 +87,7 @@
       "conditions": []
     },
     {
-      "id": "144652",
+      "id": "144692",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -108,7 +108,7 @@
       "conditions": []
     },
     {
-      "id": "144653",
+      "id": "144693",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "codebarrel.action.log",
@@ -117,7 +117,7 @@
       "conditions": []
     },
     {
-      "id": "144654",
+      "id": "144694",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "codebarrel.action.log",
@@ -126,7 +126,7 @@
       "conditions": []
     },
     {
-      "id": "144655",
+      "id": "144695",
       "component": "ACTION",
       "schemaVersion": 1,
       "type": "jira.create.variable",
@@ -147,7 +147,7 @@
       "conditions": []
     },
     {
-      "id": "144656",
+      "id": "144696",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.comparator.condition",
@@ -160,7 +160,7 @@
       "conditions": []
     },
     {
-      "id": "144657",
+      "id": "144697",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.comparator.condition",
@@ -181,14 +181,14 @@
         "headers": [],
         "sendIssue": false,
         "contentType": "custom",
-        "customBody": "{\n  \"component\": \"CeromaCore\",\n  \"releaseVersion\": \"{{ceromaVersion}}\",\n  \"sprintId\": \"{{sprintId}}\",\n  \"fixVersion\": \"{{ceromaVersion}}\",\n  \"origin\": \"sprint-start-rule-877\"\n}",
+        "customBody": "{\n  \"component\": \"CeromaCore\",\n  \"releaseVersion\": \"{{ceromaVersion}}\",\n  \"sprintId\": \"{{sprintId}}\",\n  \"sprintName\": \"{{sprintName}}\",\n  \"fixVersion\": \"{{ceromaVersion}}\",\n  \"origin\": \"sprint-start-rule-877\"\n}",
         "method": "POST",
         "responseEnabled": true,
         "usedSecretsKeys": []
       },
       "children": [],
       "conditions": [],
-      "id": "144658"
+      "id": "144698"
     },
     {
       "component": "ACTION",
@@ -199,25 +199,25 @@
         "headers": [],
         "sendIssue": false,
         "contentType": "custom",
-        "customBody": "{\n  \"component\": \"Benutzerhandbuch\",\n  \"releaseVersion\": \"{{ceromaVersion}}\",\n  \"sprintId\": \"{{sprintId}}\",\n  \"fixVersion\": \"{{ceromaVersion}}\",\n  \"origin\": \"sprint-start-rule-877\"\n}",
+        "customBody": "{\n  \"component\": \"Benutzerhandbuch\",\n  \"releaseVersion\": \"{{ceromaVersion}}\",\n  \"sprintId\": \"{{sprintId}}\",\n  \"sprintName\": \"{{sprintName}}\",\n  \"fixVersion\": \"{{ceromaVersion}}\",\n  \"origin\": \"sprint-start-rule-877\"\n}",
         "method": "POST",
         "responseEnabled": true,
         "usedSecretsKeys": []
       },
       "children": [],
       "conditions": [],
-      "id": "144659"
+      "id": "144699"
     },
     {
-      "id": "144660",
+      "id": "144700",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.condition.container.block",
       "children": [
         {
-          "id": "144661",
+          "id": "144701",
           "component": "CONDITION_BLOCK",
-          "parentId": "144660",
+          "parentId": "144700",
           "schemaVersion": 1,
           "type": "jira.condition.if.block",
           "value": {
@@ -225,9 +225,9 @@
           },
           "children": [
             {
-              "id": "144663",
+              "id": "144703",
               "component": "ACTION",
-              "parentId": "144661",
+              "parentId": "144701",
               "schemaVersion": 1,
               "type": "jira.create.variable",
               "value": {
@@ -247,9 +247,9 @@
               "conditions": []
             },
             {
-              "id": "144664",
+              "id": "144704",
               "component": "ACTION",
-              "parentId": "144661",
+              "parentId": "144701",
               "schemaVersion": 1,
               "type": "jira.create.variable",
               "value": {
@@ -269,9 +269,9 @@
               "conditions": []
             },
             {
-              "id": "144665",
+              "id": "144705",
               "component": "ACTION",
-              "parentId": "144661",
+              "parentId": "144701",
               "schemaVersion": 1,
               "type": "codebarrel.action.log",
               "value": "mediatorVersion: {{mediatorVersion}}",
@@ -287,22 +287,22 @@
                 "headers": [],
                 "sendIssue": false,
                 "contentType": "custom",
-                "customBody": "{\n  \"component\": \"Mediator\",\n  \"releaseVersion\": \"{{mediatorVersion}}\",\n  \"sprintId\": \"{{sprintId}}\",\n  \"fixVersion\": \"{{mediatorFixVersion}}\",\n  \"origin\": \"sprint-start-rule-877\"\n}",
+                "customBody": "{\n  \"component\": \"Mediator\",\n  \"releaseVersion\": \"{{mediatorVersion}}\",\n  \"sprintId\": \"{{sprintId}}\",\n  \"sprintName\": \"{{sprintName}}\",\n  \"fixVersion\": \"{{mediatorFixVersion}}\",\n  \"origin\": \"sprint-start-rule-877\"\n}",
                 "method": "POST",
                 "responseEnabled": true,
                 "usedSecretsKeys": []
               },
               "children": [],
               "conditions": [],
-              "id": "144666",
-              "parentId": "144661"
+              "id": "144706",
+              "parentId": "144701"
             }
           ],
           "conditions": [
             {
-              "id": "144662",
+              "id": "144702",
               "component": "CONDITION",
-              "conditionParentId": "144661",
+              "conditionParentId": "144701",
               "schemaVersion": 1,
               "type": "jira.comparator.condition",
               "value": {
@@ -319,15 +319,15 @@
       "conditions": []
     },
     {
-      "id": "144667",
+      "id": "144707",
       "component": "CONDITION",
       "schemaVersion": 1,
       "type": "jira.condition.container.block",
       "children": [
         {
-          "id": "144668",
+          "id": "144708",
           "component": "CONDITION_BLOCK",
-          "parentId": "144667",
+          "parentId": "144707",
           "schemaVersion": 1,
           "type": "jira.condition.if.block",
           "value": {
@@ -335,9 +335,9 @@
           },
           "children": [
             {
-              "id": "144670",
+              "id": "144710",
               "component": "ACTION",
-              "parentId": "144668",
+              "parentId": "144708",
               "schemaVersion": 1,
               "type": "jira.create.variable",
               "value": {
@@ -357,9 +357,9 @@
               "conditions": []
             },
             {
-              "id": "144671",
+              "id": "144711",
               "component": "ACTION",
-              "parentId": "144668",
+              "parentId": "144708",
               "schemaVersion": 1,
               "type": "jira.create.variable",
               "value": {
@@ -379,9 +379,9 @@
               "conditions": []
             },
             {
-              "id": "144672",
+              "id": "144712",
               "component": "ACTION",
-              "parentId": "144668",
+              "parentId": "144708",
               "schemaVersion": 1,
               "type": "codebarrel.action.log",
               "value": "postIdentServiceVersion: {{postIdentServiceVersion}}",
@@ -397,22 +397,22 @@
                 "headers": [],
                 "sendIssue": false,
                 "contentType": "custom",
-                "customBody": "{\n  \"component\": \"PostIdentService\",\n  \"releaseVersion\": \"{{postIdentServiceVersion}}\",\n  \"sprintId\": \"{{sprintId}}\",\n  \"fixVersion\": \"{{postIdentServiceFixVersion}}\",\n  \"origin\": \"sprint-start-rule-877\"\n}",
+                "customBody": "{\n  \"component\": \"PostIdentService\",\n  \"releaseVersion\": \"{{postIdentServiceVersion}}\",\n  \"sprintId\": \"{{sprintId}}\",\n  \"sprintName\": \"{{sprintName}}\",\n  \"fixVersion\": \"{{postIdentServiceFixVersion}}\",\n  \"origin\": \"sprint-start-rule-877\"\n}",
                 "method": "POST",
                 "responseEnabled": true,
                 "usedSecretsKeys": []
               },
               "children": [],
               "conditions": [],
-              "id": "144673",
-              "parentId": "144668"
+              "id": "144713",
+              "parentId": "144708"
             }
           ],
           "conditions": [
             {
-              "id": "144669",
+              "id": "144709",
               "component": "CONDITION",
-              "conditionParentId": "144668",
+              "conditionParentId": "144708",
               "schemaVersion": 1,
               "type": "jira.comparator.condition",
               "value": {

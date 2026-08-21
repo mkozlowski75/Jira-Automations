@@ -25,22 +25,30 @@ Validierung und Schreibschutz; dieser Skill ersetzt sie nicht.
    gezielte `npm run jira-ticket -- search`-Abfragen mit dem jeweiligen Status
    oder Issue-Typ und gib in der Dokumentation nur die verifizierten
    Bezeichnungen aus, nicht die IDs.
-5. Leite die Dokumentation ausschließlich aus dem aktuellen Regel-Export ab:
+5. Löse bei Sprint-Triggern technische Board-IDs vor dem Schreiben lesend über
+   die Jira-Agile-REST-API in den aktuellen Boardnamen auf. Verwende in der
+   Dokumentation den verifizierten Namen und, wenn eine stabile Jira-Board-URL
+   vorhanden ist, einen Link dorthin. Für Jira Data Center ist dies nach der
+   Verifikation `.../secure/RapidBoard.jspa?rapidView=&lt;board-id&gt;`; veröffentliche
+   weder eine geratene Bezeichnung noch die technische Board-ID als Ersatz.
+6. Leite die Dokumentation ausschließlich aus dem aktuellen Regel-Export ab:
    Trigger, Bedingungen, Variablen, Web Requests, Ergebnisse und Folgeregeln.
    Erfinde keine Projekte, Zeitpläne, IDs, Berechtigungen oder Abläufe.
-6. Verwende die Gliederung aus [Dokumentationsvorlage](references/documentation-template.md).
+7. Verwende die Gliederung aus [Dokumentationsvorlage](references/documentation-template.md).
    Seitentitel und Regelname im Überblick müssen exakt dem aktuellen Jira-Namen
-   entsprechen; übersetze sie nicht.
-7. Lege den Storage-HTML-Entwurf in einem ignorierten temporären Arbeitsordner
+   entsprechen; übersetze sie nicht. Verwende in Fließtext und Querverweisen
+   ebenfalls den exakten Regelnamen statt einer Regelnummer. Regel-IDs bleiben
+   nur in Übersichtstabellen und Jira-Links zulässig.
+8. Lege den Storage-HTML-Entwurf in einem ignorierten temporären Arbeitsordner
    ab. Bei Updates erhalte alle bestehenden Makros, Links und Inhalte außerhalb
    der beauftragten Änderung unverändert.
-8. Führe für jede Erstellung oder Aktualisierung zuerst den Confluence-Preflight
+9. Führe für jede Erstellung oder Aktualisierung zuerst den Confluence-Preflight
    ohne `--apply` aus. Bei einer neuen Regel-Dokumentation übergib immer
    `--labels jira-automatisierungsregel`; zeige auch dieses Label neben
    Operation, Titel, Elternseite, Versionen oder `expectedAbsent` sowie nur den
    Inhaltslängen. Nutze beim Update den vom Preflight gelieferten Schutzwert
    `--expected-version` und übergib dabei keine Labels.
-9. Verwende `--apply` erst nach ausdrücklicher Freigabe des konkret angezeigten
+10. Verwende `--apply` erst nach ausdrücklicher Freigabe des konkret angezeigten
    Preflights in der aktuellen Unterhaltung. Prüfe danach die Seite erneut
    lesend auf Titel, Elternseite, Version und Inhalt.
 
@@ -51,6 +59,13 @@ Validierung und Schreibschutz; dieser Skill ersetzt sie nicht.
   `--labels jira-automatisierungsregel`.
 - Bei vorhandenen Seiten: Aktualisiere den Titel und den Namen im Überblick,
   wenn sie vom aktuellen Jira-Export abweichen.
+- Verwende in beschreibendem Text und bei Querverweisen den exakten Namen der
+  jeweiligen Jira-Regel. Eine Regelnummer darf dort nicht als Ersatz für den
+  Namen stehen.
+- Bei Scrum-Boards nenne den über die Jira-Agile-REST-API verifizierten
+  Boardnamen statt der technischen Board-ID und verlinke ihn auf die stabile
+  Jira-Board-URL, sofern diese verfügbar ist. Kann der Name nicht verifiziert
+  werden, lasse die Boardangabe weg und berichte den fehlenden Abgleich.
 - Beschreibe tatsächliches Verhalten, nicht nur den Regel- oder Ticketnamen.
   Benenne bei einer Mehrtreffer-Abfrage präzise, ob die Regel alle oder nur
   einen zurückgegebenen Eintrag weiterverarbeitet.

@@ -6,11 +6,11 @@ Update bereits vorhandene Makros, Beispiele und Links außerhalb der beauftragte
 
 ## Überblick
 
-Verwende eine Tabelle mit Regel-ID, Name, Status, Projekt, Ausführung,
+Verwende eine Tabelle mit Regel-ID, Name, Zweck, Status, Projekt, Ausführung,
 Fehlerbenachrichtigung und zugehörigem Jira-Ticket. Verlinke Regel-ID und Name
 auf die Jira-Automation. Übernimm den Namen exakt aus dem aktuellen Export.
 
-Beschreibe in einem kurzen Absatz Ziel, Auslöser und fachliches Ergebnis der
+Beschreibe in der Zeile `Zweck` kurz Ziel, Auslöser und fachliches Ergebnis der
 Regel.
 
 ## Eingangsbedingungen

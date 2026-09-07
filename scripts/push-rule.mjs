@@ -13,6 +13,7 @@ import {
 import {
   loadGitHeadRule,
   parseJsonFile,
+  resolveRulesDir,
   resolveTrackedRuleFile,
   validateCandidateRule,
   writeJsonFile,
@@ -24,7 +25,7 @@ import {
 
 const __dir = dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = join(__dir, '..');
-const rulesDir = join(repositoryRoot, 'rules');
+const rulesDir = resolveRulesDir(repositoryRoot);
 const backupsRoot = join(repositoryRoot, 'backups');
 
 function parseArguments(args) {

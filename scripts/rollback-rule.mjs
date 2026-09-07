@@ -11,6 +11,7 @@ import {
 import {
   loadBackupRule,
   parseJsonFile,
+  resolveRulesDir,
   resolveTrackedRuleFile,
   validateCandidateRule,
 } from './lib/rule-repository.mjs';
@@ -21,7 +22,7 @@ import {
 
 const __dir = dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = join(__dir, '..');
-const rulesDir = join(repositoryRoot, 'rules');
+const rulesDir = resolveRulesDir(repositoryRoot);
 const backupsRoot = join(repositoryRoot, 'backups');
 
 async function main() {

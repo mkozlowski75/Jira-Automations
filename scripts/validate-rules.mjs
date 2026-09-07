@@ -6,16 +6,20 @@
 import { readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parseJsonFile } from './lib/rule-repository.mjs';
+import {
+  parseJsonFile,
+  resolveRulesDir,
+} from './lib/rule-repository.mjs';
 import { createRuleSetValidator } from './lib/rule-validation.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const rulesDir = join(__dirname, '..', 'rules');
+const repositoryRoot = join(__dirname, '..');
+const rulesDir = resolveRulesDir(repositoryRoot);
 const schemaPath = join(rulesDir, 'rule-schema.json');
 
 const schema = parseJsonFile(schemaPath);
 const files = readdirSync(rulesDir)
-  .filter(file => /^BDR-\d+\.json$/.test(file))
+  .filter(file => /^(?:BDR-|CER-jira-rule-)\d+\.json$/.test(file))
   .sort((left, right) => left.localeCompare(right, 'de', { numeric: true }));
 
 const entries = [];

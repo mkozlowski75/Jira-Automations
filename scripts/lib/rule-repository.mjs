@@ -1,7 +1,15 @@
-import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { relative, resolve, sep } from 'node:path';
 import { createRuleSetValidator } from './rule-validation.mjs';
+
+export function resolveRulesDir(repositoryRoot) {
+  const candidates = [
+    resolve(repositoryRoot, 'rules'),
+    resolve(repositoryRoot, '..', 'jira-automation-rules', 'rules'),
+  ];
+  return candidates.find(candidate => existsSync(candidate)) ?? candidates[0];
+}
 
 export function parseJsonFile(path) {
   const raw = readFileSync(path, 'utf8');
@@ -15,7 +23,7 @@ export function writeJsonFile(path, value) {
 
 export function loadRuleEntries(rulesDir) {
   return readdirSync(rulesDir)
-    .filter(file => /^BDR-\d+\.json$/.test(file))
+    .filter(file => /^(?:BDR-|CER-jira-rule-)\d+\.json$/.test(file))
     .sort((left, right) => left.localeCompare(right, 'de', { numeric: true }))
     .map(file => ({
       file,
@@ -31,15 +39,20 @@ export function validateCandidateRule({ rulesDir, schema, file, rule }) {
 }
 
 export function resolveTrackedRuleFile(repositoryRoot, inputPath) {
-  const absolutePath = resolve(repositoryRoot, inputPath);
-  const rulesRoot = resolve(repositoryRoot, 'rules');
+  const rulesRoot = resolveRulesDir(repositoryRoot);
+  const trimmedPath = String(inputPath || '')
+    .replace(/\\/g, '/')
+    .replace(/^\.\//, '')
+    .replace(/^rules\//, '')
+    .replace(/^\.\.\/jira-automation-rules\/rules\//, '');
+  const absolutePath = resolve(rulesRoot, trimmedPath);
   const relativeToRules = relative(rulesRoot, absolutePath);
   if (
     relativeToRules.startsWith(`..${sep}`)
     || relativeToRules === '..'
-    || !/^BDR-\d+\.json$/.test(relativeToRules)
+    || !/^(?:BDR-|CER-jira-rule-)\d+\.json$/.test(relativeToRules)
   ) {
-    throw new Error('Es sind ausschließlich rules/BDR-{id}.json-Dateien zulässig.');
+    throw new Error('Es sind ausschließlich rules/BDR-{id}.json- oder rules/CER-jira-rule-{id}.json-Dateien zulässig.');
   }
   return {
     absolutePath,
@@ -74,12 +87,27 @@ export function loadBackupRule(repositoryRoot, inputPath) {
 }
 
 export function loadGitHeadRule(repositoryRoot, repositoryPath) {
+  const absolutePath = resolve(repositoryRoot, repositoryPath);
+  const rulesRoot = resolveRulesDir(repositoryRoot);
+  const candidateRepoRoots = [
+    repositoryRoot,
+    resolve(repositoryRoot, '..', 'jira-automation-rules'),
+  ];
+  const repoRoot = candidateRepoRoots.find(candidate => {
+    const rootPath = resolve(candidate);
+    return absolutePath === rootPath || absolutePath.startsWith(`${rootPath}${sep}`);
+  }) || repositoryRoot;
+  const relativePath = relative(repoRoot, absolutePath).split(sep).join('/');
+  if (!relativePath || relativePath.startsWith('..')) {
+    return null;
+  }
+
   try {
     const raw = execFileSync(
       'git',
-      ['show', `HEAD:${repositoryPath}`],
+      ['show', `HEAD:${relativePath}`],
       {
-        cwd: repositoryRoot,
+        cwd: repoRoot,
         encoding: 'utf8',
         stdio: ['ignore', 'pipe', 'ignore'],
       },

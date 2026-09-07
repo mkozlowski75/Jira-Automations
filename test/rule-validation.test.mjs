@@ -18,6 +18,8 @@ import { findAutomationPluginInfo } from '../scripts/lib/plugin-info.mjs';
 import {
   loadBackupRule,
   parseJsonFile,
+  resolveRulesDir,
+  resolveTrackedRuleFile,
 } from '../scripts/lib/rule-repository.mjs';
 import {
   diffRules,
@@ -31,10 +33,15 @@ import {
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = join(__dirname, '..');
-const rulesDir = join(repositoryRoot, 'rules');
+const rulesDir = join(repositoryRoot, '..', 'jira-automation-rules', 'rules');
 const schema = JSON.parse(readFileSync(join(rulesDir, 'rule-schema.json'), 'utf8'));
 const fixture = JSON.parse(readFileSync(join(__dirname, 'fixtures', 'minimal-rule.json'), 'utf8'));
 const validateRuleSet = createRuleSetValidator(schema);
+
+function readRuleFile(id) {
+  const file = `CER-jira-rule-${id}.json`;
+  return JSON.parse(readFileSync(join(rulesDir, file), 'utf8'));
+}
 
 function cloneFixture() {
   return structuredClone(fixture);
@@ -84,7 +91,7 @@ function withNestedConditionBlock(rule) {
 
 test('validiert alle produktiven Exporte ohne Fehler oder Warnungen', () => {
   const entries = readdirSync(rulesDir)
-    .filter(file => /^BDR-\d+\.json$/.test(file))
+    .filter(file => /^(?:BDR-|CER-jira-rule-)\d+\.json$/.test(file))
     .map(file => ({
       file,
       rule: JSON.parse(readFileSync(join(rulesDir, file), 'utf8')),
@@ -97,9 +104,18 @@ test('validiert alle produktiven Exporte ohne Fehler oder Warnungen', () => {
   assert.deepEqual(result.warnings, []);
 });
 
+test('auflöst Regeln aus dem separaten Regel-Repository und akzeptiert CER-Namensmuster', () => {
+  const siblingRulesRoot = join(repositoryRoot, '..', 'jira-automation-rules', 'rules');
+  const resolved = resolveTrackedRuleFile(repositoryRoot, 'rules/CER-jira-rule-913.json');
+
+  assert.equal(resolveRulesDir(repositoryRoot), siblingRulesRoot);
+  assert.equal(resolved.absolutePath, join(siblingRulesRoot, 'CER-jira-rule-913.json'));
+  assert.equal(resolved.repositoryPath, '../jira-automation-rules/rules/CER-jira-rule-913.json');
+});
+
 test('Regel 1079 validiert Ticketdaten und übergibt sie an den Release-Worker', () => {
-  const rule = JSON.parse(readFileSync(join(rulesDir, 'BDR-1079.json'), 'utf8'));
-  const worker = JSON.parse(readFileSync(join(rulesDir, 'BDR-875.json'), 'utf8'));
+  const rule = readRuleFile(1079);
+  const worker = readRuleFile(875);
   const variables = rule.components.filter(component => component.type === 'jira.create.variable');
   const variableQuery = name => variables.find(component => component.value?.name?.value === name)?.value?.query?.value;
   const containers = rule.components.filter(component => component.type === 'jira.condition.container.block');
@@ -1017,7 +1033,7 @@ test('Rollback nutzt lokalen Mock-Endpunkt, sichert den aktuellen Stand und veri
 });
 
 test('CER-7287 erstellt nur bei Commits einen Release-Merge-Request', () => {
-  const rule = JSON.parse(readFileSync(join(rulesDir, 'BDR-1059.json'), 'utf8'));
+  const rule = readRuleFile(1059);
   const outerBlock = rule.components.find(component => component.children?.some(child =>
     child.children?.some(nested => nested.value === 'Ein offener Merge Request für den Branch {{SourceBranch}} existiert bereits in GitLab.'),
   ));

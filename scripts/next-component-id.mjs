@@ -8,13 +8,14 @@ import { fetchAutomationRules } from './lib/automation-api.mjs';
 import {
   loadRuleEntries,
   parseJsonFile,
+  resolveRulesDir,
   resolveTrackedRuleFile,
 } from './lib/rule-repository.mjs';
 import { nextComponentId } from './lib/rule-workflow.mjs';
 
 const __dir = dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = join(__dir, '..');
-const rulesDir = join(repositoryRoot, 'rules');
+const rulesDir = resolveRulesDir(repositoryRoot);
 
 async function main() {
   const ruleFile = process.argv.slice(2).find(argument => !argument.startsWith('--'));

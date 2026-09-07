@@ -144,24 +144,28 @@ Export als `rules/BDR-{id}.json` aufnehmen und erst danach bearbeiten.
 ## Projektstruktur
 
 ```text
-.github/skills/jira-automation-rules/  Verbindlicher KI-Workflow und Referenzen
-.github/skills/jira-tickets/           Sicherer Lese- und Änderungsworkflow für Tickets
-.github/skills/cer-jira-tickets/       Live-vorlagenkonforme CER-Storys, -Bugs und -Tasks
-.github/skills/confluence-pages/       Sicherer Lese- und Änderungsworkflow für Seiten
-.github/skills/cve-ticket-factory/     Freigabegesteuerte CER-CVE-Ticketanlage
-.github/skills/gitlab-access/          Sicherer schreibgeschützter GitLab-Zugriff
-.github/skills/jira-rule-documentation/ Regel-Dokumentation und Abgleich in Confluence
-.github/skills/release-changelogs/     CER-Komponenten-Changelogs in Confluence
-.github/skills/sprint-reviews/         CER-Sprint-Reviews in Confluence
-.github/skills/README.md               Übersicht mit natürlichsprachlichen Beispiel-Prompts
-.vscode/settings.json                  Schema-Zuordnung für Visual Studio Code
-config/.env.example                    Bereinigte Verbindungskonfiguration
-rules/BDR-*.json                       Produktive Jira-Exporte
-rules/rule-schema.json                 JSON-Schema und Editor-Unterstützung
-scripts/                               Validierung und sichere Jira-Werkzeuge
-test/                                  Bereinigte Fixtures und Sicherheitstests
-examples/                              Anonymisierte Eingabebeispiele
+.github/skills/jira-automation-rules/          Verbindlicher KI-Workflow und Referenzen
+.github/skills/jira-tickets/                   Sicherer Lese- und Änderungsworkflow für Tickets
+.github/skills/cer-jira-tickets/               Live-vorlagenkonforme CER-Storys, -Bugs und -Tasks
+.github/skills/confluence-pages/               Sicherer Lese- und Änderungsworkflow für Seiten
+.github/skills/cve-ticket-factory/             Freigabegesteuerte CER-CVE-Ticketanlage
+.github/skills/gitlab-access/                  Sicherer schreibgeschützter GitLab-Zugriff
+.github/skills/jira-rule-documentation/        Regel-Dokumentation und Abgleich in Confluence
+.github/skills/release-changelogs/             CER-Komponenten-Changelogs in Confluence
+.github/skills/sprint-reviews/                 CER-Sprint-Reviews in Confluence
+.github/skills/README.md                       Übersicht mit natürlichsprachlichen Beispiel-Prompts
+.vscode/settings.json                          Schema-Zuordnung für Visual Studio Code
+config/.env.example                            Bereinigte Verbindungskonfiguration
+../jira-automation-rules/rules/                Produktive Jira-Exporte im separaten Regeln-Repository
+../jira-automation-rules/rules/rule-schema.json JSON-Schema und Editor-Unterstützung
+scripts/                                       Validierung und sichere Jira-Werkzeuge
+test/                                          Bereinigte Fixtures und Sicherheitstests
+examples/                                      Anonymisierte Eingabebeispiele
 ```
+
+Die produktiven Regel-Exporte liegen jetzt in einem separaten Repository, damit
+Logik und Regelbestand unabhängig versioniert werden können. Die Skripte beziehen
+ihre `rules/`-Ordner zur Laufzeit über das Schwester-Repository `../jira-automation-rules`.
 
 Die technische Source of Truth sind `rules/rule-schema.json` und
 `KNOWN_COMPONENTS` in `scripts/lib/rule-validation.mjs`. Zusätzliche

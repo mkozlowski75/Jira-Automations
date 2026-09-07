@@ -2,9 +2,10 @@
   "json.schemas": [
     {
       "fileMatch": [
-        "/rules/BDR-*.json"
+        "/rules/CER-jira-rule-*.json",
+        "/../jira-automation-rules/rules/CER-jira-rule-*.json"
       ],
-      "url": "./rules/rule-schema.json"
+      "url": "../jira-automation-rules/rules/rule-schema.json"
     }
   ]
 }

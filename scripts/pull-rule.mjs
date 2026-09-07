@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { fetchAutomationRule } from './lib/automation-api.mjs';
 import {
   parseJsonFile,
+  resolveRulesDir,
   resolveTrackedRuleFile,
   validateCandidateRule,
   writeJsonFile,
@@ -42,9 +43,10 @@ async function main() {
     return;
   }
 
+  const rulesDir = resolveRulesDir(repositoryRoot);
   const validation = validateCandidateRule({
-    rulesDir: join(repositoryRoot, 'rules'),
-    schema: parseJsonFile(join(repositoryRoot, 'rules', 'rule-schema.json')),
+    rulesDir,
+    schema: parseJsonFile(join(rulesDir, 'rule-schema.json')),
     file: resolved.file,
     rule: remoteRule,
   });

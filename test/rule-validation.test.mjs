@@ -149,6 +149,29 @@ test('Regel 1079 validiert Ticketdaten und übergibt sie an den Release-Worker',
   assert.equal(JSON.stringify(worker).toLowerCase().includes('product'), false);
 });
 
+test('Release-Worker stellt die Fix-Version vor dem Duplikat-Lookup zentral bereit', () => {
+  const worker = readRuleFile(875);
+  const flattenComponents = components => components.flatMap(component => [
+    component,
+    ...flattenComponents(component.children ?? []),
+    ...flattenComponents(component.conditions ?? []),
+  ]);
+  const allComponents = flattenComponents(worker.components);
+  const versionActions = allComponents.filter(component => component.type === 'jira.version.create');
+  const versionActionIndex = worker.components.findIndex(component => component.type === 'jira.version.create');
+  const duplicateJqlIndex = worker.components.findIndex(component => component.value?.name?.value === 'releaseDuplicateJql');
+  const lookupIndex = worker.components.findIndex(component => component.type === 'jira.lookup.issues');
+
+  assert.equal(versionActions.length, 1);
+  assert.match(versionActions[0].id, /^\d+$/);
+  assert.equal(versionActions[0].parentId, undefined);
+  assert.equal(versionActions[0].value.versionName, '{{workerFixVersion}}');
+  assert.equal(versionActions[0].value.project.value, '11215');
+  assert.ok(versionActionIndex > worker.components.findIndex(component => component.value?.name?.value === 'workerFixVersion'));
+  assert.ok(versionActionIndex < duplicateJqlIndex);
+  assert.ok(duplicateJqlIndex < lookupIndex);
+});
+
 test('stellt eine eindeutige und vollständige Befehlsoberfläche bereit', () => {
   const packageJson = parseJsonFile(join(repositoryRoot, 'package.json'));
 

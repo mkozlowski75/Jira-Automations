@@ -130,8 +130,8 @@ test('Regel 1079 validiert Ticketdaten und übergibt sie an den Release-Worker',
   const successEmail = flattenWorkerComponents(worker.components).find(component => component.type === 'jira.issue.outgoing.email' && component.value?.subject?.startsWith('Release-Ticket erstellt:'));
 
   assert.deepEqual(rule.trigger.value.groups, ['prj-cer-pa']);
-  assert.match(rule.description, /letzte Komponente, Fix-Version und Sprint-ID/);
-  assert.equal(variableQuery('component'), '{{issue.components.last.name}}');
+  assert.match(rule.description, /erste Komponente, Fix-Version und Sprint-ID/);
+  assert.equal(variableQuery('component'), '{{issue.components.first.name}}');
   assert.equal(variableQuery('releaseVersion'), '{{issue.fixVersions.last.name}}');
   assert.equal(variableQuery('workerFixVersion'), '{{issue.fixVersions.last.name}}');
   assert.equal(variableQuery('workerSprintId'), '{{issue.sprint.last.id}}');

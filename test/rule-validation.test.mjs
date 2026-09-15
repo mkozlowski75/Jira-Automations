@@ -218,6 +218,55 @@ test('CVE-Worker 914 erstellt nur für valide, nicht duplizierte HIGH/CRITICAL-F
   assert.match(invalidPayloadLog.value, /Kein Ticket und keine E-Mail erstellt/);
 });
 
+test('Trivy-Alert 1029 übergibt höchstens fünf eindeutige HIGH/CRITICAL-CVE-Funde an Worker 914', () => {
+  const rule = readRuleFile(1029);
+  const flatten = components => components.flatMap(component => [
+    component,
+    ...flatten(component.children ?? []),
+    ...flatten(component.conditions ?? []),
+  ]);
+  const components = flatten(rule.components);
+  const variables = components.filter(component => component.type === 'jira.create.variable');
+  const cveTicketRows = variables.find(component => component.value?.name?.value === 'cveTicketRows');
+  const email = components.find(component =>
+    component.type === 'jira.issue.outgoing.email'
+      && component.value?.subject?.includes('Ceroma Security Alert'),
+  );
+  const workerCalls = components.filter(component =>
+    component.type === 'jira.issue.outgoing.webhook'
+      && component.value?.customBody?.includes('"installedVersion"')
+      && component.value?.customBody?.includes('"source"'),
+  );
+  const workerBlocks = components.filter(component =>
+    component.type === 'jira.condition.if.block'
+      && component.conditions?.some(condition =>
+        condition.value?.first?.includes('cveTicketRows')
+          && condition.value?.operator === 'NOT_EQUALS'),
+  );
+  const overflowLog = components.find(component =>
+    component.type === 'codebarrel.action.log'
+      && component.value?.includes('Fünferlimits'),
+  );
+
+  assert.ok(cveTicketRows);
+  assert.match(cveTicketRows.value.query.value, /VulnerabilityID\.startsWith\(\"CVE-\"\)/);
+  assert.match(cveTicketRows.value.query.value, /Severity\.toUpperCase,\"HIGH\"/);
+  assert.match(cveTicketRows.value.query.value, /Severity\.toUpperCase,\"CRITICAL\"/);
+  assert.equal(workerCalls.length, 5);
+  assert.equal(workerBlocks.length, 5);
+  for (const [index, workerCall] of workerCalls.entries()) {
+    assert.equal(workerCall.value.method, 'POST');
+    assert.equal(workerCall.value.contentType, 'custom');
+    assert.equal(workerCall.value.responseEnabled, false);
+    assert.match(workerCall.value.customBody, new RegExp(`get\\(${index}\\)`));
+    assert.match(workerCall.value.customBody, /\.asJsonString/);
+    assert.match(workerCall.value.customBody, /\{\{trivyJobUrl\.asJsonString\}\}/);
+  }
+  assert.match(email.value.body, /ersten fünf eindeutigen HIGH\/CRITICAL-CVE-Funde/);
+  assert.match(email.value.body, /sofern kein offenes Dubletten-Ticket vorhanden ist/);
+  assert.match(overflowLog.value, /- 5/);
+});
+
 test('Regel 1079 validiert Ticketdaten und übergibt sie an den Release-Worker', () => {
   const rule = readRuleFile(1079);
   const worker = readRuleFile(875);

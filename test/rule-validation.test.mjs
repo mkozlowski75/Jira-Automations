@@ -181,10 +181,24 @@ test('CVE-Worker 914 erstellt nur für valide, nicht duplizierte HIGH/CRITICAL-F
   assert.equal(createdKey.parentId, email.parentId);
   assert.equal(createdKey.value.query.value, '{{createdIssue.key}}');
   assert.equal(email.schemaVersion, 3);
-  assert.deepEqual(email.value.to, [{
-    type: 'FREE',
-    value: 'matthias.kozlowski.extern@bdr.de',
-  }]);
+  assert.deepEqual(email.value.to, [
+    {
+      type: 'FREE',
+      value: '"Kozlowski, Matthias (extern)" <Matthias.Kozlowski.extern@BDR.de>',
+    },
+    {
+      type: 'FREE',
+      value: '"Kiepke, Gerald" <Gerald.Kiepke@BDR.de>',
+    },
+    {
+      type: 'FREE',
+      value: '"Laska, Adrian" <Adrian.Laska@bdr.de>',
+    },
+    {
+      type: 'FREE',
+      value: '"Kühl, Alexander" <Alexander.Kuehl@BDR.de>',
+    },
+  ]);
   assert.deepEqual(email.value.cc, []);
   assert.deepEqual(email.value.bcc, []);
   assert.match(email.value.subject, /\{\{createdCveKey\}\}.*\{\{webhookData\.cve\}\}/);

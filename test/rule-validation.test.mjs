@@ -139,7 +139,7 @@ test('CVE-Worker 914 erstellt nur für valide, nicht duplizierte HIGH/CRITICAL-F
       && component.value?.includes('offenes CVE-Duplikat'),
   );
 
-  assert.equal(rule.state, 'DISABLED');
+  assert.equal(rule.state, 'ENABLED');
   assert.equal(rule.trigger.type, 'jira.incoming.webhook');
   assert.equal(rule.projects[0].projectId, '11215');
   assert.equal(validationBlock.conditions.length, 5);

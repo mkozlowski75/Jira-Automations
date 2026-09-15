@@ -113,6 +113,85 @@ test('auflöst Regeln aus dem separaten Regel-Repository und akzeptiert CER-Name
   assert.equal(resolved.repositoryPath, '../jira-automation-rules/rules/CER-jira-rule-913.json');
 });
 
+test('CVE-Worker 914 erstellt nur für valide, nicht duplizierte HIGH/CRITICAL-Funde und benachrichtigt danach', () => {
+  const rule = readRuleFile(914);
+  const flatten = components => components.flatMap(component => [
+    component,
+    ...flatten(component.children ?? []),
+    ...flatten(component.conditions ?? []),
+  ]);
+  const components = flatten(rule.components);
+  const validationBlock = components.find(component =>
+    component.type === 'jira.condition.if.block'
+      && component.conditions?.some(condition =>
+        condition.value?.first === '{{webhookData.cve}}'
+          && condition.value?.operator === 'REGEX_MATCHES'),
+  );
+  const lookup = components.find(component => component.type === 'jira.lookup.issues');
+  const create = components.find(component => component.type === 'jira.issue.create');
+  const createdKey = components.find(component =>
+    component.type === 'jira.create.variable'
+      && component.value?.name?.value === 'createdCveKey',
+  );
+  const email = components.find(component => component.type === 'jira.issue.outgoing.email');
+  const duplicateLog = components.find(component =>
+    component.type === 'codebarrel.action.log'
+      && component.value?.includes('offenes CVE-Duplikat'),
+  );
+
+  assert.equal(rule.state, 'DISABLED');
+  assert.equal(rule.trigger.type, 'jira.incoming.webhook');
+  assert.equal(rule.projects[0].projectId, '11215');
+  assert.equal(validationBlock.conditions.length, 5);
+  assert.deepEqual(
+    validationBlock.conditions.map(condition => condition.value.first).sort(),
+    [
+      '{{webhookData.cve}}',
+      '{{webhookData.installedVersion}}',
+      '{{webhookData.library}}',
+      '{{webhookData.severity}}',
+      '{{webhookData.source}}',
+    ],
+  );
+  assert.match(
+    lookup.value.query.value,
+    /statusCategory != Done.*summary.*description/s,
+  );
+  assert.equal(lookup.parentId, validationBlock.id);
+  assert.equal(create.parentId, createdKey.parentId);
+  assert.equal(createdKey.parentId, email.parentId);
+  assert.equal(createdKey.value.query.value, '{{createdIssue.key}}');
+  assert.equal(email.schemaVersion, 3);
+  assert.deepEqual(email.value.to, [{
+    type: 'FREE',
+    value: 'matthias.kozlowski.extern@bdr.de',
+  }]);
+  assert.deepEqual(email.value.cc, []);
+  assert.deepEqual(email.value.bcc, []);
+  assert.match(email.value.subject, /\{\{createdCveKey\}\}.*\{\{webhookData\.cve\}\}/);
+  assert.match(email.value.body, /browse\/\{\{createdCveKey\}\}/);
+  assert.match(email.value.body, /CVERecord\?id=\{\{webhookData\.cve\}\}/);
+  assert.match(email.value.body, /href="\{\{webhookData\.source\}\}"/);
+  assert.match(email.value.body, /<h3>Details<\/h3>/);
+  assert.match(email.value.body, /<h3>Ergebnis<\/h3>/);
+  assert.match(email.value.body, /<h3>Nächste Schritte<\/h3>/);
+  assert.match(
+    email.value.body,
+    /AutomationProjectAdminAction!default\.jspa\?projectKey=CER#\/rule\/914/,
+  );
+  assert.match(email.value.body, /Jira-Automation-Regel <strong>\{\{rule\.name\}\}<\/strong>/);
+  assert.equal(
+    create.value.operations.find(operation => operation.fieldId === 'labels').value[0].value,
+    'CVE',
+  );
+  assert.equal(
+    create.value.operations.find(operation => operation.fieldId === 'issuetype').value.value,
+    '10002',
+  );
+  assert.ok(duplicateLog);
+  assert.notEqual(duplicateLog.parentId, email.parentId);
+});
+
 test('Regel 1079 validiert Ticketdaten und übergibt sie an den Release-Worker', () => {
   const rule = readRuleFile(1079);
   const worker = readRuleFile(875);

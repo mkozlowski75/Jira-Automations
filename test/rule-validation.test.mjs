@@ -138,10 +138,29 @@ test('CVE-Worker 914 erstellt nur für valide, nicht duplizierte HIGH/CRITICAL-F
     component.type === 'codebarrel.action.log'
       && component.value?.includes('offenes CVE-Duplikat'),
   );
+  const receivedLog = rule.components.find(component =>
+    component.type === 'codebarrel.action.log'
+      && component.value?.includes('WebHook-Fund empfangen:'),
+  );
+  const invalidPayloadBlock = components.find(component =>
+    component.type === 'jira.condition.if.block'
+      && component.value?.conditionMatchType === 'ANY'
+      && component.conditions?.some(condition =>
+        condition.value?.first === '{{webhookData.cve}}'
+          && condition.value?.operator === 'REGEX_NOT_MATCHES'),
+  );
+  const invalidPayloadLog = components.find(component =>
+    component.type === 'codebarrel.action.log'
+      && component.value?.includes('WebHook-Fund abgewiesen'),
+  );
 
   assert.equal(rule.state, 'ENABLED');
   assert.equal(rule.trigger.type, 'jira.incoming.webhook');
   assert.equal(rule.projects[0].projectId, '11215');
+  assert.equal(receivedLog, rule.components[0]);
+  for (const field of ['cve', 'library', 'installedVersion', 'severity', 'source']) {
+    assert.match(receivedLog.value, new RegExp(`\\{\\{webhookData\\.${field}\\}\\}`));
+  }
   assert.equal(validationBlock.conditions.length, 5);
   assert.deepEqual(
     validationBlock.conditions.map(condition => condition.value.first).sort(),
@@ -190,6 +209,13 @@ test('CVE-Worker 914 erstellt nur für valide, nicht duplizierte HIGH/CRITICAL-F
   );
   assert.ok(duplicateLog);
   assert.notEqual(duplicateLog.parentId, email.parentId);
+  assert.equal(invalidPayloadBlock.parentId, validationBlock.parentId);
+  assert.equal(invalidPayloadBlock.conditions.length, 5);
+  assert.ok(invalidPayloadBlock.conditions.every(condition =>
+    condition.value.operator === 'REGEX_NOT_MATCHES'));
+  assert.equal(invalidPayloadLog.parentId, invalidPayloadBlock.id);
+  assert.match(invalidPayloadLog.value, /mindestens ein Parameter entspricht nicht den Vorgaben/);
+  assert.match(invalidPayloadLog.value, /Kein Ticket und keine E-Mail erstellt/);
 });
 
 test('Regel 1079 validiert Ticketdaten und übergibt sie an den Release-Worker', () => {

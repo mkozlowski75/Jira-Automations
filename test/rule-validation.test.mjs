@@ -113,7 +113,7 @@ test('auflöst Regeln aus dem separaten Regel-Repository und akzeptiert CER-Name
   assert.equal(resolved.repositoryPath, '../jira-automation-rules/rules/CER-jira-rule-913.json');
 });
 
-test('CVE-Worker 914 erstellt nur für valide, nicht duplizierte HIGH/CRITICAL-Funde und benachrichtigt danach', () => {
+test('Security-Worker 914 erstellt nur für valide, nicht duplizierte HIGH/CRITICAL-CVE- oder -GHSA-Funde und benachrichtigt danach', () => {
   const rule = readRuleFile(914);
   const flatten = components => components.flatMap(component => [
     component,
@@ -124,19 +124,19 @@ test('CVE-Worker 914 erstellt nur für valide, nicht duplizierte HIGH/CRITICAL-F
   const validationBlock = components.find(component =>
     component.type === 'jira.condition.if.block'
       && component.conditions?.some(condition =>
-        condition.value?.first === '{{webhookData.cve}}'
+        condition.value?.first === '{{webhookData.findingId}}'
           && condition.value?.operator === 'REGEX_MATCHES'),
   );
   const lookup = components.find(component => component.type === 'jira.lookup.issues');
   const create = components.find(component => component.type === 'jira.issue.create');
   const createdKey = components.find(component =>
     component.type === 'jira.create.variable'
-      && component.value?.name?.value === 'createdCveKey',
+      && component.value?.name?.value === 'createdSecurityFindingKey',
   );
   const email = components.find(component => component.type === 'jira.issue.outgoing.email');
   const duplicateLog = components.find(component =>
     component.type === 'codebarrel.action.log'
-      && component.value?.includes('offenes CVE-Duplikat'),
+      && component.value?.includes('offenes Sicherheitsfund-Duplikat'),
   );
   const receivedLog = rule.components.find(component =>
     component.type === 'codebarrel.action.log'
@@ -146,7 +146,7 @@ test('CVE-Worker 914 erstellt nur für valide, nicht duplizierte HIGH/CRITICAL-F
     component.type === 'jira.condition.if.block'
       && component.value?.conditionMatchType === 'ANY'
       && component.conditions?.some(condition =>
-        condition.value?.first === '{{webhookData.cve}}'
+        condition.value?.first === '{{webhookData.findingId}}'
           && condition.value?.operator === 'REGEX_NOT_MATCHES'),
   );
   const invalidPayloadLog = components.find(component =>
@@ -158,14 +158,14 @@ test('CVE-Worker 914 erstellt nur für valide, nicht duplizierte HIGH/CRITICAL-F
   assert.equal(rule.trigger.type, 'jira.incoming.webhook');
   assert.equal(rule.projects[0].projectId, '11215');
   assert.equal(receivedLog, rule.components[0]);
-  for (const field of ['cve', 'library', 'installedVersion', 'severity', 'source']) {
+  for (const field of ['findingId', 'library', 'installedVersion', 'severity', 'source']) {
     assert.match(receivedLog.value, new RegExp(`\\{\\{webhookData\\.${field}\\}\\}`));
   }
   assert.equal(validationBlock.conditions.length, 5);
   assert.deepEqual(
     validationBlock.conditions.map(condition => condition.value.first).sort(),
     [
-      '{{webhookData.cve}}',
+      '{{webhookData.findingId}}',
       '{{webhookData.installedVersion}}',
       '{{webhookData.library}}',
       '{{webhookData.severity}}',
@@ -176,6 +176,7 @@ test('CVE-Worker 914 erstellt nur für valide, nicht duplizierte HIGH/CRITICAL-F
     lookup.value.query.value,
     /statusCategory != Done.*summary.*description/s,
   );
+  assert.match(lookup.value.query.value, /\{\{webhookData\.findingId\}\}/);
   assert.equal(lookup.parentId, validationBlock.id);
   assert.equal(create.parentId, createdKey.parentId);
   assert.equal(createdKey.parentId, email.parentId);
@@ -201,9 +202,10 @@ test('CVE-Worker 914 erstellt nur für valide, nicht duplizierte HIGH/CRITICAL-F
   ]);
   assert.deepEqual(email.value.cc, []);
   assert.deepEqual(email.value.bcc, []);
-  assert.match(email.value.subject, /\{\{createdCveKey\}\}.*\{\{webhookData\.cve\}\}/);
-  assert.match(email.value.body, /browse\/\{\{createdCveKey\}\}/);
-  assert.match(email.value.body, /CVERecord\?id=\{\{webhookData\.cve\}\}/);
+  assert.match(email.value.subject, /\{\{createdSecurityFindingKey\}\}.*\{\{webhookData\.findingId\}\}/);
+  assert.match(email.value.body, /browse\/\{\{createdSecurityFindingKey\}\}/);
+  assert.match(email.value.body, /CVERecord\?id=\{\{webhookData\.findingId\}\}/);
+  assert.match(email.value.body, /github\.com\/advisories\/\{\{webhookData\.findingId\}\}/);
   assert.match(email.value.body, /href="\{\{webhookData\.source\}\}"/);
   assert.match(email.value.body, /<h3>Details<\/h3>/);
   assert.match(email.value.body, /<h3>Ergebnis<\/h3>/);
@@ -215,7 +217,7 @@ test('CVE-Worker 914 erstellt nur für valide, nicht duplizierte HIGH/CRITICAL-F
   assert.match(email.value.body, /Jira-Automation-Regel <strong>\{\{rule\.name\}\}<\/strong>/);
   assert.equal(
     create.value.operations.find(operation => operation.fieldId === 'labels').value[0].value,
-    'CVE',
+    'Security',
   );
   assert.equal(
     create.value.operations.find(operation => operation.fieldId === 'issuetype').value.value,
@@ -230,9 +232,19 @@ test('CVE-Worker 914 erstellt nur für valide, nicht duplizierte HIGH/CRITICAL-F
   assert.equal(invalidPayloadLog.parentId, invalidPayloadBlock.id);
   assert.match(invalidPayloadLog.value, /mindestens ein Parameter entspricht nicht den Vorgaben/);
   assert.match(invalidPayloadLog.value, /Kein Ticket und keine E-Mail erstellt/);
+  const findingIdPattern = '^(?:CVE-\\d{4}-\\d{4,24}|GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4})$';
+  assert.equal(validationBlock.conditions[0].value.second, findingIdPattern);
+  assert.equal(invalidPayloadBlock.conditions[0].value.second, findingIdPattern);
+  const findingIdExpression = new RegExp(findingIdPattern);
+  assert.equal(findingIdExpression.test('CVE-2026-40985'), true);
+  assert.equal(findingIdExpression.test('GHSA-7wwv-79xw-rvvg'), true);
+  assert.equal(findingIdExpression.test('GHSA-invalid'), false);
+  assert.equal(findingIdExpression.test('OTHER-2026-40985'), false);
+  assert.match(create.value.operations.find(operation => operation.fieldId === 'summary').value, /^\[Security\] \{\{webhookData\.findingId\}\}/);
+  assert.match(create.value.operations.find(operation => operation.fieldId === 'description').value, /github\.com\/advisories\/\{\{webhookData\.findingId\}\}/);
 });
 
-test('Trivy-Alert 1029 übergibt höchstens fünf eindeutige HIGH/CRITICAL-CVE-Funde an Worker 914', () => {
+test('Trivy-Alert 1029 übergibt höchstens fünf eindeutige HIGH/CRITICAL-CVE- oder -GHSA-Funde an Worker 914', () => {
   const rule = readRuleFile(1029);
   const flatten = components => components.flatMap(component => [
     component,
@@ -241,7 +253,8 @@ test('Trivy-Alert 1029 übergibt höchstens fünf eindeutige HIGH/CRITICAL-CVE-F
   ]);
   const components = flatten(rule.components);
   const variables = components.filter(component => component.type === 'jira.create.variable');
-  const cveTicketRows = variables.find(component => component.value?.name?.value === 'cveTicketRows');
+  const securityFindingTicketRows = variables.find(component =>
+    component.value?.name?.value === 'securityFindingTicketRows');
   const email = components.find(component =>
     component.type === 'jira.issue.outgoing.email'
       && component.value?.subject?.includes('Ceroma Security Alert'),
@@ -254,7 +267,7 @@ test('Trivy-Alert 1029 übergibt höchstens fünf eindeutige HIGH/CRITICAL-CVE-F
   const workerBlocks = components.filter(component =>
     component.type === 'jira.condition.if.block'
       && component.conditions?.some(condition =>
-        condition.value?.first?.includes('cveTicketRows')
+        condition.value?.first?.includes('securityFindingTicketRows')
           && condition.value?.operator === 'NOT_EQUALS'),
   );
   const overflowLog = components.find(component =>
@@ -262,10 +275,11 @@ test('Trivy-Alert 1029 übergibt höchstens fünf eindeutige HIGH/CRITICAL-CVE-F
       && component.value?.includes('Fünferlimits'),
   );
 
-  assert.ok(cveTicketRows);
-  assert.match(cveTicketRows.value.query.value, /VulnerabilityID\.startsWith\(\"CVE-\"\)/);
-  assert.match(cveTicketRows.value.query.value, /Severity\.toUpperCase,\"HIGH\"/);
-  assert.match(cveTicketRows.value.query.value, /Severity\.toUpperCase,\"CRITICAL\"/);
+  assert.ok(securityFindingTicketRows);
+  assert.match(securityFindingTicketRows.value.query.value, /VulnerabilityID\.startsWith\(\"CVE-\"\)/);
+  assert.match(securityFindingTicketRows.value.query.value, /VulnerabilityID\.startsWith\(\"GHSA-\"\)/);
+  assert.match(securityFindingTicketRows.value.query.value, /Severity\.toUpperCase,\"HIGH\"/);
+  assert.match(securityFindingTicketRows.value.query.value, /Severity\.toUpperCase,\"CRITICAL\"/);
   assert.equal(workerCalls.length, 5);
   assert.equal(workerBlocks.length, 5);
   for (const [index, workerCall] of workerCalls.entries()) {
@@ -274,9 +288,11 @@ test('Trivy-Alert 1029 übergibt höchstens fünf eindeutige HIGH/CRITICAL-CVE-F
     assert.equal(workerCall.value.responseEnabled, false);
     assert.match(workerCall.value.customBody, new RegExp(`get\\(${index}\\)`));
     assert.match(workerCall.value.customBody, /\.asJsonString/);
+    assert.match(workerCall.value.customBody, /"findingId"/);
+    assert.doesNotMatch(workerCall.value.customBody, /"cve"/);
     assert.match(workerCall.value.customBody, /\{\{trivyJobUrl\.asJsonString\}\}/);
   }
-  assert.match(email.value.body, /ersten fünf eindeutigen HIGH\/CRITICAL-CVE-Funde/);
+  assert.match(email.value.body, /ersten fünf eindeutigen HIGH\/CRITICAL-CVE- oder -GHSA-Funde/);
   assert.match(email.value.body, /sofern kein offenes Dubletten-Ticket vorhanden ist/);
   assert.match(overflowLog.value, /- 5/);
 });

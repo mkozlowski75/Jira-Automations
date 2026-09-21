@@ -240,7 +240,7 @@ test('Security-Worker 914 erstellt nur für valide, nicht duplizierte HIGH/CRITI
   assert.equal(findingIdExpression.test('GHSA-7wwv-79xw-rvvg'), true);
   assert.equal(findingIdExpression.test('GHSA-invalid'), false);
   assert.equal(findingIdExpression.test('OTHER-2026-40985'), false);
-  assert.match(create.value.operations.find(operation => operation.fieldId === 'summary').value, /^\[Security\] \{\{webhookData\.findingId\}\}/);
+  assert.match(create.value.operations.find(operation => operation.fieldId === 'summary').value, /^\[CVE\] \{\{webhookData\.findingId\}\}/);
   assert.match(create.value.operations.find(operation => operation.fieldId === 'description').value, /github\.com\/advisories\/\{\{webhookData\.findingId\}\}/);
 });
 

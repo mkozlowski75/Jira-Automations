@@ -297,28 +297,33 @@ test('Trivy-Alert 1029 übergibt höchstens fünf eindeutige HIGH/CRITICAL-CVE- 
   assert.match(overflowLog.value, /- 5/);
 });
 
-test('Regel 1079 validiert Ticketdaten und übergibt sie an den Release-Worker', () => {
+test('Release-Aufrufer übergeben die Fix-Version und Worker 875 leitet die Release-Version ab', () => {
   const rule = readRuleFile(1079);
   const worker = readRuleFile(875);
+  const sprintStarter = readRuleFile(877);
   const variables = rule.components.filter(component => component.type === 'jira.create.variable');
   const variableQuery = name => variables.find(component => component.value?.name?.value === name)?.value?.query?.value;
+  const workerVariables = worker.components.filter(component => component.type === 'jira.create.variable');
+  const workerVariableQuery = name => workerVariables.find(component => component.value?.name?.value === name)?.value?.query?.value;
   const containers = rule.components.filter(component => component.type === 'jira.condition.container.block');
   const allComponents = containers.flatMap(container => [container, ...container.children, ...container.children.flatMap(block => [...block.children, ...block.conditions])]);
   const webhook = allComponents.find(component => component.type === 'jira.issue.outgoing.webhook');
   const comparators = allComponents.filter(component => component.type === 'jira.comparator.condition');
-  const flattenWorkerComponents = components => components.flatMap(component => [
+  const flattenComponents = components => components.flatMap(component => [
     component,
-    ...flattenWorkerComponents(component.children ?? []),
-    ...flattenWorkerComponents(component.conditions ?? [])
+    ...flattenComponents(component.children ?? []),
+    ...flattenComponents(component.conditions ?? [])
   ]);
-  const successEmail = flattenWorkerComponents(worker.components).find(component => component.type === 'jira.issue.outgoing.email' && component.value?.subject?.startsWith('Release-Ticket erstellt:'));
+  const successEmail = flattenComponents(worker.components).find(component => component.type === 'jira.issue.outgoing.email' && component.value?.subject?.startsWith('Release-Ticket erstellt:'));
+  const sprintWebhooks = flattenComponents(sprintStarter.components).filter(component => component.type === 'jira.issue.outgoing.webhook');
 
   assert.deepEqual(rule.trigger.value.groups, ['prj-cer-pa']);
   assert.match(rule.description, /erste Komponente, Fix-Version und Sprint-ID/);
   assert.equal(variableQuery('component'), '{{issue.components.first.name}}');
-  assert.equal(variableQuery('releaseVersion'), '{{issue.fixVersions.last.name.replaceAll("^.*\\s+([0-9]+(?:\\.[0-9]+)+)$", "$1")}}');
+  assert.equal(variableQuery('releaseVersion'), undefined);
   assert.equal(variableQuery('workerFixVersion'), '{{issue.fixVersions.last.name}}');
   assert.equal(variableQuery('workerSprintId'), '{{issue.sprint.last.id}}');
+  assert.equal(workerVariableQuery('releaseVersion'), '{{webhookData.fixVersion.replaceAll("^.*\\s+([0-9]+(?:\\.[0-9]+)+)$", "$1")}}');
   const versionWithOptionalPrefix = /^.*\s+([0-9]+(?:\.[0-9]+)+)$/;
   assert.equal('Mediator 1.40.0'.replace(versionWithOptionalPrefix, '$1'), '1.40.0');
   assert.equal('PostIdentService 1.15.0'.replace(versionWithOptionalPrefix, '$1'), '1.15.0');
@@ -326,7 +331,11 @@ test('Regel 1079 validiert Ticketdaten und übergibt sie an den Release-Worker',
   assert.equal('1.2.3'.replace(versionWithOptionalPrefix, '$1'), '1.2.3');
   assert.equal(webhook.value.method, 'POST');
   assert.match(webhook.value.customBody, /"component": "\{\{component\}\}"/);
+  assert.doesNotMatch(webhook.value.customBody, /"releaseVersion"/);
   assert.match(webhook.value.customBody, /"sourceIssueKey": "\{\{issue\.key\}\}"/);
+  assert.equal(sprintWebhooks.length, 4);
+  assert.ok(sprintWebhooks.every(component => component.value.customBody.includes('"fixVersion"')));
+  assert.ok(sprintWebhooks.every(component => !component.value.customBody.includes('"releaseVersion"')));
   assert.ok(comparators.some(component => component.value.operator === 'REGEX_MATCHES'));
   assert.ok(comparators.some(component => component.value.operator === 'REGEX_NOT_MATCHES'));
   assert.ok(comparators.every(component => component.value.second.includes('Benutzerhandbuch')));

@@ -316,9 +316,14 @@ test('Regel 1079 validiert Ticketdaten und übergibt sie an den Release-Worker',
   assert.deepEqual(rule.trigger.value.groups, ['prj-cer-pa']);
   assert.match(rule.description, /erste Komponente, Fix-Version und Sprint-ID/);
   assert.equal(variableQuery('component'), '{{issue.components.first.name}}');
-  assert.equal(variableQuery('releaseVersion'), '{{issue.fixVersions.last.name}}');
+  assert.equal(variableQuery('releaseVersion'), '{{issue.fixVersions.last.name.replaceAll("^.*\\s+([0-9]+(?:\\.[0-9]+)+)$", "$1")}}');
   assert.equal(variableQuery('workerFixVersion'), '{{issue.fixVersions.last.name}}');
   assert.equal(variableQuery('workerSprintId'), '{{issue.sprint.last.id}}');
+  const versionWithOptionalPrefix = /^.*\s+([0-9]+(?:\.[0-9]+)+)$/;
+  assert.equal('Mediator 1.40.0'.replace(versionWithOptionalPrefix, '$1'), '1.40.0');
+  assert.equal('PostIdentService 1.15.0'.replace(versionWithOptionalPrefix, '$1'), '1.15.0');
+  assert.equal('WeitereKomponente 1.2.3'.replace(versionWithOptionalPrefix, '$1'), '1.2.3');
+  assert.equal('1.2.3'.replace(versionWithOptionalPrefix, '$1'), '1.2.3');
   assert.equal(webhook.value.method, 'POST');
   assert.match(webhook.value.customBody, /"component": "\{\{component\}\}"/);
   assert.match(webhook.value.customBody, /"sourceIssueKey": "\{\{issue\.key\}\}"/);

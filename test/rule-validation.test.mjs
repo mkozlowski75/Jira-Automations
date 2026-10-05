@@ -217,7 +217,7 @@ test('Security-Worker 914 erstellt nur für valide, nicht duplizierte HIGH/CRITI
   assert.match(email.value.body, /Jira-Automation-Regel <strong>\{\{rule\.name\}\}<\/strong>/);
   assert.equal(
     create.value.operations.find(operation => operation.fieldId === 'labels').value[0].value,
-    'Security',
+    'CVE',
   );
   assert.equal(
     create.value.operations.find(operation => operation.fieldId === 'issuetype').value.value,

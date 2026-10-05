@@ -134,6 +134,11 @@ test('Security-Worker 914 erstellt nur für valide, nicht duplizierte HIGH/CRITI
       && component.value?.name?.value === 'createdSecurityFindingKey',
   );
   const email = components.find(component => component.type === 'jira.issue.outgoing.email');
+  const commentBranch = components.find(component =>
+    component.type === 'jira.issue.related'
+      && component.value?.jql === 'key = {{createdSecurityFindingKey}}',
+  );
+  const comments = components.filter(component => component.type === 'jira.issue.comment');
   const duplicateLog = components.find(component =>
     component.type === 'codebarrel.action.log'
       && component.value?.includes('offenes Sicherheitsfund-Duplikat'),
@@ -181,6 +186,21 @@ test('Security-Worker 914 erstellt nur für valide, nicht duplizierte HIGH/CRITI
   assert.equal(create.parentId, createdKey.parentId);
   assert.equal(createdKey.parentId, email.parentId);
   assert.equal(createdKey.value.query.value, '{{createdIssue.key}}');
+  assert.ok(commentBranch);
+  assert.equal(commentBranch.parentId, create.parentId);
+  assert.equal(comments.length, 1);
+  assert.equal(comments[0].parentId, commentBranch.id);
+  assert.ok(commentBranch.children.includes(comments[0]));
+  const creationSteps = components.find(component => component.id === create.parentId).children;
+  assert.ok(creationSteps.indexOf(create) < creationSteps.indexOf(createdKey));
+  assert.ok(creationSteps.indexOf(createdKey) < creationSteps.indexOf(commentBranch));
+  assert.ok(creationSteps.indexOf(commentBranch) < creationSteps.indexOf(email));
+  assert.match(comments[0].value.comment, /Dieses Ticket \{\{issue\.key\}\} wurde durch die Jira-Automatisierungsregel/);
+  assert.match(
+    comments[0].value.comment,
+    /\[\{\{rule\.name\}\}\|https:\/\/partner\.bdr\.de\/jira\/secure\/AutomationProjectAdminAction!default\.jspa\?projectKey=CER#\/rule\/914\]/,
+  );
+  assert.equal(comments[0].value.addCommentOnce, true);
   assert.equal(email.schemaVersion, 3);
   assert.deepEqual(email.value.to, [
     {

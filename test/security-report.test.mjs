@@ -58,18 +58,20 @@ test('report with no eligible identifiers still sends overview with empty ticket
   assert.doesNotMatch(s.emails[0].body,/browse\/|@@TICKET:/); assert.match(s.emails[0].body,/<td[^>]*><\/td>/);
 });
 test('empty scan sends no overview and starts no worker',()=>{ const s = scenario([]); assert.equal(s.emails.length,0); assert.equal(s.executions,0); });
-test('100 returned ticket matches make incomplete lookup explicit',()=>{
+test('100 returned ticket matches retain incomplete lookup context without showing it in the email',()=>{
   const s = scenario([finding('CVE-2026-1000')],Array.from({length:100},(_,i)=>issue(`CER-${i}`,'CVE-2026-1000')));
-  assert.match(s.emails[0].body,/möglicherweise unvollständig/);
+  assert.doesNotMatch(s.emails[0].body,/möglicherweise unvollständig|Bereits vorhandene Tickets verhindern/);
+  assert.match(s.events.find(e=>e.type==='post').payload.lookupWarning,/möglicherweise unvollständig/);
 });
 test('fresh ticket status replaces the initial status without duplicate links',()=>{
   const s = scenario([finding('CVE-2026-1000')],[issue('CER-1','CVE-2026-1000','Open')],{statusChange:true});
   assert.equal((s.emails[0].body.match(/browse\/CER-1"/g)??[]).length,1);
   assert.match(s.emails[0].body,/\(Done\)/); assert.doesNotMatch(s.emails[0].body,/\(Open\)/);
 });
-test('unknown configurable lookup limit does not imply completeness even when below 100',()=>{
+test('unknown configurable lookup limit retains the warning in context rather than the email',()=>{
   const s = scenario([finding('CVE-2026-1000')],Array.from({length:60},(_,i)=>issue(`CER-${i}`,'CVE-2026-1000')),{lookupLimit:50});
-  assert.match(s.emails[0].body,/möglicherweise unvollständig/);
+  assert.doesNotMatch(s.emails[0].body,/möglicherweise unvollständig/);
+  assert.match(s.events.find(e=>e.type==='post').payload.lookupWarning,/möglicherweise unvollständig/);
 });
 test('mapping matches whole identifiers only and escapes issue status HTML',()=>{
   const s = scenario([finding('CVE-2026-1000')],[issue('CER-12','CVE-2026-10001','<Done>')]);

@@ -247,6 +247,7 @@ test('missing, partial and unresolved report tables cannot be emailed',()=>{
   }
 });
 test('fixture rejects the failed primitive syntax and requires explicit conditional booleans',()=>{
+  assert.throws(()=>render('{{"(".concat(pattern)}}',{pattern:'LOW'}),/literal strings/);
   assert.throws(()=>render('{{#rows}}{{.substringBefore("@@")}}{{/}}',{rows:['row@@']}),/Primitive member access/);
   assert.throws(()=>render('{{#if(value.match("(CVE-2025-15022)"))}}yes{{/}}',{value:'CVE-2025-15022'}),/explicit boolean/);
   assert.equal(render('{{#if(exists(value.match("(CVE-2025-15022)")))}}yes{{/}}',{value:'CVE-2025-15022'}),'yes');

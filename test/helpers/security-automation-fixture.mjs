@@ -43,10 +43,12 @@ export function evaluate(expression, globals, scopes = []) {
   function args() { const out = []; i++; space(); if (expression[i] !== ')') do { out.push(value()); space(); if (expression[i] !== ',') break; i++; } while (true); assert.equal(expression[i++],')',expression); return out; }
   function value() {
     space(); let out;
+    const literalString = expression[i] === '"';
     if (expression[i] === '"') { i++; out = ''; while (i < expression.length && expression[i] !== '"') { if (expression[i] === '\\' && ['"','\\'].includes(expression[i+1])) i++; out += expression[i++]; } assert.equal(expression[i++],'"'); }
     else if (/\d/.test(expression[i] ?? '')) { const n = /^\d+/.exec(expression.substring(i))[0]; i += n.length; out = Number(n); }
     else if (expression[i] === '.') { i++; assert.ok(!/[A-Za-z_]/.test(expression[i] ?? ''),'Primitive member access after a leading dot is unsupported in Data Center'); out = current; }
     else { const key = name(); space(); out = expression[i] === '(' ? functions[key] ? functions[key](...args()) : member(current,key,args()) : resolve(key); }
+    if (literalString) { space(); assert.notEqual(expression[i],'.','Data Center does not support member calls on literal strings'); }
     while (true) { space(); if (expression[i] !== '.') break; i++; const key = name(); space(); out = member(out,key,expression[i] === '(' ? args() : undefined); }
     space(); if (expression[i] === '|') { i++; const fallback = value(); if (!truth(out)) out = fallback; }
     return out;

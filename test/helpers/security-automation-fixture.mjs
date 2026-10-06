@@ -10,7 +10,8 @@ function pattern(v, global = false) {
   const multiline = source.startsWith('(?m)'), dotall = source.startsWith('(?s)'); if (multiline || dotall) source = source.substring(4);
   return new RegExp(source, `${global ? 'g' : ''}${multiline ? 'm' : ''}${dotall ? 's' : ''}`);
 }
-const functions = { equals: (a,b) => text(a) === text(b), exists: v => v != null && truth(v), not: a => !truth(a), and: (...a) => a.every(truth), or: (...a) => a.some(truth) };
+const binary = (name,args) => { assert.equal(args.length,2,`Data Center ${name} requires two arguments`); return name === 'and' ? args.every(truth) : args.some(truth); };
+const functions = { equals: (a,b) => text(a) === text(b), exists: v => v != null && truth(v), not: a => !truth(a), and: (...a) => binary('and',a), or: (...a) => binary('or',a) };
 function member(v, name, args) {
   // Inline collection text operations keep the outer context, unlike # sections.
   if(Array.isArray(v) && args !== undefined && !['get','join','asJsonObject'].includes(name)) return v.map(x=>member(x,name,args));

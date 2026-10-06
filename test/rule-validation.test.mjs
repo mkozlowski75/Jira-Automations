@@ -255,7 +255,7 @@ test('Security-Worker 914 erstellt für valide, nicht duplizierte CVE- oder -GHS
   const findingIdPattern = '^(?:CVE-\\d{4}-\\d{4,24}|GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4})$';
   assert.equal(validationBlock.conditions[0].value.second, 'true');
   assert.equal(invalidPayloadBlock.conditions[0].value.second, 'true');
-  assert.ok(validation.value.query.value.includes(JSON.stringify(`(${findingIdPattern})`)));
+  assert.ok(validation.value.query.value.includes(`"(${findingIdPattern})"`));
   const findingIdExpression = new RegExp(findingIdPattern);
   assert.equal(findingIdExpression.test('CVE-2026-40985'), true);
   assert.equal(findingIdExpression.test('GHSA-7wwv-79xw-rvvg'), true);

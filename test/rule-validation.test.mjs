@@ -136,7 +136,7 @@ test('Security-Worker 914 erstellt für valide, nicht duplizierte CVE- oder -GHS
   const email = components.find(component => component.type === 'jira.issue.outgoing.email');
   const commentBranch = components.find(component =>
     component.type === 'jira.issue.related'
-      && component.value?.jql === 'key = {{createdSecurityFindingKey}}',
+      && component.value?.relatedType === 'recentlycreated',
   );
   const comments = components.filter(component => component.type === 'jira.issue.comment');
   const duplicateLog = components.find(component =>
@@ -184,6 +184,10 @@ test('Security-Worker 914 erstellt für valide, nicht duplizierte CVE- oder -GHS
   assert.equal(legacyNotificationBlock.conditions[0].value.operator, 'NOT_EQUALS');
   assert.equal(createdKey.value.query.value, '{{createdIssue.key}}');
   assert.ok(commentBranch);
+  for (const branch of components.filter(component => component.type === 'jira.issue.related')) {
+    assert.equal(branch.value.relatedType, 'recentlycreated');
+    assert.equal(branch.value.jql, '');
+  }
   assert.equal(commentBranch.parentId, email.parentId);
   assert.equal(comments.length, 2);
   assert.equal(comments[0].value.sendNotifications, true);

@@ -82,6 +82,7 @@ export function render(template, globals, scopes = []) {
   return output(parse(),scopes);
 }
 export function runRule(rule, globals, handlers = {}) {
+  globals.rule ??= {id:rule.id,name:rule.name};
   const events = [];
   const check = c => { const a = render(c.value.first,globals), b = render(c.value.second,globals); switch (c.value.operator) {
     case 'EQUALS': return a === b; case 'NOT_EQUALS': return a !== b; case 'GREATER_THAN': return a !== '' && Number(a) > Number(b); case 'NOT_CONTAINS': return !a.includes(b);
@@ -110,7 +111,27 @@ export function runRule(rule, globals, handlers = {}) {
     case 'jira.issue.create': { const fields = Object.fromEntries(c.value.operations.map(op => [op.fieldId,typeof op.value === 'string' ? render(op.value,globals) : op.value])); globals.createdIssue = handlers.create(fields); events.push({type:'create',fields,key:globals.createdIssue.key}); break; }
     case 'jira.issue.outgoing.webhook': if (c.value.method === 'POST') { events.push({type:'post',payload:JSON.parse(render(c.value.customBody,globals))}); globals.webhookResponse = {status:202,body:{}}; } else globals.webhookResponse = {status:200,body:handlers.get()}; break;
     case 'jira.issue.outgoing.email': events.push({type:'email',subject:render(c.value.subject,globals),body:render(c.value.body,globals),to:c.value.to,cc:c.value.cc,bcc:c.value.bcc}); break;
-    case 'jira.issue.related': events.push({type:'commentBranch',notifications:c.children.map(x => x.value.sendNotifications)}); break;
+    case 'jira.issue.related': {
+      let targets;
+      if (c.value.relatedType === 'recentlycreated') targets = globals.createdIssue ? [globals.createdIssue] : [];
+      else if (c.value.relatedType === 'jql') targets = handlers.lookup(render(c.value.jql,globals));
+      else throw new Error(`Unsupported fixture related type ${c.value.relatedType}`);
+      events.push({type:'commentBranch',keys:targets.map(x=>x.key),notifications:c.children.map(x=>x.value.sendNotifications)});
+      const outer = globals;
+      for (const issue of targets) { globals = {...outer,issue}; walk(c.children); }
+      globals = outer;
+      break;
+    }
+    case 'jira.issue.comment': {
+      assert.ok(globals.issue?.key,'Comment requires a resolved issue context');
+      const body = render(c.value.comment,globals);
+      const comments = globals.issue.comments ??= [];
+      if (!c.value.addCommentOnce || !comments.includes(body)) {
+        comments.push(body);
+        events.push({type:'comment',key:globals.issue.key,body,sendNotifications:c.value.sendNotifications,publicComment:c.value.publicComment});
+      }
+      break;
+    }
     case 'codebarrel.action.log': events.push({type:'log',value:render(c.value,globals)}); break;
     default: throw new Error(`Unsupported fixture component ${c.type}`);
   } return true; }

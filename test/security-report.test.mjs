@@ -98,7 +98,7 @@ test('single-finding worker prevents recreation for every ticket status and matc
       lookup:()=>[issue('CER-1',payload.findingId,status)],
       create:()=>{throw new Error(`Existing ${status} ticket must prevent creation`);},
     });
-    assert.ok(!result.events.some(e=>['create','commentBranch','email'].includes(e.type)));
+    assert.ok(!result.events.some(e=>['create','commentBranch','comment','email'].includes(e.type)));
     assert.ok(result.events.some(e=>e.type==='log' && e.value.includes('Status unabhängig')));
   }
   const differentId = runRule(worker,{webhookData:payload},{
@@ -302,4 +302,55 @@ test('created issue data is visible within its IF path and disappears after leav
   const condition = {type:'jira.condition.if.block',value:{conditionMatchType:'ALL'},conditions:[],children:[create,log('inside={{createdIssue.key}}')]};
   const result = runRule({components:[condition,log('outside={{createdIssue.key}}')]},{webhookData:{findingId:'CVE-2026-1000'}},{create:()=>issue('CER-1','CVE-2026-1000')});
   assert.deepEqual(result.events.filter(e=>e.type==='log').map(e=>e.value),['inside=CER-1','outside=']);
+});
+
+test('report worker comments each freshly created issue despite search index lag',()=>{
+  const s = scenario([finding('CVE-2026-1000'),finding('CVE-2026-1001')],[],{indexLag:true});
+  const comments = s.events.filter(e=>e.type==='comment');
+  assert.equal(comments.length,2);
+  assert.deepEqual(comments.map(c=>c.key),s.created.map(c=>c.key));
+  for (const c of comments) {
+    assert.equal(c.body,`Dieses Ticket ${c.key} wurde durch die Jira-Automatisierungsregel [${worker.name}|https://partner.bdr.de/jira/secure/AutomationProjectAdminAction!default.jspa?projectKey=CER#/rule/914] erstellt.`);
+    assert.equal(c.sendNotifications,false);
+    assert.equal(c.publicComment,false);
+    assert.equal(s.all.find(i=>i.key===c.key).comments.length,1);
+    assert.ok(s.emails[0].body.includes(`browse/${c.key}`));
+  }
+  assert.equal(s.emails.length,1);
+});
+
+test('single worker comments the created ticket rather than its trigger issue and keeps notifications',()=>{
+  const original = {...issue('CER-99','CVE-2026-9999'),comments:['Existing comment']};
+  const created = issue('CER-100','CVE-2026-1000');
+  const result = runRule(worker,{issue:original,webhookData:{findingId:'CVE-2026-1000',library:'library',installedVersion:'1',severity:'LOW',source:'https://example.org/job'}},{lookup:()=>[],create:()=>created});
+  const comments = result.events.filter(e=>e.type==='comment');
+  assert.equal(comments.length,1);
+  assert.equal(comments[0].key,created.key);
+  assert.equal(comments[0].sendNotifications,true);
+  assert.ok(comments[0].body.includes(worker.name));
+  assert.ok(comments[0].body.includes('#/rule/914'));
+  assert.deepEqual(original.comments,['Existing comment']);
+  assert.equal(created.comments.length,1);
+  assert.equal(result.globals.issue,original);
+});
+
+test('native created-issue comments do not depend on JQL and addCommentOnce prevents repetition',()=>{
+  const branch = structuredClone(flat(worker.components).find(c=>c.type==='jira.issue.related'));
+  const created = issue('CER-100','CVE-2026-1000');
+  const globals = {createdIssue:created};
+  const handlers = {lookup:()=>[]};
+  const jqlBranch = structuredClone(branch);
+  jqlBranch.value.relatedType='jql'; jqlBranch.value.jql='key = {{createdIssue.key}}';
+  assert.equal(runRule({name:worker.name,components:[jqlBranch]},globals,handlers).events.filter(e=>e.type==='comment').length,0);
+  const result = runRule({name:worker.name,components:[branch,branch]},globals,handlers);
+  assert.equal(result.events.filter(e=>e.type==='comment').length,1);
+  assert.equal(created.comments.length,1);
+});
+
+test('report duplicate checks leave existing tickets and their comments unchanged',()=>{
+  const original = {...issue('CER-1','CVE-2026-1000','Done'),comments:['Existing comment']};
+  const s = scenario([finding('CVE-2026-1000')],[original]);
+  assert.equal(s.created.length,0);
+  assert.ok(!s.events.some(e=>e.type==='comment'));
+  assert.deepEqual(original.comments,['Existing comment']);
 });

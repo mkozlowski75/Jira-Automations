@@ -178,3 +178,55 @@ test('one create component serves both modes; normalized test count has no trail
   const s = scenario([finding('CVE-2026-1000')]); assert.equal(s.executions,1); assert.match(s.emails[0].body,/<strong>1<\/strong>/);
   assert.equal(render('{{value.substringBeforeLast("§§").split("§§").distinct.size}}',{value:'a§§a§§'}),'1');
 });
+test('the eleven findings from the failed Jira run produce two selected candidates and eleven complete rows',()=>{
+  const records = [
+    ['CVE-2025-15022','com.vaadin:vaadin-server','8.14.3'],
+    ['CVE-2025-9467','com.vaadin:vaadin-server','8.14.3'],
+    ['CVE-2025-48924','commons-lang:commons-lang','2.6'],
+    ['CVE-2026-59230','org.apache.camel:camel-mail','3.22.4'],
+    ['CVE-2024-6763','org.eclipse.jetty:jetty-http','10.0.26'],
+    ['CVE-2025-11143','org.eclipse.jetty:jetty-http','10.0.26','LOW'],
+    ['CVE-2026-6790','org.eclipse.jetty:jetty-server','10.0.26'],
+    ['CVE-2026-41711','org.springframework.data:spring-data-commons','2.7.18'],
+    ['CVE-2026-41721','org.springframework.data:spring-data-commons','2.7.18'],
+    ['CVE-2026-40985','org.springframework.webflow:spring-webflow','2.5.1.RELEASE'],
+    ['CVE-2026-40986','org.springframework.webflow:spring-webflow','2.5.1.RELEASE'],
+  ];
+  const findings = records.map(([VulnerabilityID,PkgName,InstalledVersion,Severity='MEDIUM'])=>({VulnerabilityID,PkgName,InstalledVersion,Severity}));
+  const s = scenario(findings);
+  const posts = s.events.filter(e=>e.type==='post');
+  assert.equal(posts.length,2);
+  assert.deepEqual(posts.map(e=>[e.payload.findingId,e.payload.library,e.payload.installedVersion,e.payload.severity]),[
+    ['CVE-2025-15022','com.vaadin:vaadin-server','8.14.3','MEDIUM'],
+    ['CVE-2025-9467','com.vaadin:vaadin-server','8.14.3','MEDIUM'],
+  ]);
+  assert.equal(s.created.length,2); assert.equal(s.emails.length,1);
+  assert.equal((s.emails[0].body.match(/<tr>/g)??[]).length,11);
+  assert.doesNotMatch(s.emails[0].body,/@@TICKET:/);
+});
+test('missing, partial and unresolved report tables cannot be emailed',()=>{
+  const first = scenario([finding('OTHER-123')]).events.find(e=>e.type==='post').payload;
+  const damages = [
+    ()=>'',
+    value=>value.replace(/<tbody>[\s\S]*<\/tbody>/,'<tbody></tbody>'),
+    value=>value.replace('</tbody>','<tr><td>@@TICKET:CVE-2026-1000@@</td></tr></tbody>'),
+    value=>value.replace('</tbody>','<tr><td>extra row</td></tr></tbody>'),
+  ];
+  for (const damage of damages) {
+    const result = runRule(worker,{webhookData:first},{variable:(name,value)=>name==='securityReportTable'?damage(value):value});
+    assert.ok(!result.events.some(e=>e.type==='email'));
+    assert.ok(!result.events.some(e=>e.type==='log' && e.value.includes('Übersicht ausschließlich an Matthias versendet')));
+  }
+});
+test('fixture rejects the failed primitive syntax and requires explicit conditional booleans',()=>{
+  assert.throws(()=>render('{{#rows}}{{.substringBefore("@@")}}{{/}}',{rows:['row@@']}),/Primitive member access/);
+  assert.throws(()=>render('{{#if(value.match("(CVE-2025-15022)"))}}yes{{/}}',{value:'CVE-2025-15022'}),/explicit boolean/);
+  assert.equal(render('{{#if(exists(value.match("(CVE-2025-15022)")))}}yes{{/}}',{value:'CVE-2025-15022'}),'yes');
+  assert.equal(render('{{#rows}}{{rows.get(index).substringBefore("@@")}}{{/}}',{rows:['first@@','second@@']}),'firstsecond');
+  assert.equal(render('{{value.split("\\n").size}}',{value:'first\nsecond\n'}),'2');
+});
+test('HTTP acceptance conditions are followed by a real action in both rules',()=>{
+  for (const r of [alert,worker]) for (const c of flat(r.components).filter(c=>c.type==='jira.condition.if.block')) {
+    assert.notEqual(c.children.at(-1)?.type,'jira.comparator.condition',`${r.id}/${c.id}: terminal condition has no action`);
+  }
+});

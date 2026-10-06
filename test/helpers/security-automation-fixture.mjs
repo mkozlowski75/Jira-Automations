@@ -10,13 +10,16 @@ function pattern(v, global = false) {
   const multiline = source.startsWith('(?m)'); if (multiline) source = source.substring(4);
   return new RegExp(source, `${global ? 'g' : ''}${multiline ? 'm' : ''}`);
 }
-const functions = { equals: (a,b) => text(a) === text(b), not: a => !truth(a), and: (...a) => a.every(truth), or: (...a) => a.some(truth) };
+const functions = { equals: (a,b) => text(a) === text(b), exists: v => v != null && truth(v), not: a => !truth(a), and: (...a) => a.every(truth), or: (...a) => a.some(truth) };
 function member(v, name, args) {
   const s = text(v);
   const methods = {
-    concat: x => s+text(x), trim: () => s.trim(), split: x => s.split(text(x)).filter((v,i,a) => v !== '' || i < a.length-1),
+    concat: x => s+text(x), trim: () => s.trim(),
+    // String.split uses a regex separator and removes trailing empty parts.
+    split: x => { const parts = s.split(pattern(x)); if (s !== '') while (parts.at(-1) === '') parts.pop(); return parts; },
     get: i => v?.[Number(i)], join: x => Array.isArray(v) ? v.join(text(x)) : s,
-    match: x => [...s.matchAll(pattern(x,true))].map(m => m[1]), replace: (a,b) => s.replaceAll(text(a),text(b)),
+    // Data Center returns null, a single match text, or a collection of matches.
+    match: x => { const matches = [...s.matchAll(pattern(x,true))].map(m => m[1]); return matches.length > 1 ? matches : matches[0] ?? null; }, replace: (a,b) => s.replaceAll(text(a),text(b)),
     replaceAll: (a,b) => s.replace(pattern(a,true),text(b)), startsWith: x => s.startsWith(text(x)),
     substring: (a,b) => s.substring(Number(a),b === undefined ? undefined : Number(b)),
     substringBefore: x => s.includes(text(x)) ? s.substring(0,s.indexOf(text(x))) : s,
@@ -38,7 +41,7 @@ export function evaluate(expression, globals, scopes = []) {
     space(); let out;
     if (expression[i] === '"') { i++; out = ''; while (i < expression.length && expression[i] !== '"') { if (expression[i] === '\\' && ['"','\\'].includes(expression[i+1])) i++; out += expression[i++]; } assert.equal(expression[i++],'"'); }
     else if (/\d/.test(expression[i] ?? '')) { const n = /^\d+/.exec(expression.substring(i))[0]; i += n.length; out = Number(n); }
-    else if (expression[i] === '.') { i++; out = current; if (/[A-Za-z_]/.test(expression[i] ?? '')) { const key = name(); space(); out = member(out,key,expression[i] === '(' ? args() : undefined); } }
+    else if (expression[i] === '.') { i++; assert.ok(!/[A-Za-z_]/.test(expression[i] ?? ''),'Primitive member access after a leading dot is unsupported in Data Center'); out = current; }
     else { const key = name(); space(); out = expression[i] === '(' ? functions[key] ? functions[key](...args()) : member(current,key,args()) : resolve(key); }
     while (true) { space(); if (expression[i] !== '.') break; i++; const key = name(); space(); out = member(out,key,expression[i] === '(' ? args() : undefined); }
     space(); if (expression[i] === '|') { i++; const fallback = value(); if (!truth(out)) out = fallback; }
@@ -54,18 +57,26 @@ export function render(template, globals, scopes = []) {
       if (t.startsWith('{{#') || t.startsWith('{{^')) nodes.push({ expr: t.substring(3,t.length-2), inverse: t[2] === '^', children: parse(true) }); else nodes.push(t);
     } assert.equal(nested,false,'Unclosed section'); return nodes;
   }
-  function output(nodes, context) { return nodes.map(n => {
-    if (typeof n === 'string') return n.startsWith('{{') ? text(evaluate(n.substring(2,n.length-2),globals,context)) : n;
-    const conditional = n.expr.startsWith('if('), v = evaluate(conditional ? n.expr.substring(3,n.expr.length-1) : n.expr,globals,context);
-    if (n.inverse) return !truth(v) ? output(n.children,context) : ''; if (!truth(v)) return '';
-    return conditional ? output(n.children,context) : Array.isArray(v) ? v.map(x => output(n.children,[...context,x])).join('') : output(n.children,[...context,v]);
+  function output(nodes, context, index) { return nodes.map(n => {
+    const scopedGlobals = {...globals,index};
+    if (typeof n === 'string') return n.startsWith('{{') ? text(evaluate(n.substring(2,n.length-2),scopedGlobals,context)) : n;
+    if (n.expr === '=') {
+      const expression = output(n.children,context,index).trim();
+      assert.match(expression,/^\d+\s*[+-]\s*\d+$/,'Fixture supports only the required two-operand integer expression');
+      const [,a,operator,b] = expression.match(/^(\d+)\s*([+-])\s*(\d+)$/);
+      return String(operator === '+' ? Number(a)+Number(b) : Number(a)-Number(b));
+    }
+    const conditional = n.expr.startsWith('if('), v = evaluate(conditional ? n.expr.substring(3,n.expr.length-1) : n.expr,scopedGlobals,context);
+    if (conditional) assert.equal(typeof v,'boolean','Use an explicit boolean for conditional Smart Values');
+    if (n.inverse) return !truth(v) ? output(n.children,context,index) : ''; if (!truth(v)) return '';
+    return conditional ? output(n.children,context,index) : Array.isArray(v) ? v.map((x,i) => output(n.children,[...context,x],i)).join('') : output(n.children,[...context,v],index);
   }).join(''); }
   return output(parse(),scopes);
 }
 export function runRule(rule, globals, handlers = {}) {
   const events = [];
   const check = c => { const a = render(c.value.first,globals), b = render(c.value.second,globals); switch (c.value.operator) {
-    case 'EQUALS': return a === b; case 'NOT_EQUALS': return a !== b; case 'GREATER_THAN': return a !== '' && Number(a) > Number(b);
+    case 'EQUALS': return a === b; case 'NOT_EQUALS': return a !== b; case 'GREATER_THAN': return a !== '' && Number(a) > Number(b); case 'NOT_CONTAINS': return !a.includes(b);
     case 'REGEX_MATCHES': return pattern(`^(?:${b})$`).test(a); case 'REGEX_NOT_MATCHES': return !pattern(`^(?:${b})$`).test(a);
     default: throw new Error(`Unsupported fixture comparator ${c.value.operator}`);
   }};
@@ -73,7 +84,7 @@ export function runRule(rule, globals, handlers = {}) {
     case 'jira.comparator.condition': if (!check(c)) return false; break;
     case 'jira.condition.container.block': walk(c.children); break;
     case 'jira.condition.if.block': { const checks = c.conditions.map(check); if (c.value.conditionMatchType === 'ANY' ? checks.some(Boolean) : checks.every(Boolean)) walk(c.children); break; }
-    case 'jira.create.variable': globals[c.value.name.value] = render(c.value.query.value,globals); break;
+    case 'jira.create.variable': { const name = c.value.name.value, value = render(c.value.query.value,globals); globals[name] = handlers.variable ? handlers.variable(name,value) : value; break; }
     case 'jira.lookup.issues': { const query = render(c.value.query.value,globals); events.push({type:'lookup',query}); globals.lookupIssues = handlers.lookup(query); break; }
     case 'jira.issue.create': { const fields = Object.fromEntries(c.value.operations.map(op => [op.fieldId,typeof op.value === 'string' ? render(op.value,globals) : op.value])); globals.createdIssue = handlers.create(fields); events.push({type:'create',fields,key:globals.createdIssue.key}); break; }
     case 'jira.issue.outgoing.webhook': if (c.value.method === 'POST') { events.push({type:'post',payload:JSON.parse(render(c.value.customBody,globals))}); globals.webhookResponse = {status:202,body:{}}; } else globals.webhookResponse = {status:200,body:handlers.get()}; break;

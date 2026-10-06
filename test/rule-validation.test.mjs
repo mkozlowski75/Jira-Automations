@@ -141,7 +141,7 @@ test('Security-Worker 914 erstellt für valide, nicht duplizierte CVE- oder -GHS
   const comments = components.filter(component => component.type === 'jira.issue.comment');
   const duplicateLog = components.find(component =>
     component.type === 'codebarrel.action.log'
-      && component.value?.includes('offenes Sicherheitsfund-Duplikat'),
+      && component.value?.includes('vorhandenes Sicherheitsfund-Ticket (Status unabhängig)'),
   );
   const receivedLog = rule.components.find(component =>
     component.type === 'codebarrel.action.log'
@@ -179,8 +179,9 @@ test('Security-Worker 914 erstellt für valide, nicht duplizierte CVE- oder -GHS
   );
   assert.match(
     lookup.value.query.value,
-    /statusCategory != Done.*summary.*description/s,
+    /summary.*description/s,
   );
+  assert.doesNotMatch(lookup.value.query.value, /statusCategory/);
   assert.match(lookup.value.query.value, /\{\{webhookData\.findingId\}\}/);
   assert.equal(lookup.parentId, validationBlock.id);
   assert.equal(create.parentId, createdKey.parentId);

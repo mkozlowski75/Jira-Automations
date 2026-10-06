@@ -78,16 +78,32 @@ test('mapping matches whole identifiers only and escapes issue status HTML',()=>
   const escaped = scenario([finding('CVE-2026-1000')],[issue('CER-12','CVE-2026-1000','<Done>')]);
   assert.match(escaped.emails[0].body,/\(&lt;Done&gt;\)/);
 });
-test('legacy worker accepts all valid severities, keeps open-only dedupe and production recipients',()=>{
+test('single-finding worker accepts all valid severities and keeps production recipients',()=>{
   const payload = {findingId:'CVE-2026-1000',library:'library',installedVersion:'1',severity:'LOW',source:'https://example.org/job'};
   const handlers = {lookup:()=>[],create:()=>issue('CER-1',payload.findingId)};
   for (const severity of ['UNKNOWN','LOW','MEDIUM','HIGH','CRITICAL']) {
     const result = runRule(worker,{webhookData:{...payload,severity}},handlers);
     assert.equal(result.events.filter(e=>e.type==='create').length,1);
     assert.equal(result.events.find(e=>e.type==='email').to.length,4);
-    assert.match(result.events.find(e=>e.type==='lookup').query,/statusCategory != Done/);
+    assert.doesNotMatch(result.events.find(e=>e.type==='lookup').query,/statusCategory/);
     assert.deepEqual(result.events.find(e=>e.type==='commentBranch').notifications,[true]);
   }
+});
+test('single-finding worker prevents recreation for every ticket status and matches whole identifiers',()=>{
+  const payload = {findingId:'CVE-2026-1000',library:'library',installedVersion:'1',severity:'LOW',source:'https://example.org/job'};
+  for (const status of ['Open','In Progress','Done','Closed']) {
+    const result = runRule(worker,{webhookData:payload},{
+      lookup:()=>[issue('CER-1',payload.findingId,status)],
+      create:()=>{throw new Error(`Existing ${status} ticket must prevent creation`);},
+    });
+    assert.ok(!result.events.some(e=>['create','commentBranch','email'].includes(e.type)));
+    assert.ok(result.events.some(e=>e.type==='log' && e.value.includes('Status unabhängig')));
+  }
+  const differentId = runRule(worker,{webhookData:payload},{
+    lookup:()=>[issue('CER-2','CVE-2026-10001','Done')],
+    create:()=>issue('CER-3',payload.findingId),
+  });
+  assert.equal(differentId.events.filter(e=>e.type==='create').length,1);
 });
 test('both worker modes accept valid severities and reject missing or invalid severities',()=>{
   const first = scenario([finding('CVE-2026-1000')]).events.find(e=>e.type==='post').payload;

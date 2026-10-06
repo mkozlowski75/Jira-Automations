@@ -248,8 +248,24 @@ test('fixture rejects the failed primitive syntax and requires explicit conditio
   assert.throws(()=>render('{{#rows}}{{.substringBefore("@@")}}{{/}}',{rows:['row@@']}),/Primitive member access/);
   assert.throws(()=>render('{{#if(value.match("(CVE-2025-15022)"))}}yes{{/}}',{value:'CVE-2025-15022'}),/explicit boolean/);
   assert.equal(render('{{#if(exists(value.match("(CVE-2025-15022)")))}}yes{{/}}',{value:'CVE-2025-15022'}),'yes');
-  assert.equal(render('{{#rows}}{{rows.get(index).substringBefore("@@")}}{{/}}',{rows:['first@@','second@@']}),'firstsecond');
+  assert.throws(()=>render('{{#rows}}{{rows.get(index).substringBefore("@@")}}{{/}}',{rows:['first@@','second@@']}),/explicit numeric index/);
+  assert.equal(render('{{#rows}}{{html.substringBefore("@@")}}{{/}}',{rows:[{html:'first@@'},{html:'second@@'}]}),'firstsecond');
   assert.equal(render('{{value.split("\\n").size}}',{value:'first\nsecond\n'}),'2');
+});
+
+test('worker iterates named objects without implicit indexes and carries all report rows and ticket mappings',()=>{
+  const s = scenario([finding('CVE-2026-1000'),finding('CVE-2026-1001'),finding('CVE-2026-1002')],[issue('CER-1','CVE-2026-1000','Done'),issue('CER-2','CVE-2026-1002','Open')]);
+  const posts=s.events.filter(e=>e.type==='post');
+  assert.equal(posts.length,2);
+  for(const {payload} of posts) {
+    assert.equal(payload.reportItems.length,3);
+    assert.ok(payload.reportItems.every(x=>typeof x.html==='string'&&x.html.includes('@@TICKET:')));
+    assert.ok(payload.ticketItems.every(x=>typeof x.line==='string'));
+  }
+  assert.ok(posts[1].payload.ticketItems.some(x=>x.line.includes('CER-1')));
+  assert.ok(posts[1].payload.ticketItems.some(x=>x.line.includes('CER-2')));
+  assert.equal(s.created.length,1);assert.equal(s.emails.length,1);
+  assert.doesNotMatch(JSON.stringify(worker.components),/get\(index\)/);
 });
 test('HTTP acceptance conditions are followed by a real action in both rules',()=>{
   for (const r of [alert,worker]) for (const c of flat(r.components).filter(c=>c.type==='jira.condition.if.block')) {

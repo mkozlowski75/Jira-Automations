@@ -17,7 +17,8 @@ function member(v, name, args) {
     concat: x => s+text(x), trim: () => s.trim(),
     // String.split uses a regex separator and removes trailing empty parts.
     split: x => { const parts = s.split(pattern(x)); if (s !== '') while (parts.at(-1) === '') parts.pop(); return parts; },
-    get: i => v?.[Number(i)], join: x => Array.isArray(v) ? v.join(text(x)) : s,
+    get: i => { assert.ok(i !== undefined && Number.isInteger(Number(i)), 'Collection.get requires an explicit numeric index'); return v?.[Number(i)]; }, join: x => Array.isArray(v) ? v.join(text(x)) : s,
+    asJsonObject: key => Array.isArray(v) ? v.map(x=>({[key]:text(x)})) : {[key]:s},
     // Data Center returns null, a single match text, or a collection of matches.
     match: x => { const matches = [...s.matchAll(pattern(x,true))].map(m => m[1]); return matches.length > 1 ? matches : matches[0] ?? null; }, replace: (a,b) => s.replaceAll(text(a),text(b)),
     replaceAll: (a,b) => s.replace(pattern(a,true),text(b)), startsWith: x => s.startsWith(text(x)),
@@ -28,7 +29,7 @@ function member(v, name, args) {
     substringBetween: (a,b) => s.includes(text(a)) ? s.substring(s.indexOf(text(a))+text(a).length).split(text(b))[0] : '',
   };
   if (args !== undefined) { assert.ok(methods[name], `Unsupported fixture method ${name}`); return methods[name](...args); }
-  const props = { trim: () => s.trim(), size: () => v?.length, distinct: () => Array.isArray(v) ? [...new Set(v)] : v, first: () => v?.[0], last: () => v?.at(-1), toUpperCase: () => s.toUpperCase(), htmlEncode: () => html(v), asJsonString: () => JSON.stringify(s), quote: () => `\\Q${s}\\E` };
+  const props = { trim: () => s.trim(), size: () => v?.length, distinct: () => Array.isArray(v) ? [...new Set(v)] : v, first: () => v?.[0], last: () => v?.at(-1), toUpperCase: () => s.toUpperCase(), htmlEncode: () => html(v), asJsonString: () => JSON.stringify(s), asJsonArray: () => JSON.stringify(v), quote: () => `\\Q${s}\\E` };
   return props[name] ? props[name]() : v?.[name];
 }
 export function evaluate(expression, globals, scopes = []) {
@@ -58,7 +59,8 @@ export function render(template, globals, scopes = []) {
     } assert.equal(nested,false,'Unclosed section'); return nodes;
   }
   function output(nodes, context, index) { return nodes.map(n => {
-    const scopedGlobals = {...globals,index};
+    // Data Center does not provide an implicit index for a template section.
+    const scopedGlobals = globals;
     if (typeof n === 'string') return n.startsWith('{{') ? text(evaluate(n.substring(2,n.length-2),scopedGlobals,context)) : n;
     if (n.expr === '=') {
       const expression = output(n.children,context,index).trim();

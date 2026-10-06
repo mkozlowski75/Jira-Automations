@@ -269,7 +269,7 @@ test('Security-Worker 914 erstellt für valide, nicht duplizierte CVE- oder -GHS
   assert.match(create.value.operations.find(operation => operation.fieldId === 'description').value, /github\.com\/advisories\/\{\{webhookData\.findingId\}\}/);
 });
 
-test('Trivy-Alert 1029 übergibt höchstens fünf eindeutige HIGH/CRITICAL-CVE- oder -GHSA-Funde an Worker 914', () => {
+test('Trivy-Alert 1029 startet einen HIGH/CRITICAL-Bericht statt unabhängiger Ticketaufrufe und sofortiger E-Mail', () => {
   const rule = readRuleFile(1029);
   const flatten = components => components.flatMap(component => [
     component,
@@ -280,46 +280,30 @@ test('Trivy-Alert 1029 übergibt höchstens fünf eindeutige HIGH/CRITICAL-CVE- 
   const variables = components.filter(component => component.type === 'jira.create.variable');
   const securityFindingTicketRows = variables.find(component =>
     component.value?.name?.value === 'securityFindingTicketRows');
-  const email = components.find(component =>
-    component.type === 'jira.issue.outgoing.email'
-      && component.value?.subject?.includes('Ceroma Security Alert'),
-  );
   const workerCalls = components.filter(component =>
     component.type === 'jira.issue.outgoing.webhook'
       && component.value?.customBody?.includes('"installedVersion"')
       && component.value?.customBody?.includes('"source"'),
   );
-  const workerBlocks = components.filter(component =>
-    component.type === 'jira.condition.if.block'
-      && component.conditions?.some(condition =>
-        condition.value?.first?.includes('securityFindingTicketRows')
-          && condition.value?.operator === 'NOT_EQUALS'),
-  );
-  const overflowLog = components.find(component =>
-    component.type === 'codebarrel.action.log'
-      && component.value?.includes('Fünferlimits'),
-  );
-
   assert.ok(securityFindingTicketRows);
-  assert.match(securityFindingTicketRows.value.query.value, /VulnerabilityID\.startsWith\(\"CVE-\"\)/);
-  assert.match(securityFindingTicketRows.value.query.value, /VulnerabilityID\.startsWith\(\"GHSA-\"\)/);
+  assert.match(securityFindingTicketRows.value.query.value, /exists\(VulnerabilityID\.match/);
   assert.match(securityFindingTicketRows.value.query.value, /Severity\.toUpperCase,\"HIGH\"/);
   assert.match(securityFindingTicketRows.value.query.value, /Severity\.toUpperCase,\"CRITICAL\"/);
-  assert.equal(workerCalls.length, 5);
-  assert.equal(workerBlocks.length, 5);
-  for (const [index, workerCall] of workerCalls.entries()) {
+  assert.equal(workerCalls.length, 1);
+  assert.equal(components.filter(c=>c.type==='jira.issue.outgoing.email').length,0);
+  for (const workerCall of workerCalls) {
     assert.equal(workerCall.value.method, 'POST');
     assert.equal(workerCall.value.contentType, 'custom');
-    assert.equal(workerCall.value.responseEnabled, false);
-    assert.match(workerCall.value.customBody, new RegExp(`get\\(${index}\\)`));
+    assert.equal(workerCall.value.responseEnabled, true);
+    assert.match(workerCall.value.customBody, /"mode": "trivy-report-1029"/);
+    assert.match(workerCall.value.customBody, /"originRuleId": "1029"/);
+    assert.match(workerCall.value.customBody, /"reportRows"/);
+    assert.match(workerCall.value.customBody, /"ticketIndex"/);
     assert.match(workerCall.value.customBody, /\.asJsonString/);
     assert.match(workerCall.value.customBody, /"findingId"/);
     assert.doesNotMatch(workerCall.value.customBody, /"cve"/);
     assert.match(workerCall.value.customBody, /\{\{trivyJobUrl\.asJsonString\}\}/);
   }
-  assert.match(email.value.body, /ersten fünf eindeutigen HIGH\/CRITICAL-CVE- oder -GHSA-Funde/);
-  assert.match(email.value.body, /sofern kein offenes Dubletten-Ticket vorhanden ist/);
-  assert.match(overflowLog.value, /- 5/);
 });
 
 test('Release-Aufrufer übergeben die Fix-Version und Worker 875 leitet die Release-Version ab', () => {

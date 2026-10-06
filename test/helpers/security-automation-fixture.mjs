@@ -109,7 +109,7 @@ export function runRule(rule, globals, handlers = {}) {
     case 'jira.create.variable': { const name = c.value.name.value, value = render(c.value.query.value,globals); globals[name] = handlers.variable ? handlers.variable(name,value) : value; break; }
     case 'jira.lookup.issues': { const query = render(c.value.query.value,globals); events.push({type:'lookup',query}); globals.lookupIssues = handlers.lookup(query); break; }
     case 'jira.issue.create': { const fields = Object.fromEntries(c.value.operations.map(op => [op.fieldId,typeof op.value === 'string' ? render(op.value,globals) : op.value])); globals.createdIssue = handlers.create(fields); events.push({type:'create',fields,key:globals.createdIssue.key}); break; }
-    case 'jira.issue.outgoing.webhook': if (c.value.method === 'POST') { events.push({type:'post',payload:JSON.parse(render(c.value.customBody,globals))}); globals.webhookResponse = {status:202,body:{}}; } else globals.webhookResponse = {status:200,body:handlers.get()}; break;
+    case 'jira.issue.outgoing.webhook': if (c.value.method === 'POST') { const payload=JSON.parse(render(c.value.customBody,globals)); events.push({type:'post',payload}); globals.webhookResponse = {status:handlers.post ? handlers.post(payload) : 202,body:{}}; } else globals.webhookResponse = {status:200,body:handlers.get()}; break;
     case 'jira.issue.outgoing.email': events.push({type:'email',subject:render(c.value.subject,globals),body:render(c.value.body,globals),to:c.value.to,cc:c.value.cc,bcc:c.value.bcc}); break;
     case 'jira.issue.related': {
       let targets;

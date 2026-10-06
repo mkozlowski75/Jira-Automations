@@ -3,11 +3,22 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { render, runRule } from './helpers/security-automation-fixture.mjs';
 const rule = id => JSON.parse(readFileSync(new URL(`../../jira-automation-rules/rules/CER-jira-rule-${id}.json`,import.meta.url),'utf8'));
-const alert = rule(1062), worker = rule(914);
+const alert = rule(1062), productionAlert = rule(1029), worker = rule(914);
 const flat = cs => cs.flatMap(c => [c,...flat(c.children ?? []),...flat(c.conditions ?? [])]);
 const finding = (id,severity='LOW',library='library') => ({VulnerabilityID:id,Severity:severity,PkgName:library,InstalledVersion:'1.0'});
 const issue = (key,id,status='Open') => ({key,summary:`[CVE] ${id} – library`,description:`Finding ${id}`,status:{name:status}});
-function scenario(findings, existing = [], { indexLag = false, statusChange = false, lookupLimit = 100 } = {}) {
+// Change a selected finding and its carried record together. Contradictory
+// payloads are separate ingress-error cases, not parameter-validation cases.
+function selectedFields(payload,patch) {
+  const changed={...payload,...patch};
+  if(payload.findingRows) {
+    const rows=[...new Set(payload.findingRows.split('§§').filter(Boolean))];
+    rows[Number(payload.position)]=['findingId','library','installedVersion','severity'].map(k=>changed[k]??'').join('¤');
+    changed.findingRows=rows.join('§§')+'§§';
+  }
+  return changed;
+}
+function scenario(findings, existing = [], { indexLag = false, statusChange = false, lookupLimit = 100, callerId = 1062 } = {}) {
   const all = [...existing], events = [], posts = [], gets = [
     [{id:42,iid:7,sha:'1234567890'}],
     [{id:55,name:'trivy:scan:sbom: [trivy, $TRIVY_SBOM]',web_url:'https://gitlab.partner.bdr.de/cer/ceroma/app/-/jobs/55',stage:'sbom-vun',status:'success'}],
@@ -23,10 +34,10 @@ function scenario(findings, existing = [], { indexLag = false, statusChange = fa
     },
     create: fields => { const x = {key:`CER-${9000+all.length}`,summary:fields.summary,description:fields.description,status:{name:'Open'}}; all.unshift(x); return x; },
   };
-  const start = runRule(alert,{},handlers); events.push(...start.events); posts.push(...start.events.filter(e=>e.type==='post').map(e=>e.payload));
+  const start = runRule(callerId === 1029 ? productionAlert : alert,{},handlers); events.push(...start.events); posts.push(...start.events.filter(e=>e.type==='post').map(e=>e.payload));
   let executions = 0;
   while (posts.length) {
-    assert.ok(++executions <= 2,'Chain must stop after at most two worker invocations');
+    assert.ok(++executions <= (callerId === 1029 ? 5 : 2),'Chain must stop within the caller limit');
     const result = runRule(worker,{webhookData:posts.shift()},handlers);
     events.push(...result.events); posts.push(...result.events.filter(e=>e.type==='post').map(e=>e.payload));
   }
@@ -113,12 +124,12 @@ test('both worker modes accept valid severities and reject missing or invalid se
   const handlers = {lookup:()=>[],create:()=>issue('CER-1',first.findingId)};
   for (const payload of [single,first]) {
     for (const severity of ['UNKNOWN','LOW','MEDIUM','HIGH','CRITICAL']) {
-      const result = runRule(worker,{webhookData:{...payload,severity}},handlers);
+      const result = runRule(worker,{webhookData:selectedFields(payload,{severity})},handlers);
       assert.equal(result.events.filter(e=>e.type==='create').length,1);
       assert.match(result.events.find(e=>e.type==='create').fields.description,new RegExp(`\\|\\*Schweregrad des Herstellers\\*\\|${severity}\\|`));
     }
     for (const severity of [undefined,'','low','IMPORTANT','HIGH|LOW']) {
-      const result = runRule(worker,{webhookData:{...payload,severity}},handlers);
+      const result = runRule(worker,{webhookData:selectedFields(payload,{severity})},handlers);
       assert.ok(!result.events.some(e=>['lookup','create','commentBranch'].includes(e.type)));
     }
   }
@@ -158,7 +169,7 @@ test('native ingress checks accept both report steps and block invalid context b
 test('invalid selected finding does not create, still completes report without backfill',()=>{
   const s = scenario([finding('CVE-2026-1000'),finding('CVE-2026-1001')]);
   const first = s.events.find(e=>e.type==='post').payload;
-  const bad = {...first,library:'invalid|library'};
+  const bad = selectedFields(first,{library:'invalid|library'});
   const result = runRule(worker,{webhookData:bad},{lookup:()=>[],create:()=>{throw new Error('invalid finding created');}});
   assert.ok(!result.events.some(e=>e.type==='create')); assert.equal(result.events.filter(e=>e.type==='post').length,1);
 });
@@ -179,7 +190,7 @@ test('malformed candidate fields do not consume the two eligible slots; original
   assert.match(s.emails[0].body,/R&amp;D &lt;package&gt;/);
 });
 test('all own variables are declared before use within their available scope',()=>{
-  for (const r of [alert,worker]) {
+  for (const r of [alert,productionAlert,worker]) {
     const own = new Set(flat(r.components).filter(c=>c.type==='jira.create.variable').map(c=>c.value.name.value));
     function references(value) {
       const strings = v=>typeof v==='string'?[v]:v&&typeof v==='object'?Object.values(v).flatMap(strings):[];
@@ -282,7 +293,7 @@ test('explicit map separators preserve record boundaries and statuses cannot int
   assert.doesNotMatch(s.emails[0].body,/§§/);
 });
 test('HTTP acceptance conditions are followed by a real action in both rules',()=>{
-  for (const r of [alert,worker]) for (const c of flat(r.components).filter(c=>c.type==='jira.condition.if.block')) {
+  for (const r of [alert,productionAlert,worker]) for (const c of flat(r.components).filter(c=>c.type==='jira.condition.if.block')) {
     assert.notEqual(c.children.at(-1)?.type,'jira.comparator.condition',`${r.id}/${c.id}: terminal condition has no action`);
   }
 });
@@ -293,7 +304,7 @@ test('Data Center iterators hide outer variables while inline list transformatio
   const table=flat(worker.components).find(c=>c.value?.name?.value==='securityReportTable').value.query.value;
   assert.ok(!table.includes('{{#'),'Table must transform rows without a scope-changing iterator');
   const merge=flat(worker.components).find(c=>c.value?.name?.value==='securityReportTicketIndex').value.query.value;
-  assert.ok(!merge.includes('{{#'),'Carried map must be deduplicated in root context');
+  assert.doesNotMatch(merge,/\{\{#(?:webhookData|security)/,'Carried map must not change context through an iterator');
 });
 
 test('created issue data is visible within its IF path and disappears after leaving it',()=>{
@@ -353,4 +364,136 @@ test('report duplicate checks leave existing tickets and their comments unchange
   assert.equal(s.created.length,0);
   assert.ok(!s.events.some(e=>e.type==='comment'));
   assert.deepEqual(original.comments,['Existing comment']);
+});
+
+const productionRecipients = [
+  {type:'FREE',value:'"Kozlowski, Matthias (extern)" <Matthias.Kozlowski.extern@BDR.de>'},
+  {type:'FREE',value:'"Kiepke, Gerald" <Gerald.Kiepke@BDR.de>'},
+  {type:'FREE',value:'"Laska, Adrian" <Adrian.Laska@bdr.de>'},
+  {type:'FREE',value:'"Kühl, Alexander" <Alexander.Kuehl@BDR.de>'},
+];
+const production = (findings,existing=[],options={}) => scenario(findings,existing,{...options,callerId:1029});
+
+test('1029 filters HIGH/CRITICAL, checks first five unique suitable tuples and sends one production overview',()=>{
+  const high = Array.from({length:7},(_,i)=>finding(`CVE-2026-${2000+i}`,i%2?'CRITICAL':'HIGH'));
+  const s = production([finding('CVE-2026-1000','LOW'),high[0],high[0],finding('CVE-2026-1001','MEDIUM'),...high.slice(1)]);
+  assert.equal(s.created.length,5); assert.equal(s.executions,5); assert.equal(s.emails.length,1);
+  assert.deepEqual(s.events.filter(e=>e.type==='post').map(e=>[e.payload.mode,e.payload.originRuleId,e.payload.position]),Array.from({length:5},(_,i)=>['trivy-report-1029','1029',String(i)]));
+  const mail=s.emails[0]; assert.deepEqual(mail.to,productionRecipients);assert.deepEqual(mail.cc,[]);assert.deepEqual(mail.bcc,[]);
+  assert.match(mail.subject,/HIGH\/CRITICAL/);assert.match(mail.body,/ersten fünf/);assert.match(mail.body,/#\/rule\/1029/);assert.ok(mail.body.includes(productionAlert.name));
+  assert.doesNotMatch(mail.body,/LOW|MEDIUM|aller Schweregrade|rule\/1062|@@TICKET:|Bereits vorhandene Tickets verhindern|möglicherweise unvollständig/);
+  for(const c of s.created)assert.ok(mail.body.includes(`browse/${c.key}`));
+  assert.equal((mail.body.match(/<tr>/g)??[]).length,7);
+  assert.equal((mail.body.match(/<td[^>]*><\/td>/g)??[]).length,2);
+  const comments=s.events.filter(e=>e.type==='comment');assert.equal(comments.length,5);
+  assert.deepEqual(comments.map(c=>c.key),s.created.map(c=>c.key));
+  assert.ok(comments.every(c=>!c.sendNotifications&&c.body.includes(worker.name)&&c.body.includes('#/rule/914')));
+});
+
+test('1029 ends correctly after each possible selected-list length, including the fifth position',()=>{
+  for(let count=1;count<=5;count++) {
+    const s=production(Array.from({length:count},(_,i)=>finding(`CVE-2026-${2100+i}`,'HIGH')),[],{indexLag:true});
+    assert.equal(s.executions,count);assert.equal(s.created.length,count);assert.equal(s.emails.length,1);
+    for(const c of s.created)assert.ok(s.emails[0].body.includes(`browse/${c.key}`));
+    assert.equal(s.events.at(-1).type,'log');assert.match(s.events.at(-1).value,/abschließende Übersicht/);
+  }
+});
+
+test('1029 existing tickets in every status consume selected slots without backfill and later rows retain links',()=>{
+  const findings=Array.from({length:7},(_,i)=>finding(`CVE-2026-${2200+i}`,'HIGH'));
+  const existing=[issue('CER-7',findings[6].VulnerabilityID,'Done'),issue('CER-6',findings[5].VulnerabilityID,'Closed'),issue('CER-2',findings[0].VulnerabilityID,'In Progress'),issue('CER-1',findings[0].VulnerabilityID,'Done')];
+  const s=production(findings,existing);
+  assert.equal(s.created.length,4);assert.equal(s.executions,5);assert.equal(s.emails.length,1);
+  const mail=s.emails[0].body;
+  for(const key of ['CER-1','CER-2','CER-6','CER-7'])assert.ok(mail.includes(`browse/${key}`));
+  assert.ok(mail.indexOf('browse/CER-2')<mail.indexOf('browse/CER-1'));
+  assert.match(mail,/\(Done\)/);assert.match(mail,/\(Closed\)/);
+  assert.ok(s.created.every(c=>!c.fields.summary.includes('CVE-2026-2205')&&!c.fields.summary.includes('CVE-2026-2206')));
+  assert.equal(s.events.filter(e=>e.type==='comment').length,4);
+});
+
+test('1029 repeated report creates no duplicates, comments or replacement tickets',()=>{
+  const findings=Array.from({length:6},(_,i)=>finding(`CVE-2026-${2300+i}`,'CRITICAL'));
+  const first=production(findings); const second=production(findings,first.all);
+  assert.equal(second.created.length,0);assert.equal(second.emails.length,1);assert.equal(second.all.length,5);
+  assert.ok(!second.events.some(e=>e.type==='comment'));
+  for(const c of first.created)assert.ok(second.emails[0].body.includes(`browse/${c.key}`));
+});
+
+test('1029 carries fresh keys across five steps despite index lag and repeated identifiers in different libraries',()=>{
+  const s=production([finding('CVE-2026-2400','HIGH','first'),finding('CVE-2026-2400','HIGH','second'),finding('CVE-2026-2401','CRITICAL'),finding('CVE-2026-2402','HIGH'),finding('CVE-2026-2403','HIGH'),finding('CVE-2026-2404','HIGH')],[],{indexLag:true});
+  assert.equal(s.created.length,4);assert.equal(s.executions,5);assert.equal(s.emails.length,1);
+  assert.equal((s.emails[0].body.match(/browse\/CER-9000/g)??[]).length,2);
+  for(const c of s.created)assert.ok(s.emails[0].body.includes(`browse/${c.key}`));
+});
+
+test('1029 rejects malformed candidates before selection, preserves escaped rows and handles no eligible candidates',()=>{
+  const s=production([finding('CVE-2026-2500','HIGH','invalid|library'),finding('OTHER-1','CRITICAL'),...Array.from({length:6},(_,i)=>finding(`CVE-2026-${2501+i}`,'HIGH',i===0?'R&D <package>':'library'))]);
+  assert.equal(s.created.length,5);assert.match(s.emails[0].body,/R&amp;D &lt;package&gt;/);
+  assert.ok(s.created.every(c=>!c.fields.summary.includes('CVE-2026-2500')&&!c.fields.summary.includes('CVE-2026-2506')));
+  const noCandidates=production([finding('OTHER-1','HIGH')]);assert.equal(noCandidates.created.length,0);assert.equal(noCandidates.emails.length,1);assert.equal(noCandidates.executions,1);
+  assert.match(noCandidates.emails[0].body,/<td[^>]*><\/td>/);assert.doesNotMatch(noCandidates.emails[0].body,/browse\/|@@TICKET:/);
+});
+
+test('1029 scan without HIGH/CRITICAL never starts the worker or sends a mail',()=>{
+  for(const findings of [[],['UNKNOWN','LOW','MEDIUM'].map((severity,i)=>finding(`CVE-2026-${2600+i}`,severity))]) {
+    const s=production(findings);assert.equal(s.executions,0);assert.equal(s.created.length,0);assert.equal(s.emails.length,0);
+  }
+});
+
+test('1029 context accepts positions zero through four but rejects mismatched mode, origin and positions before side effects',()=>{
+  const s=production(Array.from({length:5},(_,i)=>finding(`CVE-2026-${2700+i}`,'HIGH')));
+  const first=s.events.find(e=>e.type==='post').payload;
+  const invalid=[{mode:'trivy-report-1062'}, {originRuleId:'1062'}, ...['4','5','-1','01','',undefined].map(position=>({position})), {pipelineId:'bad'},{reportRows:''},{source:'https://example.org/job'},{findingRows:undefined},{findingRows:''},{findingRows:first.findingRows.slice(0,-2)},{findingId:'CVE-2026-9999'},{library:'different-library'}];
+  for(const patch of invalid) {
+    const result=runRule(worker,{webhookData:{...first,...patch}},{lookup:()=>{throw Error('Invalid production ingress searched');},create:()=>{throw Error('Invalid production ingress created');}});
+    assert.ok(!result.events.some(e=>['lookup','create','comment','post','email'].includes(e.type)));
+  }
+});
+
+test('report mode does not introduce severity selection in 914 and invalid selected data does not cause backfill',()=>{
+  const first=production([finding('CVE-2026-2800','HIGH')]).events.find(e=>e.type==='post').payload;
+  for(const severity of ['UNKNOWN','LOW','MEDIUM','HIGH','CRITICAL']) {
+    const result=runRule(worker,{webhookData:selectedFields(first,{severity})},{lookup:()=>[],create:()=>issue('CER-1',first.findingId)});
+    assert.equal(result.events.filter(e=>e.type==='create').length,1);assert.equal(result.events.filter(e=>e.type==='email').length,1);
+  }
+  const bad=runRule(worker,{webhookData:selectedFields(first,{library:'invalid|library'})},{lookup:()=>[],create:()=>{throw Error('Invalid selected finding created');}});
+  assert.equal(bad.events.filter(e=>e.type==='create').length,0);assert.equal(bad.events.filter(e=>e.type==='email').length,1);
+});
+
+test('failed production handoff or damaged final table cannot send an incomplete overview',()=>{
+  const s=production(Array.from({length:5},(_,i)=>finding(`CVE-2026-${2900+i}`,'HIGH')));
+  const posts=s.events.filter(e=>e.type==='post');
+  for(const {payload} of posts.slice(0,4)) {
+    const result=runRule(worker,{webhookData:payload},{lookup:()=>[],create:()=>issue('CER-1',payload.findingId),post:()=>500});
+    assert.equal(result.events.filter(e=>e.type==='post').length,1);assert.ok(!result.events.some(e=>e.type==='email'));
+    assert.ok(!result.events.some(e=>e.type==='log'&&e.value.includes('per HTTP an den nächsten')));
+  }
+  const payload=posts.at(-1).payload;
+  const damaged=runRule(worker,{webhookData:payload},{lookup:()=>[],create:()=>issue('CER-1',payload.findingId),variable:(name,value)=>name==='securityReportTable'?value.replace('</tbody></table>',''):value});
+  assert.ok(!damaged.events.some(e=>e.type==='email'));
+});
+
+test('fresh lookup of an old ticket containing multiple identifiers preserves newest-first links and updates status',()=>{
+  for(const callerId of [1062,1029]) {
+    const first=finding('CVE-2026-4100','HIGH'), second=finding('CVE-2026-4101','HIGH');
+    const newer=issue('CER-200',first.VulnerabilityID,'Open');
+    const older=issue('CER-100',first.VulnerabilityID,'Done');older.description+=' '+second.VulnerabilityID;
+    const s=scenario([first,second],[newer,older],{callerId});
+    assert.equal(s.created.length,0);assert.equal(s.executions,2);assert.equal(s.emails.length,1);
+    const rows=s.emails[0].body.match(/<tr>.*?<\/tr>/g);
+    assert.ok(rows[0].indexOf('browse/CER-200')<rows[0].indexOf('browse/CER-100'));
+    assert.equal((rows[0].match(/browse\/CER-100/g)??[]).length,1);
+    assert.ok(rows[1].includes('browse/CER-100'));
+  }
+});
+
+test('a zero-candidate report must start at zero and carry empty selected fields',()=>{
+  for(const callerId of [1062,1029]) {
+    const payload=scenario([finding('OTHER-1','HIGH')],[],{callerId}).events.find(e=>e.type==='post').payload;
+    for(const patch of [{position:'1'},{findingId:'CVE-2026-9999'},{library:'unexpected'}]) {
+      const result=runRule(worker,{webhookData:{...payload,...patch}},{lookup:()=>{throw Error('Bad empty report searched');},create:()=>{throw Error('Bad empty report created');}});
+      assert.ok(!result.events.some(e=>['lookup','create','post','email'].includes(e.type)));
+    }
+  }
 });

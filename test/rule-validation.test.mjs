@@ -184,17 +184,22 @@ test('Security-Worker 914 erstellt nur für valide, nicht duplizierte HIGH/CRITI
   assert.match(lookup.value.query.value, /\{\{webhookData\.findingId\}\}/);
   assert.equal(lookup.parentId, validationBlock.id);
   assert.equal(create.parentId, createdKey.parentId);
-  assert.equal(createdKey.parentId, email.parentId);
+  const legacyNotificationBlock = components.find(component => component.id === email.parentId);
+  assert.equal(legacyNotificationBlock.conditions[0].value.first, '{{securityReportMode}}');
+  assert.equal(legacyNotificationBlock.conditions[0].value.operator, 'NOT_EQUALS');
   assert.equal(createdKey.value.query.value, '{{createdIssue.key}}');
   assert.ok(commentBranch);
-  assert.equal(commentBranch.parentId, create.parentId);
-  assert.equal(comments.length, 1);
+  assert.equal(commentBranch.parentId, email.parentId);
+  assert.equal(comments.length, 2);
+  assert.equal(comments[0].value.sendNotifications, true);
+  assert.equal(comments[1].value.sendNotifications, false);
   assert.equal(comments[0].parentId, commentBranch.id);
   assert.ok(commentBranch.children.includes(comments[0]));
   const creationSteps = components.find(component => component.id === create.parentId).children;
   assert.ok(creationSteps.indexOf(create) < creationSteps.indexOf(createdKey));
-  assert.ok(creationSteps.indexOf(createdKey) < creationSteps.indexOf(commentBranch));
-  assert.ok(creationSteps.indexOf(commentBranch) < creationSteps.indexOf(email));
+  const legacyNotificationContainer = components.find(component => component.id === legacyNotificationBlock.parentId);
+  assert.ok(creationSteps.indexOf(createdKey) < creationSteps.indexOf(legacyNotificationContainer));
+  assert.ok(legacyNotificationBlock.children.indexOf(commentBranch) < legacyNotificationBlock.children.indexOf(email));
   assert.match(comments[0].value.comment, /Dieses Ticket \{\{issue\.key\}\} wurde durch die Jira-Automatisierungsregel/);
   assert.match(
     comments[0].value.comment,

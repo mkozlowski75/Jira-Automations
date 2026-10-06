@@ -5,7 +5,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test test/rule-validation.test.mjs test/ticket-api.test.mjs test/cve-ticket-factory.test.mjs test/cer-ticket.test.mjs test/gitlab-api.test.mjs test/confluence-api.test.mjs && node scripts/lint-skill.mjs",
+    "test": "node --test test/rule-validation.test.mjs test/security-report.test.mjs test/ticket-api.test.mjs test/cve-ticket-factory.test.mjs test/cer-ticket.test.mjs test/gitlab-api.test.mjs test/confluence-api.test.mjs && node scripts/lint-skill.mjs",
     "validate": "node scripts/validate-rules.mjs",
     "verify": "npm test && npm run validate",
     "next-component-id": "node scripts/next-component-id.mjs",

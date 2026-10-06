@@ -113,7 +113,7 @@ test('auflöst Regeln aus dem separaten Regel-Repository und akzeptiert CER-Name
   assert.equal(resolved.repositoryPath, '../jira-automation-rules/rules/CER-jira-rule-913.json');
 });
 
-test('Security-Worker 914 erstellt nur für valide, nicht duplizierte HIGH/CRITICAL-CVE- oder -GHSA-Funde und benachrichtigt danach', () => {
+test('Security-Worker 914 erstellt für valide, nicht duplizierte CVE- oder -GHSA-Funde aller Trivy-Schweregrade und benachrichtigt danach', () => {
   const rule = readRuleFile(914);
   const flatten = components => components.flatMap(component => [
     component,

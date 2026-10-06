@@ -78,16 +78,34 @@ test('mapping matches whole identifiers only and escapes issue status HTML',()=>
   const escaped = scenario([finding('CVE-2026-1000')],[issue('CER-12','CVE-2026-1000','<Done>')]);
   assert.match(escaped.emails[0].body,/\(&lt;Done&gt;\)/);
 });
-test('legacy worker rejects LOW, keeps open-only dedupe and production recipients',()=>{
+test('legacy worker accepts all valid severities, keeps open-only dedupe and production recipients',()=>{
   const payload = {findingId:'CVE-2026-1000',library:'library',installedVersion:'1',severity:'LOW',source:'https://example.org/job'};
   const handlers = {lookup:()=>[],create:()=>issue('CER-1',payload.findingId)};
-  assert.equal(runRule(worker,{webhookData:payload},handlers).events.filter(e=>e.type==='create').length,0);
-  const high = runRule(worker,{webhookData:{...payload,severity:'HIGH'}},handlers);
-  assert.equal(high.events.filter(e=>e.type==='create').length,1); assert.equal(high.events.find(e=>e.type==='email').to.length,4);
-  assert.match(high.events.find(e=>e.type==='lookup').query,/statusCategory != Done/);
-  assert.deepEqual(high.events.find(e=>e.type==='commentBranch').notifications,[true]);
+  for (const severity of ['UNKNOWN','LOW','MEDIUM','HIGH','CRITICAL']) {
+    const result = runRule(worker,{webhookData:{...payload,severity}},handlers);
+    assert.equal(result.events.filter(e=>e.type==='create').length,1);
+    assert.equal(result.events.find(e=>e.type==='email').to.length,4);
+    assert.match(result.events.find(e=>e.type==='lookup').query,/statusCategory != Done/);
+    assert.deepEqual(result.events.find(e=>e.type==='commentBranch').notifications,[true]);
+  }
 });
-test('unknown mode and report origin cannot activate widened worker behavior',()=>{
+test('both worker modes accept valid severities and reject missing or invalid severities',()=>{
+  const first = scenario([finding('CVE-2026-1000')]).events.find(e=>e.type==='post').payload;
+  const single = {findingId:first.findingId,library:first.library,installedVersion:first.installedVersion,source:first.source};
+  const handlers = {lookup:()=>[],create:()=>issue('CER-1',first.findingId)};
+  for (const payload of [single,first]) {
+    for (const severity of ['UNKNOWN','LOW','MEDIUM','HIGH','CRITICAL']) {
+      const result = runRule(worker,{webhookData:{...payload,severity}},handlers);
+      assert.equal(result.events.filter(e=>e.type==='create').length,1);
+      assert.match(result.events.find(e=>e.type==='create').fields.description,new RegExp(`\\|\\*Schweregrad des Herstellers\\*\\|${severity}\\|`));
+    }
+    for (const severity of [undefined,'','low','IMPORTANT','HIGH|LOW']) {
+      const result = runRule(worker,{webhookData:{...payload,severity}},handlers);
+      assert.ok(!result.events.some(e=>['lookup','create','commentBranch'].includes(e.type)));
+    }
+  }
+});
+test('unknown mode and report origin cannot activate report worker behavior',()=>{
   const handlers = {lookup:()=>{throw new Error('must not search');},create:()=>{throw new Error('must not create');}};
   for (const webhookData of [{mode:'unknown'},{mode:'trivy-report-1062',originRuleId:'1029',position:'0',pipelineId:'42',source:'https://gitlab.partner.bdr.de/cer/ceroma/app/-/jobs/55',reportRows:'test'}]) {
     assert.ok(!runRule(worker,{webhookData},handlers).events.some(e=>['create','post','email'].includes(e.type)));

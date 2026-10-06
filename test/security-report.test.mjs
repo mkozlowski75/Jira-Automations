@@ -282,3 +282,12 @@ test('HTTP acceptance conditions are followed by a real action in both rules',()
     assert.notEqual(c.children.at(-1)?.type,'jira.comparator.condition',`${r.id}/${c.id}: terminal condition has no action`);
   }
 });
+
+test('Data Center iterators hide outer variables while inline list transformations retain root data',()=>{
+  assert.equal(render('{{outside}}{{#rows}}{{outside}}{{label}}{{/}}',{outside:'X',rows:[{label:'A'},{label:'B'}]}),'XAB');
+  assert.equal(render('{{rows.concat(outside).join("")}}',{outside:'X',rows:['A','B']}),'AXBX');
+  const table=flat(worker.components).find(c=>c.value?.name?.value==='securityReportTable').value.query.value;
+  assert.ok(!table.includes('{{#'),'Table must transform rows without a scope-changing iterator');
+  const merge=flat(worker.components).find(c=>c.value?.name?.value==='securityReportTicketIndex').value.query.value;
+  assert.ok(!merge.includes('{{#'),'Carried map must be deduplicated in root context');
+});

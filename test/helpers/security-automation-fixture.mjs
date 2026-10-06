@@ -7,11 +7,13 @@ const escape = v => text(v).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const html = v => text(v).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
 function pattern(v, global = false) {
   let source = text(v).replace(/\\Q(.*?)\\E/g, (_, literal) => escape(literal));
-  const multiline = source.startsWith('(?m)'); if (multiline) source = source.substring(4);
-  return new RegExp(source, `${global ? 'g' : ''}${multiline ? 'm' : ''}`);
+  const multiline = source.startsWith('(?m)'), dotall = source.startsWith('(?s)'); if (multiline || dotall) source = source.substring(4);
+  return new RegExp(source, `${global ? 'g' : ''}${multiline ? 'm' : ''}${dotall ? 's' : ''}`);
 }
 const functions = { equals: (a,b) => text(a) === text(b), exists: v => v != null && truth(v), not: a => !truth(a), and: (...a) => a.every(truth), or: (...a) => a.some(truth) };
 function member(v, name, args) {
+  // Inline collection text operations keep the outer context, unlike # sections.
+  if(Array.isArray(v) && args !== undefined && !['get','join','asJsonObject'].includes(name)) return v.map(x=>member(x,name,args));
   const s = text(v);
   const methods = {
     concat: x => s+text(x), trim: () => s.trim(),
@@ -35,7 +37,8 @@ function member(v, name, args) {
 export function evaluate(expression, globals, scopes = []) {
   let i = 0; const current = scopes.at(-1);
   const space = () => { while (i < expression.length && /\s/.test(expression[i])) i++; };
-  const resolve = key => { for (const scope of [...scopes].reverse()) if (scope && typeof scope === 'object' && key in scope) return scope[key]; return globals[key]; };
+  // A # list section exposes its item and lower fields, not outer variables.
+  const resolve = key => scopes.length ? (current && typeof current === 'object' ? current[key] : undefined) : globals[key];
   function name() { const m = /^[A-Za-z_][A-Za-z_0-9]*/.exec(expression.substring(i)); assert.ok(m, expression.substring(i)); i += m[0].length; return m[0]; }
   function args() { const out = []; i++; space(); if (expression[i] !== ')') do { out.push(value()); space(); if (expression[i] !== ',') break; i++; } while (true); assert.equal(expression[i++],')',expression); return out; }
   function value() {

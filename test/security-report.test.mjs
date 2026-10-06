@@ -259,13 +259,23 @@ test('worker iterates named objects without implicit indexes and carries all rep
   assert.equal(posts.length,2);
   for(const {payload} of posts) {
     assert.equal(payload.reportItems.length,3);
-    assert.ok(payload.reportItems.every(x=>typeof x.html==='string'&&x.html.includes('@@TICKET:')));
+    assert.ok(payload.reportItems.every(x=>typeof x.reportFindingId==='string'&&typeof x.reportTicketPattern==='string'));
+    assert.deepEqual(JSON.parse('['+payload.reportItemsJson+']'),payload.reportItems);
     assert.ok(payload.ticketItems.every(x=>typeof x.line==='string'));
   }
   assert.ok(posts[1].payload.ticketItems.some(x=>x.line.includes('CER-1')));
   assert.ok(posts[1].payload.ticketItems.some(x=>x.line.includes('CER-2')));
   assert.equal(s.created.length,1);assert.equal(s.emails.length,1);
   assert.doesNotMatch(JSON.stringify(worker.components),/get\(index\)/);
+});
+
+test('explicit map separators preserve record boundaries and statuses cannot introduce delimiters',()=>{
+  const s=scenario([finding('CVE-2026-1000'),finding('CVE-2026-1001')],[issue('CER-1','CVE-2026-1000','New§§Done'),issue('CER-2','CVE-2026-1001','In Progress\nreview')]);
+  const second=s.events.filter(e=>e.type==='post')[1].payload;
+  assert.equal(second.ticketIndex.split('§§').filter(Boolean).length,2);
+  assert.equal(second.ticketItems.length,2);
+  for(const key of ['CER-1','CER-2']) assert.equal((s.emails[0].body.match(new RegExp('browse/'+key+'"','g'))??[]).length,1);
+  assert.doesNotMatch(s.emails[0].body,/§§/);
 });
 test('HTTP acceptance conditions are followed by a real action in both rules',()=>{
   for (const r of [alert,worker]) for (const c of flat(r.components).filter(c=>c.type==='jira.condition.if.block')) {

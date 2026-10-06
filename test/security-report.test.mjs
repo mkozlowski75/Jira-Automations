@@ -293,3 +293,11 @@ test('Data Center iterators hide outer variables while inline list transformatio
   const merge=flat(worker.components).find(c=>c.value?.name?.value==='securityReportTicketIndex').value.query.value;
   assert.ok(!merge.includes('{{#'),'Carried map must be deduplicated in root context');
 });
+
+test('created issue data is visible within its IF path and disappears after leaving it',()=>{
+  const create = flat(worker.components).find(c=>c.type==='jira.issue.create');
+  const log = value=>({type:'codebarrel.action.log',value});
+  const condition = {type:'jira.condition.if.block',value:{conditionMatchType:'ALL'},conditions:[],children:[create,log('inside={{createdIssue.key}}')]};
+  const result = runRule({components:[condition,log('outside={{createdIssue.key}}')]},{webhookData:{findingId:'CVE-2026-1000'}},{create:()=>issue('CER-1','CVE-2026-1000')});
+  assert.deepEqual(result.events.filter(e=>e.type==='log').map(e=>e.value),['inside=CER-1','outside=']);
+});

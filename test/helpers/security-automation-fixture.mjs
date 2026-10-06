@@ -88,7 +88,20 @@ export function runRule(rule, globals, handlers = {}) {
   function walk(cs) { for (const c of cs) switch (c.type) {
     case 'jira.comparator.condition': if (!check(c)) return false; break;
     case 'jira.condition.container.block': walk(c.children); break;
-    case 'jira.condition.if.block': { const checks = c.conditions.map(check); if (c.value.conditionMatchType === 'ANY' ? checks.some(Boolean) : checks.every(Boolean)) walk(c.children); break; }
+    case 'jira.condition.if.block': {
+      const checks = c.conditions.map(check);
+      if (c.value.conditionMatchType === 'ANY' ? checks.some(Boolean) : checks.every(Boolean)) {
+        // A created issue belongs to the conditional path that created it.
+        // Keep lookup results and declared variable updates, as observed in the
+        // live rules; the separate declaration audit checks own variable scope.
+        const hadCreatedIssue = Object.hasOwn(globals,'createdIssue');
+        const previousCreatedIssue = globals.createdIssue;
+        walk(c.children);
+        if (hadCreatedIssue) globals.createdIssue = previousCreatedIssue;
+        else delete globals.createdIssue;
+      }
+      break;
+    }
     case 'jira.create.variable': { const name = c.value.name.value, value = render(c.value.query.value,globals); globals[name] = handlers.variable ? handlers.variable(name,value) : value; break; }
     case 'jira.lookup.issues': { const query = render(c.value.query.value,globals); events.push({type:'lookup',query}); globals.lookupIssues = handlers.lookup(query); break; }
     case 'jira.issue.create': { const fields = Object.fromEntries(c.value.operations.map(op => [op.fieldId,typeof op.value === 'string' ? render(op.value,globals) : op.value])); globals.createdIssue = handlers.create(fields); events.push({type:'create',fields,key:globals.createdIssue.key}); break; }

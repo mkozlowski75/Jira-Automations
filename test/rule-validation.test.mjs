@@ -124,8 +124,8 @@ test('Security-Worker 914 erstellt für valide, nicht duplizierte CVE- oder -GHS
   const validationBlock = components.find(component =>
     component.type === 'jira.condition.if.block'
       && component.conditions?.some(condition =>
-        condition.value?.first === '{{webhookData.findingId}}'
-          && condition.value?.operator === 'REGEX_MATCHES'),
+        condition.value?.first === '{{securityFindingParametersValid}}'
+          && condition.value?.operator === 'EQUALS'),
   );
   const lookup = components.find(component => component.type === 'jira.lookup.issues');
   const create = components.find(component => component.type === 'jira.issue.create');
@@ -151,8 +151,8 @@ test('Security-Worker 914 erstellt für valide, nicht duplizierte CVE- oder -GHS
     component.type === 'jira.condition.if.block'
       && component.value?.conditionMatchType === 'ANY'
       && component.conditions?.some(condition =>
-        condition.value?.first === '{{webhookData.findingId}}'
-          && condition.value?.operator === 'REGEX_NOT_MATCHES'),
+        condition.value?.first === '{{securityFindingParametersValid}}'
+          && condition.value?.operator === 'NOT_EQUALS'),
   );
   const invalidPayloadLog = components.find(component =>
     component.type === 'codebarrel.action.log'
@@ -166,17 +166,11 @@ test('Security-Worker 914 erstellt für valide, nicht duplizierte CVE- oder -GHS
   for (const field of ['findingId', 'library', 'installedVersion', 'severity', 'source']) {
     assert.match(receivedLog.value, new RegExp(`\\{\\{webhookData\\.${field}\\}\\}`));
   }
-  assert.equal(validationBlock.conditions.length, 5);
-  assert.deepEqual(
-    validationBlock.conditions.map(condition => condition.value.first).sort(),
-    [
-      '{{webhookData.findingId}}',
-      '{{webhookData.installedVersion}}',
-      '{{webhookData.library}}',
-      '{{webhookData.severity}}',
-      '{{webhookData.source}}',
-    ],
-  );
+  assert.equal(validationBlock.conditions.length, 1);
+  const validation = rule.components.find(component => component.value?.name?.value === 'securityFindingParametersValid');
+  for (const field of ['findingId', 'installedVersion', 'library', 'severity', 'source']) {
+    assert.ok(validation.value.query.value.includes(`webhookData.${field}.match(`));
+  }
   assert.match(
     lookup.value.query.value,
     /summary.*description/s,
@@ -252,15 +246,16 @@ test('Security-Worker 914 erstellt für valide, nicht duplizierte CVE- oder -GHS
   assert.ok(duplicateLog);
   assert.notEqual(duplicateLog.parentId, email.parentId);
   assert.equal(invalidPayloadBlock.parentId, validationBlock.parentId);
-  assert.equal(invalidPayloadBlock.conditions.length, 5);
+  assert.equal(invalidPayloadBlock.conditions.length, 1);
   assert.ok(invalidPayloadBlock.conditions.every(condition =>
-    condition.value.operator === 'REGEX_NOT_MATCHES'));
+    condition.value.operator === 'NOT_EQUALS'));
   assert.equal(invalidPayloadLog.parentId, invalidPayloadBlock.id);
   assert.match(invalidPayloadLog.value, /mindestens ein Parameter entspricht nicht den Vorgaben/);
   assert.match(invalidPayloadLog.value, /Kein Ticket und keine E-Mail erstellt/);
   const findingIdPattern = '^(?:CVE-\\d{4}-\\d{4,24}|GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4})$';
-  assert.equal(validationBlock.conditions[0].value.second, findingIdPattern);
-  assert.equal(invalidPayloadBlock.conditions[0].value.second, findingIdPattern);
+  assert.equal(validationBlock.conditions[0].value.second, 'true');
+  assert.equal(invalidPayloadBlock.conditions[0].value.second, 'true');
+  assert.ok(validation.value.query.value.includes(JSON.stringify(`(${findingIdPattern})`)));
   const findingIdExpression = new RegExp(findingIdPattern);
   assert.equal(findingIdExpression.test('CVE-2026-40985'), true);
   assert.equal(findingIdExpression.test('GHSA-7wwv-79xw-rvvg'), true);

@@ -127,6 +127,32 @@ test('unknown mode and report origin cannot activate report worker behavior',()=
     assert.ok(!runRule(worker,{webhookData},handlers).events.some(e=>['create','post','email'].includes(e.type)));
   }
 });
+
+test('native ingress checks accept both report steps and block invalid context before side effects',()=>{
+  const s = scenario([finding('CVE-2026-1000'),finding('CVE-2026-1001')]);
+  const payloads = s.events.filter(e=>e.type==='post').map(e=>e.payload);
+  assert.deepEqual(payloads.map(p=>String(p.position)),['0','1']);
+  for (const payload of payloads) {
+    const result = runRule(worker,{webhookData:payload},{lookup:()=>[],create:()=>issue('CER-1',payload.findingId)});
+    assert.ok(result.events.some(e=>e.type==='log' && e.value.includes('Eingangsprüfung bestanden')));
+    assert.equal(result.events.filter(e=>e.type==='create').length,1);
+  }
+  const first = payloads[0];
+  const invalid = [
+    ['mode','unknown'],['mode','legacy'],['originRuleId',undefined],['originRuleId','1029'],['originRuleId','legacy'],
+    ['position',undefined],['position',''],['position','-1'],['position','2'],['position','01'],
+    ['pipelineId',undefined],['pipelineId',''],['pipelineId','not-a-number'],
+    ['source',undefined],['source','https://example.org/job'],['source',first.source+'?token=invalid'],
+    ['reportRows',undefined],['reportRows',''],
+  ];
+  for (const [field,value] of invalid) {
+    const result = runRule(worker,{webhookData:{...first,[field]:value}},{lookup:()=>{throw Error('Invalid ingress reached lookup');},create:()=>{throw Error('Invalid ingress reached create');}});
+    assert.ok(!result.events.some(e=>['lookup','create','commentBranch','post','email'].includes(e.type)),`${field}=${value}`);
+    assert.ok(!result.events.some(e=>e.type==='log' && e.value.includes('Eingangsprüfung bestanden')),`${field}=${value}`);
+    assert.ok(result.events.some(e=>e.type==='log' && e.value.includes('reportRowsLength=')));
+  }
+  assert.ok(!flat(worker.components).some(c=>c.value?.name?.value==='securityRequestAccepted'));
+});
 test('invalid selected finding does not create, still completes report without backfill',()=>{
   const s = scenario([finding('CVE-2026-1000'),finding('CVE-2026-1001')]);
   const first = s.events.find(e=>e.type==='post').payload;

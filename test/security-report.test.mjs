@@ -43,18 +43,28 @@ function scenario(findings, existing = [], { indexLag = false, statusChange = fa
   }
   return {events,all,executions,emails:events.filter(e=>e.type==='email'),created:events.filter(e=>e.type==='create')};
 }
-test('1062 reports every severity but only checks first two eligible HIGH/CRITICAL tuples',()=>{
-  const s = scenario(['UNKNOWN','LOW','MEDIUM','HIGH','CRITICAL'].map((severity,i)=>finding(`CVE-2026-${1000+i}`,severity)));
-  assert.equal(s.created.length,2); assert.equal(s.executions,2); assert.equal(s.emails.length,1);
-  assert.deepEqual(s.created.map(c=>c.fields.summary.match(/CVE-2026-\d+/)[0]),['CVE-2026-1003','CVE-2026-1004']);
-  assert.deepEqual(s.events.filter(e=>e.type==='post').map(e=>e.payload.severity),['HIGH','CRITICAL']);
-  const mail = s.emails[0]; assert.deepEqual(mail.to,[{type:'FREE',value:'matthias.kozlowski.extern@bdr.de'}]); assert.deepEqual(mail.cc,[]); assert.deepEqual(mail.bcc,[]);
-  assert.match(mail.body,/>Jira-Tickets</); assert.doesNotMatch(mail.body,/@ @|@@TICKET:/);
-  for (const c of s.created) assert.match(mail.body,new RegExp(`browse/${c.key}`));
-  for (const severity of ['UNKNOWN','LOW','MEDIUM','HIGH','CRITICAL']) assert.ok(mail.body.includes(severity));
-  assert.equal((mail.body.match(/<tr>/g)??[]).length,5);
-  assert.match(mail.body,/ersten zwei.*Schweregrade HIGH und CRITICAL/);
-  assert.ok(s.events.filter(e=>e.type==='commentBranch').every(e=>e.notifications.every(n=>n===false)));
+test('1062 selects the first two eligible tuples of any severity; 914 only creates HIGH/CRITICAL tickets and reports all rows',()=>{
+  const cases=[
+    {severities:['UNKNOWN','LOW','MEDIUM','HIGH','CRITICAL'],createdIds:[]},
+    {severities:['LOW','HIGH','MEDIUM','CRITICAL','UNKNOWN'],createdIds:['CVE-2026-1001']},
+    {severities:['HIGH','CRITICAL','UNKNOWN','LOW','MEDIUM'],createdIds:['CVE-2026-1000','CVE-2026-1001']},
+  ];
+  for(const {severities,createdIds} of cases) {
+    const s=scenario(severities.map((severity,i)=>finding(`CVE-2026-${1000+i}`,severity)));
+    assert.equal(s.created.length,createdIds.length);assert.equal(s.executions,2);assert.equal(s.emails.length,1);
+    assert.deepEqual(s.created.map(c=>c.fields.summary.match(/CVE-2026-\d+/)[0]),createdIds);
+    const posts=s.events.filter(e=>e.type==='post');
+    assert.deepEqual(posts.map(e=>e.payload.findingId),['CVE-2026-1000','CVE-2026-1001']);
+    assert.deepEqual(posts.map(e=>e.payload.severity),severities.slice(0,2));
+    assert.ok(posts.every(e=>e.payload.reportItems.length===5));
+    const mail=s.emails[0];assert.deepEqual(mail.to,[{type:'FREE',value:'matthias.kozlowski.extern@bdr.de'}]);assert.deepEqual(mail.cc,[]);assert.deepEqual(mail.bcc,[]);
+    assert.match(mail.body,/>Jira-Tickets</);assert.doesNotMatch(mail.body,/@ @|@@TICKET:/);
+    for(const c of s.created)assert.match(mail.body,new RegExp(`browse/${c.key}`));
+    for(const severity of severities)assert.ok(mail.body.includes(severity));
+    assert.equal((mail.body.match(/<tr>/g)??[]).length,5);
+    assert.equal(s.events.filter(e=>e.type==='comment').length,createdIds.length);
+    assert.ok(s.events.filter(e=>e.type==='commentBranch').every(e=>e.notifications.every(n=>n===false)));
+  }
 });
 test('closed and open tickets prevent recreation; all statuses and rows beyond two get links',()=>{
   const findings = [finding('CVE-2026-1000'),finding('GHSA-aaaa-bbbb-cccc','MEDIUM'),finding('CVE-2026-1002')];
@@ -75,21 +85,23 @@ test('report with no eligible identifiers still sends overview with empty ticket
 test('1062 with only lower severities sends all rows and existing ticket links without creating tickets',()=>{
   const severities=['UNKNOWN','LOW','MEDIUM'];
   const s=scenario(severities.map((severity,i)=>finding(`CVE-2026-${1100+i}`,severity)),[issue('CER-1','CVE-2026-1101','Done')]);
-  assert.equal(s.created.length,0);assert.equal(s.executions,1);assert.equal(s.emails.length,1);
+  assert.equal(s.created.length,0);assert.equal(s.executions,2);assert.equal(s.emails.length,1);
   assert.ok(!s.events.some(e=>['comment','commentBranch'].includes(e.type)));
-  const payload=s.events.find(e=>e.type==='post').payload;
-  assert.equal(payload.findingRows,'');assert.equal(payload.findingId,'');
+  const posts=s.events.filter(e=>e.type==='post');
+  assert.deepEqual(posts.map(e=>[e.payload.findingId,e.payload.severity]),[['CVE-2026-1100','UNKNOWN'],['CVE-2026-1101','LOW']]);
+  assert.ok(posts.every(e=>e.payload.findingRows.split('§§').filter(Boolean).length===3));
   const mail=s.emails[0].body;
   assert.equal((mail.match(/<tr>/g)??[]).length,3);
   for(const severity of severities)assert.ok(mail.includes(severity));
   assert.match(mail,/browse\/CER-1/);assert.match(mail,/\(Done\)/);assert.doesNotMatch(mail,/@@TICKET:/);
 });
 
-test('1062 lower severities do not consume slots and existing HIGH tickets still consume one of two slots',()=>{
+test('1062 lower severities consume both slots without backfill; later existing HIGH tickets stay linked',()=>{
   const findings=[finding('CVE-2026-1200','LOW'),finding('CVE-2026-1201','MEDIUM'),finding('CVE-2026-1202','HIGH'),finding('CVE-2026-1203','CRITICAL'),finding('CVE-2026-1204','HIGH')];
   const s=scenario(findings,[issue('CER-1','CVE-2026-1202','Closed')]);
-  assert.equal(s.executions,2);assert.equal(s.created.length,1);assert.equal(s.emails.length,1);
-  assert.match(s.created[0].fields.summary,/CVE-2026-1203/);
+  assert.equal(s.executions,2);assert.equal(s.created.length,0);assert.equal(s.emails.length,1);
+  assert.deepEqual(s.events.filter(e=>e.type==='post').map(e=>e.payload.findingId),['CVE-2026-1200','CVE-2026-1201']);
+  assert.ok(!s.events.some(e=>['comment','commentBranch'].includes(e.type)));
   assert.equal((s.emails[0].body.match(/<tr>/g)??[]).length,5);
   assert.match(s.emails[0].body,/browse\/CER-1/);assert.match(s.emails[0].body,/\(Closed\)/);
 });
@@ -274,9 +286,12 @@ test('the eleven LOW/MEDIUM findings from the failed Jira run produce no tickets
   const findings = records.map(([VulnerabilityID,PkgName,InstalledVersion,Severity='MEDIUM'])=>({VulnerabilityID,PkgName,InstalledVersion,Severity}));
   const s = scenario(findings);
   const posts = s.events.filter(e=>e.type==='post');
-  assert.equal(posts.length,1);
-  assert.equal(posts[0].payload.findingRows,'');
-  assert.equal(posts[0].payload.findingId,'');
+  assert.equal(posts.length,2);
+  assert.deepEqual(posts.map(e=>[e.payload.findingId,e.payload.library,e.payload.installedVersion,e.payload.severity]),[
+    ['CVE-2025-15022','com.vaadin:vaadin-server','8.14.3','MEDIUM'],
+    ['CVE-2025-9467','com.vaadin:vaadin-server','8.14.3','MEDIUM'],
+  ]);
+  assert.ok(posts.every(e=>e.payload.findingRows.split('§§').filter(Boolean).length===11));
   assert.equal(s.created.length,0); assert.equal(s.emails.length,1);
   assert.equal((s.emails[0].body.match(/<tr>/g)??[]).length,11);
   assert.doesNotMatch(s.emails[0].body,/@@TICKET:/);

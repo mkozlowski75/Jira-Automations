@@ -5,7 +5,7 @@ import { render, runRule } from './helpers/security-automation-fixture.mjs';
 const rule = id => JSON.parse(readFileSync(new URL(`../../jira-automation-rules/rules/CER-jira-rule-${id}.json`,import.meta.url),'utf8'));
 const alert = rule(1062), productionAlert = rule(1029), worker = rule(914);
 const flat = cs => cs.flatMap(c => [c,...flat(c.children ?? []),...flat(c.conditions ?? [])]);
-const finding = (id,severity='LOW',library='library') => ({VulnerabilityID:id,Severity:severity,PkgName:library,InstalledVersion:'1.0'});
+const finding = (id,severity='HIGH',library='library') => ({VulnerabilityID:id,Severity:severity,PkgName:library,InstalledVersion:'1.0'});
 const issue = (key,id,status='Open') => ({key,summary:`[CVE] ${id} – library`,description:`Finding ${id}`,status:{name:status}});
 // Change a selected finding and its carried record together. Contradictory
 // payloads are separate ingress-error cases, not parameter-validation cases.
@@ -43,13 +43,17 @@ function scenario(findings, existing = [], { indexLag = false, statusChange = fa
   }
   return {events,all,executions,emails:events.filter(e=>e.type==='email'),created:events.filter(e=>e.type==='create')};
 }
-test('1062 processes every severity but only first two eligible tuples; summary includes immediate keys',()=>{
+test('1062 reports every severity but only checks first two eligible HIGH/CRITICAL tuples',()=>{
   const s = scenario(['UNKNOWN','LOW','MEDIUM','HIGH','CRITICAL'].map((severity,i)=>finding(`CVE-2026-${1000+i}`,severity)));
   assert.equal(s.created.length,2); assert.equal(s.executions,2); assert.equal(s.emails.length,1);
+  assert.deepEqual(s.created.map(c=>c.fields.summary.match(/CVE-2026-\d+/)[0]),['CVE-2026-1003','CVE-2026-1004']);
+  assert.deepEqual(s.events.filter(e=>e.type==='post').map(e=>e.payload.severity),['HIGH','CRITICAL']);
   const mail = s.emails[0]; assert.deepEqual(mail.to,[{type:'FREE',value:'matthias.kozlowski.extern@bdr.de'}]); assert.deepEqual(mail.cc,[]); assert.deepEqual(mail.bcc,[]);
   assert.match(mail.body,/>Jira-Tickets</); assert.doesNotMatch(mail.body,/@ @|@@TICKET:/);
   for (const c of s.created) assert.match(mail.body,new RegExp(`browse/${c.key}`));
   for (const severity of ['UNKNOWN','LOW','MEDIUM','HIGH','CRITICAL']) assert.ok(mail.body.includes(severity));
+  assert.equal((mail.body.match(/<tr>/g)??[]).length,5);
+  assert.match(mail.body,/ersten zwei.*Schweregrade HIGH und CRITICAL/);
   assert.ok(s.events.filter(e=>e.type==='commentBranch').every(e=>e.notifications.every(n=>n===false)));
 });
 test('closed and open tickets prevent recreation; all statuses and rows beyond two get links',()=>{
@@ -60,7 +64,7 @@ test('closed and open tickets prevent recreation; all statuses and rows beyond t
   assert.ok(s.emails[0].body.includes('(Done)')); assert.ok(s.emails[0].body.includes('(In Progress)'));
 });
 test('same identifier in two libraries does not create twice even before search index sees first ticket',()=>{
-  const s = scenario([finding('CVE-2026-1000','LOW','library-a'),finding('CVE-2026-1000','MEDIUM','library-b')],[],{indexLag:true});
+  const s = scenario([finding('CVE-2026-1000','HIGH','library-a'),finding('CVE-2026-1000','CRITICAL','library-b')],[],{indexLag:true});
   assert.equal(s.created.length,1); assert.equal(s.emails.length,1);
   assert.equal((s.emails[0].body.match(/browse\/CER-9000/g)??[]).length,2);
 });
@@ -68,6 +72,41 @@ test('report with no eligible identifiers still sends overview with empty ticket
   const s = scenario([finding('OTHER-123','LOW')]); assert.equal(s.created.length,0); assert.equal(s.emails.length,1); assert.equal(s.executions,1);
   assert.doesNotMatch(s.emails[0].body,/browse\/|@@TICKET:/); assert.match(s.emails[0].body,/<td[^>]*><\/td>/);
 });
+test('1062 with only lower severities sends all rows and existing ticket links without creating tickets',()=>{
+  const severities=['UNKNOWN','LOW','MEDIUM'];
+  const s=scenario(severities.map((severity,i)=>finding(`CVE-2026-${1100+i}`,severity)),[issue('CER-1','CVE-2026-1101','Done')]);
+  assert.equal(s.created.length,0);assert.equal(s.executions,1);assert.equal(s.emails.length,1);
+  assert.ok(!s.events.some(e=>['comment','commentBranch'].includes(e.type)));
+  const payload=s.events.find(e=>e.type==='post').payload;
+  assert.equal(payload.findingRows,'');assert.equal(payload.findingId,'');
+  const mail=s.emails[0].body;
+  assert.equal((mail.match(/<tr>/g)??[]).length,3);
+  for(const severity of severities)assert.ok(mail.includes(severity));
+  assert.match(mail,/browse\/CER-1/);assert.match(mail,/\(Done\)/);assert.doesNotMatch(mail,/@@TICKET:/);
+});
+
+test('1062 lower severities do not consume slots and existing HIGH tickets still consume one of two slots',()=>{
+  const findings=[finding('CVE-2026-1200','LOW'),finding('CVE-2026-1201','MEDIUM'),finding('CVE-2026-1202','HIGH'),finding('CVE-2026-1203','CRITICAL'),finding('CVE-2026-1204','HIGH')];
+  const s=scenario(findings,[issue('CER-1','CVE-2026-1202','Closed')]);
+  assert.equal(s.executions,2);assert.equal(s.created.length,1);assert.equal(s.emails.length,1);
+  assert.match(s.created[0].fields.summary,/CVE-2026-1203/);
+  assert.equal((s.emails[0].body.match(/<tr>/g)??[]).length,5);
+  assert.match(s.emails[0].body,/browse\/CER-1/);assert.match(s.emails[0].body,/\(Closed\)/);
+});
+
+test('914 skips a lower severity in the first report step but hands off and sends the final overview',()=>{
+  for(const callerId of [1062,1029]) {
+    const first=scenario([finding('CVE-2026-1300'),finding('CVE-2026-1301')],[],{callerId}).events.find(e=>e.type==='post').payload;
+    const skipped=runRule(worker,{webhookData:selectedFields(first,{severity:'LOW'})},{create:()=>{throw Error('Lower severity created a ticket');}});
+    assert.ok(!skipped.events.some(e=>['lookup','create','comment','email'].includes(e.type)));
+    const posts=skipped.events.filter(e=>e.type==='post');assert.equal(posts.length,1);
+    const final=runRule(worker,{webhookData:posts[0].payload},{lookup:()=>[],create:()=>issue('CER-1','CVE-2026-1301')});
+    assert.equal(final.events.filter(e=>e.type==='create').length,1);assert.equal(final.events.filter(e=>e.type==='email').length,1);
+    const mail=final.events.find(e=>e.type==='email').body;
+    assert.ok(mail.includes('CVE-2026-1300'));assert.ok(mail.includes('CVE-2026-1301'));assert.ok(mail.includes('browse/CER-1'));
+  }
+});
+
 test('empty scan sends no overview and starts no worker',()=>{ const s = scenario([]); assert.equal(s.emails.length,0); assert.equal(s.executions,0); });
 test('100 returned ticket matches retain incomplete lookup context without showing it in the email',()=>{
   const s = scenario([finding('CVE-2026-1000')],Array.from({length:100},(_,i)=>issue(`CER-${i}`,'CVE-2026-1000')));
@@ -91,10 +130,10 @@ test('mapping matches whole identifiers only and escapes issue status HTML',()=>
   const escaped = scenario([finding('CVE-2026-1000')],[issue('CER-12','CVE-2026-1000','<Done>')]);
   assert.match(escaped.emails[0].body,/\(&lt;Done&gt;\)/);
 });
-test('single-finding worker accepts all valid severities and keeps production recipients',()=>{
-  const payload = {findingId:'CVE-2026-1000',library:'library',installedVersion:'1',severity:'LOW',source:'https://example.org/job'};
+test('single-finding worker only creates HIGH/CRITICAL tickets and keeps production recipients',()=>{
+  const payload = {findingId:'CVE-2026-1000',library:'library',installedVersion:'1',severity:'HIGH',source:'https://example.org/job'};
   const handlers = {lookup:()=>[],create:()=>issue('CER-1',payload.findingId)};
-  for (const severity of ['UNKNOWN','LOW','MEDIUM','HIGH','CRITICAL']) {
+  for (const severity of ['HIGH','CRITICAL']) {
     const result = runRule(worker,{webhookData:{...payload,severity}},handlers);
     assert.equal(result.events.filter(e=>e.type==='create').length,1);
     assert.equal(result.events.find(e=>e.type==='email').to.length,4);
@@ -103,7 +142,7 @@ test('single-finding worker accepts all valid severities and keeps production re
   }
 });
 test('single-finding worker prevents recreation for every ticket status and matches whole identifiers',()=>{
-  const payload = {findingId:'CVE-2026-1000',library:'library',installedVersion:'1',severity:'LOW',source:'https://example.org/job'};
+  const payload = {findingId:'CVE-2026-1000',library:'library',installedVersion:'1',severity:'HIGH',source:'https://example.org/job'};
   for (const status of ['Open','In Progress','Done','Closed']) {
     const result = runRule(worker,{webhookData:payload},{
       lookup:()=>[issue('CER-1',payload.findingId,status)],
@@ -118,19 +157,20 @@ test('single-finding worker prevents recreation for every ticket status and matc
   });
   assert.equal(differentId.events.filter(e=>e.type==='create').length,1);
 });
-test('both worker modes accept valid severities and reject missing or invalid severities',()=>{
+test('both worker modes only create HIGH/CRITICAL and skip other, missing or invalid severities',()=>{
   const first = scenario([finding('CVE-2026-1000')]).events.find(e=>e.type==='post').payload;
   const single = {findingId:first.findingId,library:first.library,installedVersion:first.installedVersion,source:first.source};
   const handlers = {lookup:()=>[],create:()=>issue('CER-1',first.findingId)};
   for (const payload of [single,first]) {
-    for (const severity of ['UNKNOWN','LOW','MEDIUM','HIGH','CRITICAL']) {
+    for (const severity of ['HIGH','CRITICAL']) {
       const result = runRule(worker,{webhookData:selectedFields(payload,{severity})},handlers);
       assert.equal(result.events.filter(e=>e.type==='create').length,1);
       assert.match(result.events.find(e=>e.type==='create').fields.description,new RegExp(`\\|\\*Schweregrad des Herstellers\\*\\|${severity}\\|`));
     }
-    for (const severity of [undefined,'','low','IMPORTANT','HIGH|LOW']) {
+    for (const severity of ['UNKNOWN','LOW','MEDIUM',undefined,'','low','IMPORTANT','HIGH|LOW']) {
       const result = runRule(worker,{webhookData:selectedFields(payload,{severity})},handlers);
       assert.ok(!result.events.some(e=>['lookup','create','commentBranch'].includes(e.type)));
+      assert.equal(result.events.filter(e=>e.type==='email').length,payload.mode?1:0);
     }
   }
 });
@@ -183,7 +223,7 @@ test('second execution links the same tickets without creating them again or fil
 });
 test('malformed candidate fields do not consume the two eligible slots; original rows remain escaped',()=>{
   const bad = {...finding('CVE-2026-1000'),PkgName:'invalid|library'};
-  const encoded = finding('CVE-2026-1003','MEDIUM','R&D <package>');
+  const encoded = finding('CVE-2026-1003','HIGH','R&D <package>');
   const s = scenario([bad,finding('CVE-2026-1001'),encoded,finding('CVE-2026-1004')]);
   assert.equal(s.created.length,2);
   assert.ok(s.created.every(x=>!x.fields.summary.includes('CVE-2026-1000')&&!x.fields.summary.includes('CVE-2026-1004')));
@@ -217,7 +257,7 @@ test('one create component serves both modes; normalized test count has no trail
   const s = scenario([finding('CVE-2026-1000')]); assert.equal(s.executions,1); assert.match(s.emails[0].body,/<strong>1<\/strong>/);
   assert.equal(render('{{value.substringBeforeLast("§§").split("§§").distinct.size}}',{value:'a§§a§§'}),'1');
 });
-test('the eleven findings from the failed Jira run produce two selected candidates and eleven complete rows',()=>{
+test('the eleven LOW/MEDIUM findings from the failed Jira run produce no tickets and eleven complete rows',()=>{
   const records = [
     ['CVE-2025-15022','com.vaadin:vaadin-server','8.14.3'],
     ['CVE-2025-9467','com.vaadin:vaadin-server','8.14.3'],
@@ -234,12 +274,10 @@ test('the eleven findings from the failed Jira run produce two selected candidat
   const findings = records.map(([VulnerabilityID,PkgName,InstalledVersion,Severity='MEDIUM'])=>({VulnerabilityID,PkgName,InstalledVersion,Severity}));
   const s = scenario(findings);
   const posts = s.events.filter(e=>e.type==='post');
-  assert.equal(posts.length,2);
-  assert.deepEqual(posts.map(e=>[e.payload.findingId,e.payload.library,e.payload.installedVersion,e.payload.severity]),[
-    ['CVE-2025-15022','com.vaadin:vaadin-server','8.14.3','MEDIUM'],
-    ['CVE-2025-9467','com.vaadin:vaadin-server','8.14.3','MEDIUM'],
-  ]);
-  assert.equal(s.created.length,2); assert.equal(s.emails.length,1);
+  assert.equal(posts.length,1);
+  assert.equal(posts[0].payload.findingRows,'');
+  assert.equal(posts[0].payload.findingId,'');
+  assert.equal(s.created.length,0); assert.equal(s.emails.length,1);
   assert.equal((s.emails[0].body.match(/<tr>/g)??[]).length,11);
   assert.doesNotMatch(s.emails[0].body,/@@TICKET:/);
 });
@@ -333,7 +371,7 @@ test('report worker comments each freshly created issue despite search index lag
 test('single worker comments the created ticket rather than its trigger issue and keeps notifications',()=>{
   const original = {...issue('CER-99','CVE-2026-9999'),comments:['Existing comment']};
   const created = issue('CER-100','CVE-2026-1000');
-  const result = runRule(worker,{issue:original,webhookData:{findingId:'CVE-2026-1000',library:'library',installedVersion:'1',severity:'LOW',source:'https://example.org/job'}},{lookup:()=>[],create:()=>created});
+  const result = runRule(worker,{issue:original,webhookData:{findingId:'CVE-2026-1000',library:'library',installedVersion:'1',severity:'HIGH',source:'https://example.org/job'}},{lookup:()=>[],create:()=>created});
   const comments = result.events.filter(e=>e.type==='comment');
   assert.equal(comments.length,1);
   assert.equal(comments[0].key,created.key);
@@ -451,11 +489,13 @@ test('1029 context accepts positions zero through four but rejects mismatched mo
   }
 });
 
-test('report mode does not introduce severity selection in 914 and invalid selected data does not cause backfill',()=>{
+test('914 independently filters severity in production reports and completes skipped findings without backfill',()=>{
   const first=production([finding('CVE-2026-2800','HIGH')]).events.find(e=>e.type==='post').payload;
   for(const severity of ['UNKNOWN','LOW','MEDIUM','HIGH','CRITICAL']) {
     const result=runRule(worker,{webhookData:selectedFields(first,{severity})},{lookup:()=>[],create:()=>issue('CER-1',first.findingId)});
-    assert.equal(result.events.filter(e=>e.type==='create').length,1);assert.equal(result.events.filter(e=>e.type==='email').length,1);
+    assert.equal(result.events.filter(e=>e.type==='create').length,['HIGH','CRITICAL'].includes(severity)?1:0);
+    assert.equal(result.events.filter(e=>e.type==='email').length,1);
+    if(['UNKNOWN','LOW','MEDIUM'].includes(severity)) assert.ok(!result.events.some(e=>['lookup','comment','commentBranch'].includes(e.type)));
   }
   const bad=runRule(worker,{webhookData:selectedFields(first,{library:'invalid|library'})},{lookup:()=>[],create:()=>{throw Error('Invalid selected finding created');}});
   assert.equal(bad.events.filter(e=>e.type==='create').length,0);assert.equal(bad.events.filter(e=>e.type==='email').length,1);

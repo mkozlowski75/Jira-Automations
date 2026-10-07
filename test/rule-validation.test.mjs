@@ -113,7 +113,7 @@ test('auflöst Regeln aus dem separaten Regel-Repository und akzeptiert CER-Name
   assert.equal(resolved.repositoryPath, '../jira-automation-rules/rules/CER-jira-rule-913.json');
 });
 
-test('Security-Worker 914 erstellt für valide, nicht duplizierte CVE- oder -GHSA-Funde aller Trivy-Schweregrade und benachrichtigt danach', () => {
+test('Security-Worker 914 erstellt nur für valide, nicht duplizierte HIGH/CRITICAL-CVE- oder -GHSA-Funde und benachrichtigt danach', () => {
   const rule = readRuleFile(914);
   const flatten = components => components.flatMap(component => [
     component,
@@ -168,6 +168,7 @@ test('Security-Worker 914 erstellt für valide, nicht duplizierte CVE- oder -GHS
   }
   assert.equal(validationBlock.conditions.length, 1);
   const validation = rule.components.find(component => component.value?.name?.value === 'securityFindingParametersValid');
+  assert.equal(rule.components.find(component => component.value?.name?.value === 'securityValidSeverityPattern').value.query.value, '^(HIGH|CRITICAL)$');
   for (const field of ['findingId', 'installedVersion', 'library', 'severity', 'source']) {
     assert.ok(validation.value.query.value.includes(`webhookData.${field}.match(`));
   }
@@ -254,8 +255,8 @@ test('Security-Worker 914 erstellt für valide, nicht duplizierte CVE- oder -GHS
   assert.ok(invalidPayloadBlock.conditions.every(condition =>
     condition.value.operator === 'NOT_EQUALS'));
   assert.equal(invalidPayloadLog.parentId, invalidPayloadBlock.id);
-  assert.match(invalidPayloadLog.value, /mindestens ein Parameter entspricht nicht den Vorgaben/);
-  assert.match(invalidPayloadLog.value, /Kein Ticket und keine E-Mail erstellt/);
+  assert.match(invalidPayloadLog.value, /ungültige Parameter oder Schweregrad nicht HIGH\/CRITICAL/);
+  assert.match(invalidPayloadLog.value, /Kein Ticket und keine separate E-Mail erstellt; im Berichtsmodus wird die vollständige Übersicht weiterverarbeitet/);
   const findingIdPattern = '^(?:CVE-\\d{4}-\\d{4,24}|GHSA-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4})$';
   assert.equal(validationBlock.conditions[0].value.second, 'true');
   assert.equal(invalidPayloadBlock.conditions[0].value.second, 'true');

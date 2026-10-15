@@ -10,7 +10,7 @@ description: 'Jira Data Center Automation-for-Jira-Regeln im rohen Code-Barrel-J
 Dieser Skill gilt ausschließlich für Jira Data Center mit Automation for Jira
 (Code Barrel) und für rohe Exporte unter `rules/BDR-{id}.json`. Verwende niemals
 Jira-Cloud-JSON. `rules/rule-schema.json` und `KNOWN_COMPONENTS` in
-`scripts/lib/rule-validation.mjs` sind die technische Source of Truth.
+`scripts/lib/rule-validation.mjs` sind die technische Source of Truth. Regelstarts und Ergebnisprüfungen erfolgen per API, ohne Browser oder Computer Use.
 
 Öffne weder `config/.env` noch Zertifikatsdateien. Verbindungswerkzeuge dürfen
 diese Dateien intern laden; Credential-, Zertifikats-, Token- und Secret-Werte
@@ -27,7 +27,7 @@ Lade nur die für die Aufgabe erforderlichen Dateien:
 - Conditions oder Branches: [Conditions und Branches](references/conditions.md)
 - Smart Values: [Smart Values](references/smart-values.md)
 - Validierung, Secrets, Backup oder Push: [Sicherheit und Validierung](references/security-and-validation.md)
-- Jira-/Automation-Version oder API: [Umgebung](references/environment.md)
+- Jira-/Automation-Version, API-Regelstart und Audit: [Umgebung](references/environment.md)
 
 Die Beispiele [Minimalregel](examples/minimal-disabled-rule.json),
 [If-Block](examples/if-block.json) und

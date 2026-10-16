@@ -136,7 +136,11 @@ async function httpPutJson(url, body, headers = {}) {
     body,
   });
   if (!res.ok) {
-    throw new Error(`PUT ${url} → ${res.status} ${res.statusText}`);
+    const error = new Error(`PUT ${url} → ${res.status} ${res.statusText}`);
+    Object.defineProperty(error, 'privateResponseBody', { value: await res.text() });
+    error.httpStatus = res.status;
+    error.requestRuleId = Number.isInteger(body?.id) ? body.id : undefined;
+    throw error;
   }
   if (res.status === 204) return null;
   const responseBody = await res.text();

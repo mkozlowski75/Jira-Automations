@@ -99,7 +99,7 @@ test('validiert alle produktiven Exporte ohne Fehler oder Warnungen', () => {
 
   const result = validateRuleSet(entries);
 
-  assert.equal(entries.length, 30);
+  assert.equal(entries.length, 31);
   assert.deepEqual(result.errors, []);
   assert.deepEqual(result.warnings, []);
 });

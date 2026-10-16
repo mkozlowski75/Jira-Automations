@@ -1,3 +1,4 @@
+import { hasCredentialChanges } from './credential-guard.mjs';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
@@ -391,6 +392,7 @@ export function prepareDeployment({
   validation,
   allowedFields = [],
   forceDrift = false,
+  referenceRules,
 }) {
   const errors = [];
   const warnings = [...(validation?.warnings || [])];
@@ -437,8 +439,7 @@ export function prepareDeployment({
     errors.push('Der sichere Push unterstützt genau einen Projekt-Scope.');
   }
 
-  const sensitiveChanges = diffRules(remoteRule, localRule).filter(change => change.sensitive);
-  if (sensitiveChanges.length > 0) {
+  if (hasCredentialChanges(remoteRule, localRule, referenceRules ?? [remoteRule])) {
     errors.push('Secret- oder Tokenwerte dürfen nicht durch den lokalen Push geändert werden.');
   }
   if (summary.businessChanges.length === 0) {
@@ -481,12 +482,14 @@ export async function performDeployment({
   createBackup,
   persistSynchronizedRule,
   reportPreflight,
+  fetchReferenceRules,
 }) {
   if (forceDrift && !apply) {
     throw new Error('--force-drift darf nur zusammen mit --apply verwendet werden.');
   }
 
   const remoteRule = await fetchRemote(localRule);
+  const referenceRules = fetchReferenceRules ? await fetchReferenceRules(localRule) : [remoteRule];
   const preflight = prepareDeployment({
     localRule,
     remoteRule,
@@ -494,6 +497,7 @@ export async function performDeployment({
     validation,
     allowedFields,
     forceDrift,
+    referenceRules,
   });
   if (reportPreflight) await reportPreflight(preflight);
 

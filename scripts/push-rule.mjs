@@ -1,3 +1,4 @@
+import { mkdirSync, writeFileSync } from 'node:fs';
 /**
  * Push eine einzelne Regel-Datei nach Jira Data Center (Automation API).
  * Usage: npm run push-rule -- rules/BDR-913.json [--apply] [--force-drift]
@@ -8,6 +9,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   fetchAutomationRule,
+  fetchAutomationRules,
   putAutomationRule,
 } from './lib/automation-api.mjs';
 import {
@@ -125,6 +127,7 @@ async function main() {
     apply,
     forceDrift,
     fetchRemote: fetchAutomationRule,
+    fetchReferenceRules: fetchAutomationRules,
     putRemote: putAutomationRule,
     createBackup: remoteRule => writeServerBackup(backupsRoot, remoteRule),
     persistSynchronizedRule: synchronizedRule => writeJsonFile(
@@ -157,6 +160,11 @@ async function main() {
 }
 
 main().catch(error => {
+  if (error.privateResponseBody && error.requestRuleId) {
+    const directory = join(backupsRoot, `BDR-${error.requestRuleId}`);
+    mkdirSync(directory, { recursive: true });
+    writeFileSync(join(directory, 'last-rejection.private.json'), JSON.stringify({ status: error.httpStatus, responseBody: error.privateResponseBody }), { mode: 0o600 });
+  }
   console.error(`❌ Sicherer Push abgebrochen: ${safeErrorMessage(error)}`);
   process.exitCode = 1;
 });

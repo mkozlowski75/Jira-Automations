@@ -144,7 +144,7 @@ Export als `rules/BDR-{id}.json` aufnehmen und erst danach bearbeiten.
 ## Projektstruktur
 
 ```text
-.github/skills/jira-automation-rules/          Verbindlicher KI-Workflow und Referenzen
+.github/skills/jira-automation-rules/          Verweis auf den zentralen KI-Workflow
 .github/skills/jira-tickets/                   Sicherer Lese- und Änderungsworkflow für Tickets
 .github/skills/cer-jira-tickets/               Live-vorlagenkonforme CER-Storys, -Bugs und -Tasks
 .github/skills/confluence-pages/               Sicherer Lese- und Änderungsworkflow für Seiten
@@ -162,6 +162,10 @@ scripts/                                       Validierung und sichere Jira-Werk
 test/                                          Bereinigte Fixtures und Sicherheitstests
 examples/                                      Anonymisierte Eingabebeispiele
 ```
+
+Der verbindliche [Jira-Automation-Skill](../ai-collaboration-skills/skills/jira/jira-automation-rules/SKILL.md)
+liegt im zentralen Skills-Repository. `npm run lint` prüft diese zentrale Fassung
+und den lokalen Verweis; hier wird keine zweite Workflow-Fassung gepflegt.
 
 Die produktiven Regel-Exporte liegen jetzt in einem separaten Repository, damit
 Logik und Regelbestand unabhängig versioniert werden können. Die Skripte beziehen

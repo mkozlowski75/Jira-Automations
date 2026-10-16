@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Gemeinsamer API-Helper für Jira Data Center.
  * Lädt Credentials + Client-Zertifikat (mTLS) aus config/.env.
  */
@@ -231,4 +231,14 @@ export async function jiraRawPost(url, body) {
 
 export function jiraConfig() {
   return { base: JIRA_BASE };
+}
+
+// Löscht ausschließlich die vom aufrufenden Workflow geprüfte REST-Ressource.
+export async function jiraRawDelete(url) {
+  assertJiraConfigured();
+  const res = await request('DELETE', url, { headers: jiraAuthHeaders });
+  if (!res.ok) throw new Error(`DELETE ${url} → ${res.status} ${res.statusText}`);
+  if (res.status === 204) return null;
+  const responseBody = await res.text();
+  return responseBody ? JSON.parse(responseBody) : null;
 }

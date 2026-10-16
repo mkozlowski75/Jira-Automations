@@ -8,7 +8,8 @@ import { fileURLToPath } from 'node:url';
 import { KNOWN_COMPONENTS } from './lib/rule-validation.mjs';
 
 const __dir = dirname(fileURLToPath(import.meta.url));
-const skillRoot = join(__dir, '..', '.github', 'skills', 'jira-automation-rules');
+const skillRoot = resolve(__dir, '..', '..', 'ai-collaboration-skills', 'skills', 'jira', 'jira-automation-rules');
+const localSkillPath = join(__dir, '..', '.github', 'skills', 'jira-automation-rules', 'SKILL.md');
 const skillPath = join(skillRoot, 'SKILL.md');
 const examplesDir = join(skillRoot, 'examples');
 const referenceFiles = [
@@ -20,6 +21,7 @@ const errors = [];
 const skill = readFileSync(skillPath, 'utf8');
 const markdownFiles = [
   skillPath,
+  localSkillPath,
   ...readdirSync(join(skillRoot, 'references'))
     .filter(file => file.endsWith('.md'))
     .map(file => join(skillRoot, 'references', file)),

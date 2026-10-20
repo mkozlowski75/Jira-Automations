@@ -1084,6 +1084,38 @@ test('Deployment führt ohne --apply weder Backup noch PUT aus', async () => {
   assert.equal(putCount, 0);
 });
 
+test('template opt-in reaches preflight and apply, preserving backup and remote verification', async () => {
+  const remote = cloneFixture();
+  remote.projects = [{ projectId: '42', projectTypeKey: 'software' }];
+  remote.components = [component('1001', 'ACTION', 1, 'jira.issue.outgoing.webhook', {
+    method: 'GET', url: 'https://example.invalid/confluence/rest/api/content/123?version=8',
+    headers: [{ name: 'Authorization', value: { secret: true, keyOrValue: 'Synthetic Secret' } }],
+    usedSecretsKeys: ['Synthetic Secret'],
+  })];
+  const local = structuredClone(remote);
+  local.components[0].value.url = 'https://example.invalid/confluence/rest/api/content/456?version=1';
+  for (const [enabled, apply] of [[false, true], [true, false], [true, true]]) {
+    const events = [];
+    let reads = 0;
+    const result = await performDeployment({
+      localRule: local, baselineRule: remote, validation: { errors: [], warnings: [] },
+      allowConfluenceTemplateUrlChange: enabled, apply,
+      fetchRemote: async () => { events.push('read'); return structuredClone(reads++ === 0 ? remote : local); },
+      createBackup: async () => { events.push('backup'); return 'synthetic-backup'; },
+      putRemote: async rule => { events.push('put'); assert.deepEqual(rule, local); },
+      reportPreflight: preflight => assert.equal(preflight.summary.allowConfluenceTemplateUrlChange, enabled),
+    });
+    assert.equal(result.preflight.ok, enabled);
+    assert.equal(result.applied, enabled && apply);
+    assert.deepEqual(events, enabled && apply ? ['read', 'backup', 'put', 'read'] : ['read']);
+  }
+  const changedServer = structuredClone(remote); changedServer.name = 'Server drift';
+  const drift = prepareDeployment({ localRule: local, remoteRule: changedServer, baselineRule: remote,
+    validation: { errors: [], warnings: [] }, allowConfluenceTemplateUrlChange: true });
+  assert.equal(drift.ok, false);
+  assert.ok(drift.errors.some(error => error.includes('Git-HEAD')));
+});
+
 test('Deployment bricht bei fehlendem Backup vor dem PUT ab', async () => {
   const remote = cloneFixture();
   remote.projects = [{ projectId: '99999', projectTypeKey: 'software' }];

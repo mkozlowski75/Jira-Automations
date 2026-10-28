@@ -2,6 +2,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 /**
  * Push eine einzelne Regel-Datei nach Jira Data Center (Automation API).
  * Usage: npm run push-rule -- rules/BDR-913.json [--apply] [--force-drift]
+ * Optional: --allow-confluence-template-url-change for an approved same-origin page read.
  *
  * Ohne --apply wird ausschließlich ein read-only Preflight ausgeführt.
  */
@@ -40,6 +41,7 @@ function parseArguments(args) {
     ruleFile,
     apply: args.includes('--apply'),
     forceDrift: args.includes('--force-drift'),
+    allowConfluenceTemplateUrlChange: args.includes('--allow-confluence-template-url-change'),
     allowedFields,
   };
 }
@@ -59,6 +61,9 @@ function formatValue(value) {
 
 function printPreflight(preflight) {
   const { summary } = preflight;
+  if (summary.allowConfluenceTemplateUrlChange) {
+    console.log('Explizite Freigabe: Confluence-Vorlagen-URL bei unveränderter HTTPS-Origin, GET-Aktion und Secret-Headern.');
+  }
   console.log(`Regel: ${summary.rule.name} (ID ${summary.rule.id})`);
   console.log(`Projekt-Scope: ${formatValue(summary.rule.projects)}`);
   console.log(`Trigger: ${summary.rule.trigger?.type || 'nicht vorhanden'}`);
@@ -91,10 +96,11 @@ async function main() {
     apply,
     forceDrift,
     allowedFields,
+    allowConfluenceTemplateUrlChange,
   } = parseArguments(process.argv.slice(2));
   if (!ruleFile) {
     console.log(
-      'Usage: npm run push-rule -- <rule-file.json> [--apply] [--force-drift] [--allow-field=<field>]',
+      'Usage: npm run push-rule -- <rule-file.json> [--apply] [--force-drift] [--allow-field=<field>] [--allow-confluence-template-url-change]',
     );
     process.exitCode = 1;
     return;
@@ -126,6 +132,7 @@ async function main() {
     allowedFields,
     apply,
     forceDrift,
+    allowConfluenceTemplateUrlChange,
     fetchRemote: fetchAutomationRule,
     fetchReferenceRules: fetchAutomationRules,
     putRemote: putAutomationRule,

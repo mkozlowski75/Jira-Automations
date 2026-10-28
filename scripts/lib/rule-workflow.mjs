@@ -393,6 +393,7 @@ export function prepareDeployment({
   allowedFields = [],
   forceDrift = false,
   referenceRules,
+  allowConfluenceTemplateUrlChange = false,
 }) {
   const errors = [];
   const warnings = [...(validation?.warnings || [])];
@@ -400,6 +401,7 @@ export function prepareDeployment({
   const summary = summarizeRuleChanges(remoteRule, localRule);
   const serverDrift = Boolean(baselineRule && !rulesEqual(remoteRule, baselineRule));
   summary.serverDrift = serverDrift;
+  summary.allowConfluenceTemplateUrlChange = allowConfluenceTemplateUrlChange === true;
 
   for (const validationError of validation?.errors || []) {
     errors.push(`Validierung: ${validationError.file} ${validationError.path} ${validationError.message}`);
@@ -439,7 +441,7 @@ export function prepareDeployment({
     errors.push('Der sichere Push unterstützt genau einen Projekt-Scope.');
   }
 
-  if (hasCredentialChanges(remoteRule, localRule, referenceRules ?? [remoteRule])) {
+  if (hasCredentialChanges(remoteRule, localRule, referenceRules ?? [remoteRule], { allowConfluenceTemplateUrlChange })) {
     errors.push('Secret- oder Tokenwerte dürfen nicht durch den lokalen Push geändert werden.');
   }
   if (summary.businessChanges.length === 0) {
@@ -483,6 +485,7 @@ export async function performDeployment({
   persistSynchronizedRule,
   reportPreflight,
   fetchReferenceRules,
+  allowConfluenceTemplateUrlChange = false,
 }) {
   if (forceDrift && !apply) {
     throw new Error('--force-drift darf nur zusammen mit --apply verwendet werden.');
@@ -498,6 +501,7 @@ export async function performDeployment({
     allowedFields,
     forceDrift,
     referenceRules,
+    allowConfluenceTemplateUrlChange,
   });
   if (reportPreflight) await reportPreflight(preflight);
 

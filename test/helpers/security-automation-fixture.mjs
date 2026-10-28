@@ -23,7 +23,9 @@ function member(v, name, args) {
     get: i => { assert.ok(i !== undefined && Number.isInteger(Number(i)), 'Collection.get requires an explicit numeric index'); return v?.[Number(i)]; }, join: x => Array.isArray(v) ? v.join(text(x)) : s,
     asJsonObject: key => Array.isArray(v) ? v.map(x=>({[key]:text(x)})) : {[key]:s},
     // Data Center returns null, a single match text, or a collection of matches.
-    match: x => { const matches = [...s.matchAll(pattern(x,true))].map(m => m[1]); return matches.length > 1 ? matches : matches[0] ?? null; }, replace: (a,b) => s.replaceAll(text(a),text(b)),
+    match: x => { const matches = [...s.matchAll(pattern(x,true))].map(m => m[1]); return matches.length > 1 ? matches : matches[0] ?? null; },
+    // Literal replacement must preserve dollar signs in inserted HTML as well.
+    replace: (a,b) => s.replaceAll(text(a),()=>text(b)),
     replaceAll: (a,b) => s.replace(pattern(a,true),text(b)), startsWith: x => s.startsWith(text(x)),
     substring: (a,b) => s.substring(Number(a),b === undefined ? undefined : Number(b)),
     substringBefore: x => s.includes(text(x)) ? s.substring(0,s.indexOf(text(x))) : s,

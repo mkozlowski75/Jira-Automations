@@ -552,3 +552,62 @@ test('a zero-candidate report must start at zero and carry empty selected fields
     }
   }
 });
+
+test('914 defines the report subject and complete HTML template once before both delivery paths',()=>{
+  const components=flat(worker.components);
+  const definitions=name=>components.filter(c=>c.type==='jira.create.variable'&&c.value.name.value===name);
+  const subjects=definitions('securityReportEmailSubject'), templates=definitions('securityReportEmailTemplate');
+  assert.equal(subjects.length,1);assert.equal(templates.length,1);
+  assert.ok(worker.components.includes(subjects[0]));assert.ok(worker.components.includes(templates[0]));
+  const template=templates[0].value.query.value;
+  assert.match(template,/<h3>Nächste Schritte<\/h3>/);
+  assert.equal((template.match(/@@SECURITY_REPORT_TABLE@@/g)??[]).length,1);
+  assert.doesNotMatch(template,/\{\{securityReportTable\}\}/,'The table does not exist when the shared template is declared');
+  assert.equal((JSON.stringify(worker).match(/Die in der Übersicht verlinkten/g)??[]).length,1);
+  const deliveries=components.filter(c=>c.type==='jira.issue.outgoing.email'&&c.value.subject==='{{securityReportEmailSubject}}');
+  assert.equal(deliveries.length,4);
+  assert.ok(deliveries.every(c=>c.value.body==='{{securityReportEmailTemplate.replace("@@SECURITY_REPORT_TABLE@@",securityReportTable)}}'));
+});
+
+test('the shared report template inserts the final table literally at delivery without rendering it again',()=>{
+  const definitions=worker.components.filter(c=>['securityReportEmailSubject','securityReportEmailTemplate'].includes(c.value?.name?.value));
+  const email=flat(worker.components).find(c=>c.type==='jira.issue.outgoing.email'&&c.value.subject==='{{securityReportEmailSubject}}');
+  for(const callerId of [1062,1029]) {
+    const webhookData={mode:`trivy-report-${callerId}`,pipelineId:'42',source:'https://example.org/jobs/55?a=1&b=2',reportRows:'row§§'};
+    const {globals}=runRule({components:definitions},{webhookData,securityReportTable:'STALE TABLE'});
+    assert.ok(globals.securityReportEmailTemplate.includes('@@SECURITY_REPORT_TABLE@@'));
+    assert.ok(!globals.securityReportEmailTemplate.includes('STALE TABLE'));
+    const table='<table><tbody><tr><td>$1 $& $$ \\ {{unresolved}} &amp; &lt;package&gt;</td></tr></tbody></table>';
+    globals.securityReportTable=table;
+    const body=render(email.value.body,globals);
+    assert.ok(body.includes(table),'Replacement must preserve every character of the final table');
+    assert.doesNotMatch(body,/@@SECURITY_REPORT_TABLE@@|STALE TABLE/);
+    assert.match(body,/jobs\/55\?a=1&amp;b=2/);
+    assert.ok(body.includes(`#/rule/${callerId}`));
+  }
+});
+
+test('both report modes use the shared template after either creating or finding the final ticket',()=>{
+  for(const callerId of [1062,1029]) for(const duplicate of [false,true]) {
+    const findings=[finding('CVE-2026-4200'),finding('GHSA-aaaa-bbbb-cccc','CRITICAL')];
+    const existing=duplicate?[issue('CER-42',findings[1].VulnerabilityID,'Done')]:[];
+    const s=scenario(findings,existing,{callerId,indexLag:true});
+    assert.equal(s.created.length,duplicate?1:2);assert.equal(s.emails.length,1);
+    const mail=s.emails[0];
+    assert.equal((mail.body.match(/<tr>/g)??[]).length,2);
+    for(const ticket of s.all)assert.ok(mail.body.includes(`browse/${ticket.key}`));
+    if(duplicate)assert.match(mail.body,/\(Done\)/);
+    assert.match(mail.body,/Die in der Übersicht verlinkten, automatisch erstellten oder bereits vorhandenen Jira-Tickets prüfen/);
+    assert.match(mail.body,/Vorlage für CVE-Tickets/);assert.match(mail.body,/weiterbearbeiten/);
+    assert.doesNotMatch(mail.body,/@@SECURITY_REPORT_TABLE@@|@@TICKET:|Falls erforderlich, Tickets/);
+    if(callerId===1029) {
+      assert.match(mail.body,/ersten fünf/);assert.match(mail.subject,/HIGH\/CRITICAL/);
+      assert.deepEqual(mail.to,productionRecipients);
+      assert.doesNotMatch(mail.body,/aller Schweregrade|rule\/1062/);
+    } else {
+      assert.match(mail.body,/ersten zwei/);assert.match(mail.subject,/aller Schweregrade/);
+      assert.doesNotMatch(mail.body,/ersten fünf|rule\/1029/);
+      assert.equal(mail.to.length,1);
+    }
+  }
+});
